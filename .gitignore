@@ -1,0 +1,45 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Email exports (NEVER commit these)
+*.mbox
+*.eml
+*.pst
+
+# Sensitive test data
+tests/fixtures/private/
+
+# archives
+*.zip
+*.tar.gz
