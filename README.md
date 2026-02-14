@@ -1,132 +1,104 @@
 # Link Safety Hub
 
-A modular security toolbelt for inspecting links, messages, emails, and QR codes. Built for personal use, family protection, and small business security hygiene.
+Modular security toolbelt for inspecting links, messages, emails, and QR codes.
 
-Each module works standalone via CLI, but shares a common core engine so they compose into a unified web app, browser extension, or inbox scanner as the project matures.
+## Current Status (2026-02-13)
 
-## Why This Exists
+Implemented now:
 
-Normal people get compromised through everyday vectors: shortened links in texts, spoofed emails, QR codes at restaurants, and old inboxes full of phishing. Enterprise tools don't help individuals or family businesses. This project fills that gap with plain-English explanations and practical "what to do next" advice.
+- Core models and scorer (`src/lsh/core/`)
+- CLI entrypoint with URL analysis (`lsh check <url>`)
+- Module #1 Homoglyph / IDN detector (`src/lsh/modules/homoglyph/`)
+- Family-friendly summary and actionable guidance in CLI output
+- Focused tests for Homoglyph/IDN scenarios
+
+Planned next:
+
+- Module #2 Redirect Chain Expander (Session 2)
+- Email Auth checker, QR decoder, Family Mode pipeline layer
+- Dedicated orchestrator component (instead of CLI-local orchestration)
 
 ## Quick Start
 
 ```bash
-# Clone and install
 git clone https://github.com/YOUR_USERNAME/link-safety-hub.git
 cd link-safety-hub
 python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-# Check a URL
-lsh check https://suspicious-link.example.com
+# URL safety check (offline)
+lsh check https://example.com
 
-# Check an email header file
-lsh email-check headers.txt
-
-# Scan a QR code image
-lsh qr-scan screenshot.png
+# JSON output
+lsh check https://xn--pple-43d.com --json
 ```
+
+## Current CLI Commands
+
+- `lsh check <url>`
+
+Note: `email-check`, `qr-scan`, and `inbox-scan` are planned but not implemented yet.
 
 ## Modules
 
 | # | Module | Status | Description |
 |---|--------|--------|-------------|
-| 1 | **Homoglyph / IDN Detector** | 🟡 MVP | Detects lookalike characters and punycode tricks |
-| 2 | **Redirect Chain Expander** | 🟡 MVP | Safely unwinds shortened URLs, shows every hop |
-| 3 | **Domain Risk Profiler** | ⚪ Planned | Age, TLD, DNS, typosquat detection |
-| 4 | **Content Snapshot Analyzer** | ⚪ Planned | Safe headless fetch, fake login form detection |
-| 5 | **Email Auth Checker** | 🟡 MVP | SPF/DKIM/DMARC validation from headers |
-| 6 | **Attachment Triage** | ⚪ Planned | Static file analysis, hash, macro detection |
-| 7 | **QR / Smishing Decoder** | 🟡 MVP | Extract links from QR codes, run through pipeline |
-| 8 | **Password Hygiene** | ⚪ Planned | Local-only strength and reuse checks |
-| 9 | **Family Mode Explainer** | 🟡 MVP | Plain-English risk explanations and action steps |
-| 10 | **Offline Inbox Scanner** | ⚪ Planned | Batch scan exported .mbox/.eml files |
+| 1 | Homoglyph / IDN Detector | Implemented (MVP) | Detects lookalike Unicode and punycode hostname risks |
+| 2 | Redirect Chain Expander | Planned | Safely unwinds shortened URLs |
+| 3 | Domain Risk Profiler | Planned | Age, TLD, DNS, typosquat detection |
+| 4 | Content Snapshot Analyzer | Planned | Safe headless fetch, fake login detection |
+| 5 | Email Auth Checker | Planned | SPF/DKIM/DMARC validation |
+| 6 | Attachment Triage | Planned | Static file analysis and URL extraction |
+| 7 | QR / Smishing Decoder | Planned | Decode QR payloads and re-analyze URLs |
+| 8 | Password Hygiene | Planned | Local strength and reuse checks |
+| 9 | Family Mode Explainer | Planned | Plain-language explanation layer |
+| 10 | Offline Inbox Scanner | Planned | Batch scan exported mailbox data |
 
 ## Project Structure
 
-```
+```text
 link-safety-hub/
-├── .claude/
-│   └── skills/
-│       └── session-logger/       # Session logging skill for Claude Code
-│           ├── SKILL.md
-│           └── assets/
-│               └── entry.template.md
-├── src/
-│   └── lsh/
-│       ├── core/              # Shared engine: scoring, parsing, rules
-│       │   ├── __init__.py
-│       │   ├── models.py      # Pydantic models for findings, risk scores
-│       │   ├── scorer.py      # Risk scoring engine
-│       │   └── rules.py       # Shared detection rules
-│       ├── modules/           # Each module is a self-contained package
-│       │   ├── homoglyph/
-│       │   ├── redirect/
-│       │   ├── domain_risk/
-│       │   ├── content_snapshot/
-│       │   ├── email_auth/
-│       │   ├── attachment/
-│       │   ├── qr_decode/
-│       │   ├── password/
-│       │   ├── family_mode/
-│       │   └── inbox_scanner/
-│       ├── adapters/          # Interface adapters (CLI, API, etc.)
-│       │   ├── cli.py
-│       │   ├── api.py
-│       │   └── web.py
-│       └── __init__.py
-├── tests/
-│   ├── core/
-│   ├── modules/
-│   └── fixtures/              # Sample emails, URLs, QR images for testing
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── MODULES.md
-│   ├── GITHUB_STRATEGY.md
-│   └── SECURITY.md
-├── CLAUDE.md                  # Agent context for Claude Code / Codex
-├── SESSION_LOG.md             # Structured development session history
-├── pyproject.toml
-├── Makefile
-└── README.md
+  src/lsh/
+    core/
+    adapters/
+    modules/
+      homoglyph/
+  tests/
+    modules/
+  docs/
+  SESSION_LOG.md
 ```
-
-## Architecture
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design, including the core engine, module interface contract, and adapter pattern.
 
 ## Development
 
 ```bash
-# Run tests
-make test
+# Lint
+ruff check src/ tests/
 
-# Run linting
-make lint
+# Type check
+mypy src/
 
-# Run a single module's tests
-pytest tests/modules/test_homoglyph.py -v
-
-# Type checking
-make typecheck
+# Tests
+pytest -v --tb=short
 ```
 
 ## Session Logging
 
-This project uses structured session logging to maintain continuity across multiple developers and AI coding agents (Claude Code, Codex, etc.). Every session appends an entry to `SESSION_LOG.md` with changes, decisions (with reasoning), open questions, and next steps.
+Every coding session appends an entry to `SESSION_LOG.md` with:
 
-To log a session in Claude Code: type `/session-logger` or say "log this session".
+- goal
+- files touched
+- decisions with reasoning
+- open questions
+- next steps
 
-See `.claude/skills/session-logger/SKILL.md` for the full format and conventions.
+## Documentation
 
-## Roadmap
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased build plan.
-
-## Ethics & Legal
-
-This tool is for **defensive security only**. Never scan accounts, emails, or devices you don't own or have explicit written permission to analyze. See [docs/SECURITY.md](docs/SECURITY.md) for responsible use guidelines.
+- Architecture: `docs/ARCHITECTURE.md`
+- Module specs: `docs/MODULES.md`
+- Build plan: `docs/ROADMAP.md`
+- Security guidance: `docs/SECURITY.md`
 
 ## License
 

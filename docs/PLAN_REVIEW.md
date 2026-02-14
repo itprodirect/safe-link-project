@@ -1,5 +1,7 @@
 # Plan Review: Gaps, Risks & Corrections
 
+Status note (2026-02-13): Session 0 and Session 1 are complete. Items below are historical review notes plus remaining risks to address.
+
 This document captures things the original ChatGPT plan got right, got wrong, or didn't address. Read this before building.
 
 ## What the plan gets right
@@ -12,11 +14,11 @@ This document captures things the original ChatGPT plan got right, got wrong, or
 
 ## What needs correction
 
-### 1. The scaffold is docs-perfect but will fail CI
+### 1. The scaffold is docs-perfect but will fail CI (resolved)
 
 This is the most immediate issue. The `pyproject.toml` declares a `lsh` CLI entry point and `src/lsh` package structure, but none of those files exist yet. Running `pip install -e .` will fail, `make check` will fail, and any agent starting a session will be confused by the gap between documentation and reality.
 
-**Fix:** Session 0 (see ROADMAP.md) creates the minimum package skeleton so CI turns green before any real module work begins. This must be the very first coding session.
+**Fix:** Session 0 (see ROADMAP.md) created the minimum package skeleton and turned CI green before module implementation.
 
 **Also fixed:** The original `pyproject.toml` used self-referential extras (`phase1 = ["link-safety-hub[homoglyph,qr,email-auth]"]`) which can break in editable installs. The `[dev]` extra now lists all dependencies flat.
 

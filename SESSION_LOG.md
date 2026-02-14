@@ -161,6 +161,7 @@ Development session history. Each entry documents what was done, why, and what's
 - Consider moving module orchestration from CLI into a dedicated orchestrator component
 
 **Tests:** Passing - `ruff check src tests`, `mypy src`, and `pytest -v --tb=short` (14 tests)
+<<<<<<< HEAD
 
 ## Session Wrap — 2026-02-13/14
 
@@ -201,3 +202,37 @@ Development session history. Each entry documents what was done, why, and what's
 ### Open Questions / Risks
 - `pyzbar` may require zbar DLL on Windows; keep QR support optional and not on critical path.
 
+||||||| parent of e430ae0 (docs: sync Session 1 status and Session 2 handoff docs)
+=======
+
+---
+
+## 2026-02-13 21:26 - Docs sync for Session 2 handoff
+
+**Agent:** Codex
+
+**Goal:** Align project documentation with current implementation state and prepare clear next-session guidance
+
+**Module(s) Touched:** docs
+
+**Changes:**
+- Rewrote `README.md` to reflect current implemented scope (`lsh check`, Homoglyph module) and explicitly mark unimplemented commands as planned
+- Rewrote `docs/ROADMAP.md` with completed Session 0/1 checkpoint and concrete Session 2 scope/definition of done
+- Rewrote `docs/MODULES.md` to document implemented Homoglyph detector behavior and finding codes (`HMG000`-`HMG004`)
+- Rewrote `docs/ARCHITECTURE.md` to distinguish current architecture from target orchestrator architecture
+- Updated `CLAUDE.md` current-priority section to reflect Session 1 completion and Session 2 ordering
+- Updated `docs/PLAN_REVIEW.md` to mark the CI scaffold gap as resolved and add a status note
+
+**Decisions:**
+- Kept docs explicit about implemented vs planned capabilities - because stale command examples caused ambiguity for next-session execution
+- Prioritized concise, operational handoff language over broad aspirational text - because the immediate need is Session 2 implementation clarity
+
+**Open Questions:**
+- Should we add a dedicated `docs/NEXT_SESSION.md` checklist, or keep handoff guidance centralized in `docs/ROADMAP.md` + `SESSION_LOG.md`?
+
+**Next:**
+- Begin Session 2 redirect module scaffold and CLI flag design
+- Add redirect-focused test plan with mocked chains and timeout coverage
+
+**Tests:** N/A - docs-only session
+>>>>>>> e430ae0 (docs: sync Session 1 status and Session 2 handoff docs)

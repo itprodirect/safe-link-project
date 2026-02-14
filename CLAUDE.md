@@ -71,14 +71,16 @@ python -m lsh.adapters.cli check "https://example.com"
 
 ## Current Priority
 
-Phase 1 MVP modules (in build order):
-1. Core engine (models, scorer, rules)
-2. Homoglyph detector (#1)
-3. Redirect chain expander (#2)
-4. Email auth checker (#5)
-5. QR decoder (#7)
-6. Family mode explainer (#9)
-7. CLI adapter
+Current checkpoint:
+- Session 0 complete (repo green)
+- Session 1 complete (Homoglyph / IDN detector)
+
+Next build order:
+1. Redirect chain expander (#2)
+2. Email auth checker (#5)
+3. QR decoder (#7)
+4. Family mode explainer (#9)
+5. Extract dedicated orchestrator from CLI wiring
 
 ## What NOT to Do
 
