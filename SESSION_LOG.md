@@ -161,3 +161,43 @@ Development session history. Each entry documents what was done, why, and what's
 - Consider moving module orchestration from CLI into a dedicated orchestrator component
 
 **Tests:** Passing - `ruff check src tests`, `mypy src`, and `pytest -v --tb=short` (14 tests)
+
+## Session Wrap — 2026-02-13/14
+
+### Outcome
+- Session 0: Repo turns green. CLI + typed core + smoke tests established.
+- Session 1: Homoglyph/IDN detector implemented end-to-end and wired into CLI.
+- Verified CLI + JSON outputs against a known homoglyph example (Cyrillic “і” in logіn.com).
+
+### Validation
+- ruff: pass
+- mypy: pass
+- pytest: pass (14 tests)
+
+### Key Decisions (with why)
+- Windows environment lacks `make`; local gate is:
+  - `python -m ruff check .`
+  - `python -m mypy .`
+  - `python -m pytest -q`
+- Keep network actions opt-in only; default analysis is offline.
+- Findings include family-friendly explanations + actionable recommendations.
+
+### Notable Deliverables
+- New module: `src/lsh/modules/homoglyph/`
+- New tests: `tests/modules/test_homoglyph.py`
+- CLI improvements: actionable summary + “What to do next”
+- Session logs updated continuously
+
+### Next Session Plan
+1) Session 2: Redirect chain expander module
+   - CLI flag: `--follow` (opt-in)
+   - strict timeouts + max hops + HEAD-first
+   - network tests marked/skipped by default
+2) CLI polish
+   - “Key details” section (shown hostname / punycode / ASCII lookalike)
+   - `--explain` flag for full evidence output
+3) Prevent recommendation duplication as modules scale (top-3 aggregated guidance)
+
+### Open Questions / Risks
+- `pyzbar` may require zbar DLL on Windows; keep QR support optional and not on critical path.
+
