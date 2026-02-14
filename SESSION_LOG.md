@@ -128,3 +128,36 @@ Development session history. Each entry documents what was done, why, and what's
 - Add real test fixtures with known-bad homoglyph URLs
 
 **Tests:** 10 passed — CLI help, CLI check (text + JSON), model validation (AnalysisInput, Finding, Evidence, AnalysisResult), scorer normalize (empty, severity correction, all severity bands)
+
+---
+
+## 2026-02-13 21:05 - Session 1: Homoglyph / IDN detector
+
+**Agent:** Codex
+
+**Goal:** Implement an offline Homoglyph / IDN detector module, wire it into CLI analysis, add focused tests, and keep checks green on Windows
+
+**Module(s) Touched:** homoglyph, adapter:cli
+
+**Changes:**
+- Created `src/lsh/modules/homoglyph/analyzer.py` - implemented hostname extraction, non-ASCII detection, IDNA/punycode visibility, mixed-script label detection, confusable detection, and coded findings with evidence
+- Created `src/lsh/modules/homoglyph/__init__.py` and `src/lsh/modules/homoglyph/README.md`
+- Updated `src/lsh/modules/__init__.py` - exports `HomoglyphDetector`
+- Replaced CLI stub flow in `src/lsh/adapters/cli.py` - now runs URL modules, normalizes findings, computes aggregate risk, prints coded findings, and adds family-friendly actionable guidance
+- Added `tests/modules/test_homoglyph.py` - focused tests for clean ASCII, Unicode hostname, mixed scripts, and punycode input
+
+**Decisions:**
+- Emitted one finding per signal (`HMG001`-`HMG004`) with cumulative scoring evidence (`Risk Delta`, `Cumulative Risk`) - because incremental risk is easier to explain and audit than opaque single-score output
+- Performed mixed-script detection per-label instead of across the full hostname - because cross-label checks create false positives on normal ASCII TLDs (for example `.com`)
+- Kept analysis fully offline with `urllib.parse`, stdlib IDNA codec, and local `confusables` data only - because Session 1 requirements explicitly disallow network use
+
+**Open Questions:**
+- Should we add allow-list controls for legitimate internationalized domains to reduce false positives for bilingual brands?
+- Should CLI expose a `--family` mode that suppresses technical finding rows and prints only plain-language actions?
+
+**Next:**
+- Start Session 2 redirect-chain module and pass final destination hostnames into this detector
+- Add fixture-driven homoglyph regression cases (known-good international domains vs known-bad lookalikes)
+- Consider moving module orchestration from CLI into a dedicated orchestrator component
+
+**Tests:** Passing - `ruff check src tests`, `mypy src`, and `pytest -v --tb=short` (14 tests)
