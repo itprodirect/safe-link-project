@@ -83,3 +83,48 @@ Development session history. Each entry documents what was done, why, and what's
 - Get `make check` green before touching any module code
 
 **Tests:** N/A — documentation only session
+
+---
+
+## 2026-02-13 — Session 0: Get the repo green
+
+**Agent:** Claude Code (Claude Opus 4.6)
+
+**Goal:** Bootstrap the Python package skeleton so `pip install -e ".[dev]"`, ruff, mypy, and pytest all pass — and the CLI runs
+
+**Module(s) Touched:** core, adapters (stubs only)
+
+**Changes:**
+- Created `src/lsh/core/__init__.py` — core engine package
+- Created `src/lsh/core/models.py` — Pydantic v2 models: `Severity` (StrEnum), `AnalysisInput`, `Evidence`, `Finding`, `AnalysisResult`, `ModuleInterface` (ABC)
+- Created `src/lsh/core/scorer.py` — `score_to_severity()` maps 0-100 to severity bands, `normalize()` aligns finding severity to risk_score
+- Created `src/lsh/core/rules.py` — empty placeholder with `__all__ = []`
+- Created `src/lsh/modules/__init__.py` — modules package placeholder
+- Created `src/lsh/adapters/__init__.py` — adapters package placeholder
+- Created `src/lsh/adapters/cli.py` — Click CLI with `lsh --help` and `lsh check <url>` (stub returning 0/100 INFO)
+- Created `src/lsh/adapters/__main__.py` — enables `python -m lsh.adapters` invocation
+- Created `src/lsh/py.typed` — PEP 561 marker for typed package
+- Updated `src/lsh/__init__.py` — added package docstring
+- Created `tests/__init__.py` and `tests/test_smoke.py` — 10 smoke tests covering CLI, models, scorer
+- Updated `pyproject.toml` — added `mypy_path = "src"` and `plugins = ["pydantic.mypy"]` for correct src-layout type checking
+
+**Decisions:**
+- Used `StrEnum` instead of `str, Enum` — ruff UP042 requires it for Python 3.11+, and it's the modern pattern
+- Used `datetime.UTC` instead of `timezone.utc` — ruff UP017 requires the alias for Python 3.11+
+- Added `pydantic.mypy` plugin — ensures mypy understands Pydantic model fields correctly under strict mode
+- Added `mypy_path = "src"` — required for mypy to resolve `lsh` imports with src-layout when running `mypy .`
+- Used `Field(ge=0, le=100)` for risk_score/overall_risk — runtime validation of score bounds even in stub phase
+- Kept mutable defaults (`= {}`, `= []`) on Pydantic models instead of `Field(default_factory=...)` — Pydantic v2 handles these correctly and it's simpler
+- Created `__main__.py` for adapters — CLAUDE.md references `python -m lsh.adapters.cli` invocation pattern
+
+**Open Questions:**
+- Should severity bands (0-20 INFO, etc.) be configurable per-deployment? (carried forward)
+- How to handle false positives for legitimate international domains in homoglyph detection? (carried forward)
+- Windows terminal shows mojibake for em-dash in CLI output — cosmetic only, may need `rich` integration to fix
+
+**Next:**
+- Session 1: Build the Homoglyph / IDN Detector module (#1)
+- Wire up the first real module through the orchestrator
+- Add real test fixtures with known-bad homoglyph URLs
+
+**Tests:** 10 passed — CLI help, CLI check (text + JSON), model validation (AnalysisInput, Finding, Evidence, AnalysisResult), scorer normalize (empty, severity correction, all severity bands)

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m ruff check:*)",
+      "Bash(python -m mypy:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m lsh.adapters.cli:*)",
+      "Bash(lsh --help:*)",
+      "Bash(lsh check:*)",
+      "Bash(python -m lsh.adapters:*)"
+    ]
+  }
+}
