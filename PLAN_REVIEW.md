@@ -13,11 +13,10 @@ Status updated: 2026-02-16
 
 ## Remaining Gaps
 
-1. Redirect module is not implemented yet.
-2. Email auth and QR modules are not implemented yet.
-3. False-positive management is in progress (`allowlist_domains`, `--allowlist-file`, scoped categories, confidence labels) but not yet complete.
-4. Dependency security gate (`pip-audit`) is not in CI yet.
-5. Docs exist in two locations (root + `docs/`) and require discipline to stay in sync.
+1. Email auth and QR modules are not implemented yet.
+2. False-positive management is in progress (`allowlist_domains`, `--allowlist-file`, scoped categories, confidence labels) but not yet complete.
+3. Dependency security gate (`pip-audit`) is not in CI yet.
+4. Docs exist in two locations (root + `docs/`) and require discipline to stay in sync.
 
 ## Current Risks
 
@@ -51,6 +50,6 @@ Mitigation:
 
 ## Recommendations for Next 2 Sessions
 
-1. Build redirect module with strict guardrails and mocked tests.
+1. Build the email-auth module with deterministic local header parsing.
 2. Add `pip-audit` target and wire it into CI for vulnerability checks.
-3. Introduce known-safe allowlist config for IDN false positives.
+3. Extend allowlist controls with per-rule granularity and clearer operator docs.

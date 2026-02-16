@@ -11,6 +11,7 @@ from lsh.modules import (
     AsciiLookalikeDetector,
     HomoglyphDetector,
     NetIPDetector,
+    RedirectChainDetector,
     URLStructureDetector,
 )
 
@@ -20,6 +21,7 @@ _URL_ORCHESTRATOR = AnalysisOrchestrator(
         URLStructureDetector(),
         AsciiLookalikeDetector(),
         HomoglyphDetector(),
+        RedirectChainDetector(),
     ]
 )
 
@@ -184,6 +186,28 @@ def main() -> None:
     type=click.Choice(["HMG", "ASCII", "URL", "NET", "ALL"], case_sensitive=False),
     help="Category prefixes suppressed for allowlisted domains (default: HMG,ASCII).",
 )
+@click.option(
+    "--network",
+    "network_enabled",
+    is_flag=True,
+    help="Enable opt-in network checks (for example redirect chain analysis).",
+)
+@click.option(
+    "--max-hops",
+    "network_max_hops",
+    type=click.IntRange(min=1, max=15),
+    default=5,
+    show_default=True,
+    help="Maximum redirect hops when --network is enabled.",
+)
+@click.option(
+    "--timeout",
+    "network_timeout",
+    type=click.FloatRange(min=0.1),
+    default=3.0,
+    show_default=True,
+    help="Per-request timeout in seconds when --network is enabled.",
+)
 def check(
     url: str,
     as_json: bool,
@@ -191,6 +215,9 @@ def check(
     allowlist_domains: tuple[str, ...],
     allowlist_files: tuple[str, ...],
     allowlist_categories: tuple[str, ...],
+    network_enabled: bool,
+    network_max_hops: int,
+    network_timeout: float,
 ) -> None:
     """Analyze a URL for safety issues."""
     resolved_allowlist = _load_allowlist_domains(allowlist_domains, allowlist_files)
@@ -199,6 +226,9 @@ def check(
         metadata["allowlist_domains"] = resolved_allowlist
     if allowlist_categories:
         metadata["allowlist_categories"] = [category.upper() for category in allowlist_categories]
+    metadata["network_enabled"] = network_enabled
+    metadata["network_max_hops"] = network_max_hops
+    metadata["network_timeout"] = network_timeout
 
     analysis_input = AnalysisInput(
         input_type="url",

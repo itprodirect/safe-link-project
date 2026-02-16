@@ -8,44 +8,36 @@
 - [x] Session 2B: Offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
 - [x] Session 2C: P1 start (`confidence` labels + domain allowlist path)
 - [x] Session 2D: P1 continuation (`--allowlist-file`, scoped categories, confidence-aware family summaries)
-- [ ] Session 3: Redirect chain module (next)
+- [x] Session 3: Redirect chain module (`--network`, `--max-hops`, `--timeout`)
+- [ ] Session 4: Email auth module (next)
 
-## Next Session: 3 Redirect Chain Expansion
+## Next Session: 4 Email Auth Checker
 
 ### Goal
 
-Add safe redirect-chain analysis with explicit network opt-in.
+Add local email-header authentication analysis (SPF/DKIM/DMARC state parsing).
 
 ### Work Items
 
-1. Create `src/lsh/modules/redirect/` with `analyzer.py`, `__init__.py`, `README.md`.
-2. Add CLI flags:
-   - `--network` (default false)
-   - `--max-hops` (default sensible cap)
-   - timeout option
-3. Ensure offline mode remains default.
-4. Add tests for:
-   - no redirect
-   - redirect chain
-   - loop / max-hop guard
-   - timeout handling
-5. Update architecture and module docs.
-6. Append session log.
+1. Create `src/lsh/modules/email_auth/` with parser and analyzer scaffolding.
+2. Add CLI path for email-header input.
+3. Emit structured findings for SPF/DKIM/DMARC signal presence and obvious failures.
+4. Add unit tests with representative header fixtures.
+5. Update docs and session log.
 
 ### Definition of Done
 
-- Redirect analysis only runs when `--network` is present.
-- Redirect findings are explainable and consistent with scoring model.
+- Email auth findings are explainable and deterministic for local header input.
 - `ruff`, `mypy`, `pytest` all pass.
 - Docs reflect new behavior.
 
 ## Near-Term Sequence
 
-1. Redirect chain module (#2)
-2. Email auth checker (#5)
-3. QR decoder (#7)
-4. Family formatter module (#9)
-5. Input-type routing for multi-input orchestrator
+1. Email auth checker (#5)
+2. QR decoder (#7)
+3. Family formatter module (#9)
+4. Input-type routing for multi-input orchestrator
+5. Dependency auditing in CI (`pip-audit`)
 
 ## Phase Exit Criteria
 

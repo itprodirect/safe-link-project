@@ -12,12 +12,16 @@ Implemented:
 - Scoring normalization in `src/lsh/core/scorer.py`
 - Dedicated orchestration layer in `src/lsh/core/orchestrator.py`
 - CLI adapter in `src/lsh/adapters/cli.py`
-- Homoglyph/IDN module in `src/lsh/modules/homoglyph/analyzer.py`
+- URL modules in `src/lsh/modules/`:
+  - `homoglyph`
+  - `ascii_lookalike`
+  - `url_structure`
+  - `net_ip`
+  - `redirect` (opt-in network mode)
 - Family output mode (`lsh check <url> --family`)
 
 Not implemented yet:
 
-- Redirect module (#2)
 - Email auth module (#5)
 - QR decode module (#7)
 - Standalone Family explainer module (#9)
@@ -65,11 +69,11 @@ Not implemented yet:
 
 ## Current Build Priority
 
-1. Redirect chain module with strict network opt-in
-2. Email auth checker
-3. QR decoder
-4. Standalone family explainer module
-5. Additional module orchestration routing by `input_type`
+1. Email auth checker
+2. QR decoder
+3. Standalone family explainer module
+4. Additional module orchestration routing by `input_type`
+5. Dependency audit wiring (`pip-audit`) in local/CI workflows
 
 ## What Not To Do
 

@@ -12,15 +12,16 @@ Status note: updated on 2026-02-16 after scoped allowlist + confidence UX upgrad
 
 ## What Still Needs Work
 
-### 1. Redirect Safety Layer Is Missing
+### 1. Redirect Safety Layer (resolved in Session 3)
 
-The roadmap expects redirect expansion, but no module exists yet.
+The roadmap expected redirect expansion and now has an implemented module with explicit controls.
 
-Required guardrails:
+Implemented guardrails:
 
 - network must be opt-in
 - max-hop cap
 - tight timeouts
+- HEAD-only requests
 - no content fetching beyond what is needed for redirect resolution
 
 ### 2. False Positive Strategy Is In Progress
@@ -74,9 +75,10 @@ Recommended:
 - Added IP literal checks (`NET001`/`NET002`)
 - Added ASCII lookalike checks (`ASCII001`/`ASCII002`)
 - Prevented homoglyph confusable logic on IP literals and ASCII-only spoof cases
+- Added opt-in redirect-chain checks with hop/timeout guardrails (`RED*`)
 
 ## Next Session Priority
 
-1. Redirect module implementation with opt-in network path.
+1. Email-auth module implementation with local header parsing.
 2. Add `pip-audit` to local and CI checks.
-3. Start false-positive controls for homoglyph module.
+3. Continue false-positive controls with per-rule allowlist granularity.

@@ -6,6 +6,7 @@ from lsh.modules import (
     AsciiLookalikeDetector,
     HomoglyphDetector,
     NetIPDetector,
+    RedirectChainDetector,
     URLStructureDetector,
 )
 
@@ -17,6 +18,7 @@ def _url_stack() -> AnalysisOrchestrator:
             URLStructureDetector(),
             AsciiLookalikeDetector(),
             HomoglyphDetector(),
+            RedirectChainDetector(),
         ]
     )
 

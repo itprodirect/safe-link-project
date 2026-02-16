@@ -474,3 +474,73 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (42 tests)
+
+## 2026-02-16 12:40 - Session 3: Redirect chain module + continued trust controls
+
+**Agent:** Codex
+
+**Goal:** Complete Session 3 with safe, opt-in redirect-chain analysis and continue quality/documentation updates in the same disciplined workflow.
+
+**Module(s) Touched:** modules:redirect, adapters:cli, core, docs
+
+**Changes:**
+- Added new module `src/lsh/modules/redirect/`:
+  - `analyzer.py`
+  - `__init__.py`
+  - `README.md`
+- Implemented redirect findings:
+  - `RED000_NETWORK_URL_REQUIRED`
+  - `RED001_REDIRECT_CHAIN_PRESENT`
+  - `RED002_CROSS_DOMAIN_REDIRECT`
+  - `RED003_MAX_HOPS_REACHED`
+  - `RED004_REDIRECT_LOOP_DETECTED`
+  - `RED005_REQUEST_TIMEOUT`
+  - `RED006_REQUEST_ERROR`
+  - `RED007_NON_HTTP_REDIRECT_TARGET`
+- Redirect safety model:
+  - analysis runs only when `network_enabled=True`
+  - HEAD-only requests
+  - explicit hop and timeout controls
+  - no body/content fetches for redirect analysis
+- Updated CLI `check` command with network controls:
+  - `--network`
+  - `--max-hops`
+  - `--timeout`
+- Wired redirect module into URL orchestrator stack in `src/lsh/adapters/cli.py`
+- Added redirect-focused tests with mocked network behavior:
+  - `tests/modules/test_redirect.py`
+  - cases: network-disabled skip, chain + cross-domain, max-hop reached, timeout, invalid URL in network mode
+- Added/updated integration and smoke coverage:
+  - `tests/core/test_url_stack.py` includes redirect module in stack
+  - `tests/test_smoke.py` includes check-help coverage for new network flags
+- Continued trust-control hardening from prior pass:
+  - keep scoped allowlist/category/file behavior and confidence-aware summaries
+  - ensure Unicode-safe JSON output on Windows console (`ensure_ascii=True`)
+- Synced docs to new implemented state:
+  - `README.md`
+  - `CLAUDE.md`
+  - `ROADMAP.md`
+  - `PLAN_REVIEW.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+
+**Decisions:**
+- Kept redirect checks opt-in and HEAD-only to respect offline-first posture and reduce side effects.
+- Used conservative cumulative scoring for redirect findings to avoid over-alarming users on benign chains.
+- Left `RED*` out of allowlist suppression intentionally in this phase to avoid hiding network/path anomalies by default.
+
+**Open Questions:**
+- Should `RED*` suppression become optionally configurable for advanced operators, or remain intentionally unsuppressible?
+- Should redirect module expose a CLI switch for choosing HEAD vs GET fallback for rare servers that reject HEAD?
+
+**Next:**
+- Session 4: email-auth module (SPF/DKIM/DMARC local header analysis)
+- Add `pip-audit` target and CI step
+- Continue P1 refinement with per-rule allowlist granularity and confidence calibration docs
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (48 tests)

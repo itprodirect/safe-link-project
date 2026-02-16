@@ -20,6 +20,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 - `ascii_lookalike/`: ASCII glyph/leet brand lookalike detector (offline)
 - `url_structure/`: URL deception-pattern detector (offline)
 - `net_ip/`: IP literal classifier (offline)
+- `redirect/`: opt-in redirect chain detector (HEAD-only network checks)
 
 ### Adapter Layer (`src/lsh/adapters/`)
 
@@ -47,8 +48,8 @@ Every module must:
 ## Near-Term Architecture Moves
 
 1. Add input-aware module routing in orchestrator (by `input_type`).
-2. Add redirect module and network policy controls.
-3. Move family explainer logic into a dedicated module layer component.
+2. Move family explainer logic into a dedicated module layer component.
+3. Add dedicated email/QR adapters while keeping core contracts stable.
 4. Keep adapters focused on I/O only.
 
 ## Testing Requirements

@@ -14,6 +14,8 @@ Implemented now:
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
   - `url_structure` (`@` userinfo tricks, deceptive subdomains, nested URL params)
   - `net_ip` (private/public IP literal host detection)
+- Opt-in network module:
+  - `redirect` (HEAD-only redirect chain analysis with hop/timeout safeguards)
 - Two output modes:
   - Technical (default): finding codes, evidence-driven categories
   - Family (`--family`): plain-language summary and safer actions
@@ -22,7 +24,6 @@ Implemented now:
 
 Planned next:
 
-- Module #2 Redirect chain expansion with explicit network opt-in
 - Module #5 Email auth checks (SPF/DKIM/DMARC)
 - Module #7 QR decode pipeline
 - Module #9 Family mode as a reusable formatter layer
@@ -52,7 +53,7 @@ lsh check https://xn--pple-43d.com --family
 ## CLI Usage
 
 ```bash
-lsh check <url> [--json] [--family] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
+lsh check <url> [--json] [--family] [--network] [--max-hops N] [--timeout SECONDS] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
 ```
 
 Examples:
@@ -81,6 +82,9 @@ lsh check "https://paypaI.com" --allowlist-file allowlist.txt
 
 # Suppress only selected categories for allowlisted domains
 lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-category HMG
+
+# Opt-in redirect-chain checks (HEAD only)
+lsh check "https://bit.ly/example" --network --max-hops 5 --timeout 3.0
 ```
 
 ## Detection Categories (Current)
@@ -89,6 +93,7 @@ lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-categor
 - `ASCII*`: ASCII lookalike brand-style signals
 - `URL*`: URL-structure deception signals
 - `NET*`: IP literal network-scope signals
+- `RED*`: opt-in redirect-chain signals
 
 ## P1 False-Positive Controls
 
@@ -96,6 +101,7 @@ lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-categor
 - `--allowlist-domain` to suppress domain-lookalike findings for known-safe domains
 - `--allowlist-file` for shared/team allowlist inputs
 - `--allowlist-category` for scoped suppression (`HMG`, `ASCII`, `URL`, `NET`, `ALL`)
+- Redirect findings (`RED*`) are intentionally not suppressed by allowlist in this phase
 - Family mode now prints `Signal confidence` and uses confidence-aware summary wording
 
 ## Project Structure
@@ -113,6 +119,7 @@ safe-link-project/
       ascii_lookalike/
       homoglyph/
       net_ip/
+      redirect/
       url_structure/
   tests/
     core/

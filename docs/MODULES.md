@@ -82,14 +82,34 @@ Finding codes:
 - `NET001_PRIVATE_IP_LITERAL`
 - `NET002_PUBLIC_IP_LITERAL`
 
-## Planned Next
-
 ### Module #2: Redirect Chain Expander
 
-- Path: `src/lsh/modules/redirect/` (planned)
+- Path: `src/lsh/modules/redirect/`
 - Input type: `url`
-- Network: opt-in only
-- Key controls: hop cap, timeout, safe request policy
+- Network: opt-in only (`--network`)
+- Safety controls: hop cap and timeout
+
+Detections:
+
+- redirect chain presence
+- cross-domain redirect jumps
+- max-hop limit reached
+- redirect loops
+- timeout/request errors
+- non-http(s) redirect targets
+
+Finding codes:
+
+- `RED000_NETWORK_URL_REQUIRED`
+- `RED001_REDIRECT_CHAIN_PRESENT`
+- `RED002_CROSS_DOMAIN_REDIRECT`
+- `RED003_MAX_HOPS_REACHED`
+- `RED004_REDIRECT_LOOP_DETECTED`
+- `RED005_REQUEST_TIMEOUT`
+- `RED006_REQUEST_ERROR`
+- `RED007_NON_HTTP_REDIRECT_TARGET`
+
+## Planned Next
 
 ### Module #5: Email Auth Checker
 
@@ -124,3 +144,4 @@ Finding codes:
   - `--allowlist-category`
 - Default allowlist suppression scope is `HMG` + `ASCII`
 - `--allowlist-category ALL` enables suppression for all categories (`HMG`, `ASCII`, `URL`, `NET`)
+- Redirect findings (`RED*`) are intentionally not suppressible via allowlist in this phase

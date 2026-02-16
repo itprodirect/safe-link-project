@@ -23,6 +23,15 @@ def test_cli_help() -> None:
     assert "Link Safety Hub" in result.output
 
 
+def test_cli_check_help_includes_network_options() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["check", "--help"])
+    assert result.exit_code == 0
+    assert "--network" in result.output
+    assert "--max-hops" in result.output
+    assert "--timeout" in result.output
+
+
 def test_cli_check_stub() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["check", "https://example.com"])

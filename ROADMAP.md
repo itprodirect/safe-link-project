@@ -10,35 +10,30 @@ Completed:
 - Session 2B: offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
 - Session 2C: P1 start (`confidence` labels + domain allowlist path)
 - Session 2D: P1 continuation (scoped allowlist categories/files + confidence-aware family summaries)
+- Session 3: redirect-chain expansion (network opt-in)
 
 In progress:
 
-- Session 3: redirect-chain expansion (network opt-in)
+- Session 4: email-auth module planning/implementation
 
 ## Session Plan (Immediate)
 
-### Session 3 - Redirect Module
+### Session 4 - Email Auth Module
 
-Goal: support safe redirect expansion without breaking offline defaults.
+Goal: parse local email headers and score SPF/DKIM/DMARC trust signals.
 
 Scope:
 
-- Add `src/lsh/modules/redirect/` scaffold
-- Keep offline default behavior
-- Add `--network`, `--max-hops`, and timeout controls
-- Emit structured findings and recommendations
-- Add unit tests with mocked chains and timeout case
+- Add `src/lsh/modules/email_auth/` scaffold
+- Parse header fields and normalize auth signal extraction
+- Emit structured findings with recommendations
+- Add fixture-driven unit tests
 
 Definition of done:
 
-- `lsh check <url>` remains offline and works as before
-- `lsh check <url> --network` shows redirect chain analysis
+- `lsh email-check <headers_or_file>` path is available and deterministic
 - `ruff`, `mypy`, and `pytest` all pass
 - docs and session log updated
-
-### Session 4 - Email Auth Module
-
-Goal: parse email headers and evaluate SPF, DKIM, DMARC state.
 
 ### Session 5 - QR Decode Module
 
