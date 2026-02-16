@@ -1,10 +1,10 @@
-# Session Log — Link Safety Hub
+﻿# Session Log â€” Link Safety Hub
 
 Development session history. Each entry documents what was done, why, and what's next. See `.claude/skills/session-logger/SKILL.md` for the logging format and conventions.
 
 ---
 
-## 2026-02-13 — Project scaffold and documentation
+## 2026-02-13 â€” Project scaffold and documentation
 
 **Agent:** Claude.ai
 
@@ -13,26 +13,26 @@ Development session history. Each entry documents what was done, why, and what's
 **Module(s) Touched:** docs
 
 **Changes:**
-- Created `README.md` — project overview, module table, quick start, project structure
-- Created `CLAUDE.md` — agent context for Claude Code and Codex sessions
-- Created `docs/ARCHITECTURE.md` — core engine, module contract, orchestrator, adapter pattern
-- Created `docs/GITHUB_STRATEGY.md` — monorepo rationale, branch strategy, CI/CD, agent workflow tips
-- Created `docs/ROADMAP.md` — phased build plan with realistic time estimates
-- Created `docs/MODULES.md` — detailed specs for all 10 modules
-- Created `docs/SECURITY.md` — responsible use guidelines, safe analysis practices
-- Created `docs/PLAN_REVIEW.md` — gaps, corrections, and missing items from ChatGPT plan
-- Created `pyproject.toml` — PEP 621 project config with optional dependency groups
-- Created `Makefile` — dev commands (test, lint, typecheck, format)
-- Created `.gitignore` — Python, IDE, and sensitive data patterns
-- Created `.github/workflows/ci.yml` — GitHub Actions pipeline
+- Created `README.md` â€” project overview, module table, quick start, project structure
+- Created `CLAUDE.md` â€” agent context for Claude Code and Codex sessions
+- Created `docs/ARCHITECTURE.md` â€” core engine, module contract, orchestrator, adapter pattern
+- Created `docs/GITHUB_STRATEGY.md` â€” monorepo rationale, branch strategy, CI/CD, agent workflow tips
+- Created `docs/ROADMAP.md` â€” phased build plan with realistic time estimates
+- Created `docs/MODULES.md` â€” detailed specs for all 10 modules
+- Created `docs/SECURITY.md` â€” responsible use guidelines, safe analysis practices
+- Created `docs/PLAN_REVIEW.md` â€” gaps, corrections, and missing items from ChatGPT plan
+- Created `pyproject.toml` â€” PEP 621 project config with optional dependency groups
+- Created `Makefile` â€” dev commands (test, lint, typecheck, format)
+- Created `.gitignore` â€” Python, IDE, and sensitive data patterns
+- Created `.github/workflows/ci.yml` â€” GitHub Actions pipeline
 - Created `.github/ISSUE_TEMPLATE/module-proposal.md`
 - Integrated session-logger skill at `.claude/skills/session-logger/`
 
 **Decisions:**
-- Monorepo over multi-repo — because shared core engine creates cross-repo dependency hell, and agents work better with full project context
-- Swapped #10 (Inbox Scanner) for #9 (Family Mode) in Phase 1 — because Family Mode makes every module useful to non-technical users immediately, and #10 is the most complex module
-- Max-score-wins for aggregate risk scoring — because it's simplest to explain and conservative by default
-- Python first, Go in the parking lot — because Docker solves distribution without a rewrite, and Python's library ecosystem for email/HTTP/QR is vastly richer
+- Monorepo over multi-repo â€” because shared core engine creates cross-repo dependency hell, and agents work better with full project context
+- Swapped #10 (Inbox Scanner) for #9 (Family Mode) in Phase 1 â€” because Family Mode makes every module useful to non-technical users immediately, and #10 is the most complex module
+- Max-score-wins for aggregate risk scoring â€” because it's simplest to explain and conservative by default
+- Python first, Go in the parking lot â€” because Docker solves distribution without a rewrite, and Python's library ecosystem for email/HTTP/QR is vastly richer
 
 **Open Questions:**
 - Should severity bands (0-20 INFO, etc.) be configurable per-deployment?
@@ -46,11 +46,11 @@ Development session history. Each entry documents what was done, why, and what's
 - Build first module: Homoglyph / IDN Detector (#1)
 - Set up the Python package structure with `src/lsh/` namespace
 
-**Tests:** N/A — documentation only session
+**Tests:** N/A â€” documentation only session
 
 ---
 
-## 2026-02-13 — ChatGPT cross-review integration and final doc updates
+## 2026-02-13 â€” ChatGPT cross-review integration and final doc updates
 
 **Agent:** Claude.ai
 
@@ -59,22 +59,22 @@ Development session history. Each entry documents what was done, why, and what's
 **Module(s) Touched:** docs
 
 **Changes:**
-- Fixed `pyproject.toml` — flattened self-referential extras (`phase1 = ["link-safety-hub[...]"]`) to direct dependency list in `[dev]` to avoid editable install breakage
-- Updated `docs/ROADMAP.md` — added Session 0/1/2 quickstart plan with specific goals and definitions of done for each session
-- Updated `CLAUDE.md` — added two-loop agent workflow (Codex for code, Claude Code for decisions) and per-session definition of done rule
-- Updated `docs/PLAN_REVIEW.md` — added new correction #1 about docs-perfect-but-CI-fails gap, renumbered remaining items, noted pyproject.toml fix
-- Updated `docs/GITHUB_STRATEGY.md` — expanded agent workflow tips from 4 to 7 items, added session logging as commit convention
-- Created `.claude/skills/session-0-green-ci/SKILL.md` — ready-to-use prompt for the first Claude Code session to bootstrap the package skeleton
+- Fixed `pyproject.toml` â€” flattened self-referential extras (`phase1 = ["link-safety-hub[...]"]`) to direct dependency list in `[dev]` to avoid editable install breakage
+- Updated `docs/ROADMAP.md` â€” added Session 0/1/2 quickstart plan with specific goals and definitions of done for each session
+- Updated `CLAUDE.md` â€” added two-loop agent workflow (Codex for code, Claude Code for decisions) and per-session definition of done rule
+- Updated `docs/PLAN_REVIEW.md` â€” added new correction #1 about docs-perfect-but-CI-fails gap, renumbered remaining items, noted pyproject.toml fix
+- Updated `docs/GITHUB_STRATEGY.md` â€” expanded agent workflow tips from 4 to 7 items, added session logging as commit convention
+- Created `.claude/skills/session-0-green-ci/SKILL.md` â€” ready-to-use prompt for the first Claude Code session to bootstrap the package skeleton
 
 **Decisions:**
-- Kept `.claude/skills/` for skill location (not `skills/` at root) — because `.claude/skills/` is the correct discovery path for Claude Code's skill system
-- Kept `SESSION_LOG.md` at project root (not `docs/log.md`) — because root-level visibility is more important than tidy docs folder
-- Adopted ChatGPT's two-loop workflow — because the distinction between "make it pass" (Codex) and "make it correct" (Claude Code) matches how these tools actually perform
-- Did NOT adopt ChatGPT's copy-paste prompt as a text block — instead created it as a proper Claude Code skill at `.claude/skills/session-0-green-ci/SKILL.md` so it integrates with the skill system
+- Kept `.claude/skills/` for skill location (not `skills/` at root) â€” because `.claude/skills/` is the correct discovery path for Claude Code's skill system
+- Kept `SESSION_LOG.md` at project root (not `docs/log.md`) â€” because root-level visibility is more important than tidy docs folder
+- Adopted ChatGPT's two-loop workflow â€” because the distinction between "make it pass" (Codex) and "make it correct" (Claude Code) matches how these tools actually perform
+- Did NOT adopt ChatGPT's copy-paste prompt as a text block â€” instead created it as a proper Claude Code skill at `.claude/skills/session-0-green-ci/SKILL.md` so it integrates with the skill system
 
 **Open Questions:**
 - Should we add more session-N skills for Sessions 1 and 2, or is that over-engineering the workflow?
-- ChatGPT mentions Codex 5.3 xhigh — need to verify that's the right model string and available
+- ChatGPT mentions Codex 5.3 xhigh â€” need to verify that's the right model string and available
 - Should the session logger skill auto-commit its entry, or leave that to the developer?
 
 **Next:**
@@ -82,52 +82,52 @@ Development session history. Each entry documents what was done, why, and what's
 - Run Session 0: `/session-0-green-ci` in Claude Code to bootstrap the package skeleton
 - Get `make check` green before touching any module code
 
-**Tests:** N/A — documentation only session
+**Tests:** N/A â€” documentation only session
 
 ---
 
-## 2026-02-13 — Session 0: Get the repo green
+## 2026-02-13 â€” Session 0: Get the repo green
 
 **Agent:** Claude Code (Claude Opus 4.6)
 
-**Goal:** Bootstrap the Python package skeleton so `pip install -e ".[dev]"`, ruff, mypy, and pytest all pass — and the CLI runs
+**Goal:** Bootstrap the Python package skeleton so `pip install -e ".[dev]"`, ruff, mypy, and pytest all pass â€” and the CLI runs
 
 **Module(s) Touched:** core, adapters (stubs only)
 
 **Changes:**
-- Created `src/lsh/core/__init__.py` — core engine package
-- Created `src/lsh/core/models.py` — Pydantic v2 models: `Severity` (StrEnum), `AnalysisInput`, `Evidence`, `Finding`, `AnalysisResult`, `ModuleInterface` (ABC)
-- Created `src/lsh/core/scorer.py` — `score_to_severity()` maps 0-100 to severity bands, `normalize()` aligns finding severity to risk_score
-- Created `src/lsh/core/rules.py` — empty placeholder with `__all__ = []`
-- Created `src/lsh/modules/__init__.py` — modules package placeholder
-- Created `src/lsh/adapters/__init__.py` — adapters package placeholder
-- Created `src/lsh/adapters/cli.py` — Click CLI with `lsh --help` and `lsh check <url>` (stub returning 0/100 INFO)
-- Created `src/lsh/adapters/__main__.py` — enables `python -m lsh.adapters` invocation
-- Created `src/lsh/py.typed` — PEP 561 marker for typed package
-- Updated `src/lsh/__init__.py` — added package docstring
-- Created `tests/__init__.py` and `tests/test_smoke.py` — 10 smoke tests covering CLI, models, scorer
-- Updated `pyproject.toml` — added `mypy_path = "src"` and `plugins = ["pydantic.mypy"]` for correct src-layout type checking
+- Created `src/lsh/core/__init__.py` â€” core engine package
+- Created `src/lsh/core/models.py` â€” Pydantic v2 models: `Severity` (StrEnum), `AnalysisInput`, `Evidence`, `Finding`, `AnalysisResult`, `ModuleInterface` (ABC)
+- Created `src/lsh/core/scorer.py` â€” `score_to_severity()` maps 0-100 to severity bands, `normalize()` aligns finding severity to risk_score
+- Created `src/lsh/core/rules.py` â€” empty placeholder with `__all__ = []`
+- Created `src/lsh/modules/__init__.py` â€” modules package placeholder
+- Created `src/lsh/adapters/__init__.py` â€” adapters package placeholder
+- Created `src/lsh/adapters/cli.py` â€” Click CLI with `lsh --help` and `lsh check <url>` (stub returning 0/100 INFO)
+- Created `src/lsh/adapters/__main__.py` â€” enables `python -m lsh.adapters` invocation
+- Created `src/lsh/py.typed` â€” PEP 561 marker for typed package
+- Updated `src/lsh/__init__.py` â€” added package docstring
+- Created `tests/__init__.py` and `tests/test_smoke.py` â€” 10 smoke tests covering CLI, models, scorer
+- Updated `pyproject.toml` â€” added `mypy_path = "src"` and `plugins = ["pydantic.mypy"]` for correct src-layout type checking
 
 **Decisions:**
-- Used `StrEnum` instead of `str, Enum` — ruff UP042 requires it for Python 3.11+, and it's the modern pattern
-- Used `datetime.UTC` instead of `timezone.utc` — ruff UP017 requires the alias for Python 3.11+
-- Added `pydantic.mypy` plugin — ensures mypy understands Pydantic model fields correctly under strict mode
-- Added `mypy_path = "src"` — required for mypy to resolve `lsh` imports with src-layout when running `mypy .`
-- Used `Field(ge=0, le=100)` for risk_score/overall_risk — runtime validation of score bounds even in stub phase
-- Kept mutable defaults (`= {}`, `= []`) on Pydantic models instead of `Field(default_factory=...)` — Pydantic v2 handles these correctly and it's simpler
-- Created `__main__.py` for adapters — CLAUDE.md references `python -m lsh.adapters.cli` invocation pattern
+- Used `StrEnum` instead of `str, Enum` â€” ruff UP042 requires it for Python 3.11+, and it's the modern pattern
+- Used `datetime.UTC` instead of `timezone.utc` â€” ruff UP017 requires the alias for Python 3.11+
+- Added `pydantic.mypy` plugin â€” ensures mypy understands Pydantic model fields correctly under strict mode
+- Added `mypy_path = "src"` â€” required for mypy to resolve `lsh` imports with src-layout when running `mypy .`
+- Used `Field(ge=0, le=100)` for risk_score/overall_risk â€” runtime validation of score bounds even in stub phase
+- Kept mutable defaults (`= {}`, `= []`) on Pydantic models instead of `Field(default_factory=...)` â€” Pydantic v2 handles these correctly and it's simpler
+- Created `__main__.py` for adapters â€” CLAUDE.md references `python -m lsh.adapters.cli` invocation pattern
 
 **Open Questions:**
 - Should severity bands (0-20 INFO, etc.) be configurable per-deployment? (carried forward)
 - How to handle false positives for legitimate international domains in homoglyph detection? (carried forward)
-- Windows terminal shows mojibake for em-dash in CLI output — cosmetic only, may need `rich` integration to fix
+- Windows terminal shows mojibake for em-dash in CLI output â€” cosmetic only, may need `rich` integration to fix
 
 **Next:**
 - Session 1: Build the Homoglyph / IDN Detector module (#1)
 - Wire up the first real module through the orchestrator
 - Add real test fixtures with known-bad homoglyph URLs
 
-**Tests:** 10 passed — CLI help, CLI check (text + JSON), model validation (AnalysisInput, Finding, Evidence, AnalysisResult), scorer normalize (empty, severity correction, all severity bands)
+**Tests:** 10 passed â€” CLI help, CLI check (text + JSON), model validation (AnalysisInput, Finding, Evidence, AnalysisResult), scorer normalize (empty, severity correction, all severity bands)
 
 ---
 
@@ -161,14 +161,13 @@ Development session history. Each entry documents what was done, why, and what's
 - Consider moving module orchestration from CLI into a dedicated orchestrator component
 
 **Tests:** Passing - `ruff check src tests`, `mypy src`, and `pytest -v --tb=short` (14 tests)
-<<<<<<< HEAD
 
-## Session Wrap — 2026-02-13/14
+## Session Wrap â€” 2026-02-13/14
 
 ### Outcome
 - Session 0: Repo turns green. CLI + typed core + smoke tests established.
 - Session 1: Homoglyph/IDN detector implemented end-to-end and wired into CLI.
-- Verified CLI + JSON outputs against a known homoglyph example (Cyrillic “і” in logіn.com).
+- Verified CLI + JSON outputs against a known homoglyph example (Cyrillic â€œÑ–â€ in logÑ–n.com).
 
 ### Validation
 - ruff: pass
@@ -186,7 +185,7 @@ Development session history. Each entry documents what was done, why, and what's
 ### Notable Deliverables
 - New module: `src/lsh/modules/homoglyph/`
 - New tests: `tests/modules/test_homoglyph.py`
-- CLI improvements: actionable summary + “What to do next”
+- CLI improvements: actionable summary + â€œWhat to do nextâ€
 - Session logs updated continuously
 
 ### Next Session Plan
@@ -195,15 +194,13 @@ Development session history. Each entry documents what was done, why, and what's
    - strict timeouts + max hops + HEAD-first
    - network tests marked/skipped by default
 2) CLI polish
-   - “Key details” section (shown hostname / punycode / ASCII lookalike)
+   - â€œKey detailsâ€ section (shown hostname / punycode / ASCII lookalike)
    - `--explain` flag for full evidence output
 3) Prevent recommendation duplication as modules scale (top-3 aggregated guidance)
 
 ### Open Questions / Risks
 - `pyzbar` may require zbar DLL on Windows; keep QR support optional and not on critical path.
 
-||||||| parent of e430ae0 (docs: sync Session 1 status and Session 2 handoff docs)
-=======
 
 ---
 
@@ -235,10 +232,6 @@ Development session history. Each entry documents what was done, why, and what's
 - Add redirect-focused test plan with mocked chains and timeout coverage
 
 **Tests:** N/A - docs-only session
-<<<<<<< HEAD
->>>>>>> e430ae0 (docs: sync Session 1 status and Session 2 handoff docs)
-||||||| parent of f831a1e (feat(core): extract orchestrator and sync docs workflow)
-=======
 
 ---
 
@@ -294,4 +287,3 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (19 tests)
->>>>>>> f831a1e (feat(core): extract orchestrator and sync docs workflow)
