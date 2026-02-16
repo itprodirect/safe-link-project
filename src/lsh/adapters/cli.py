@@ -110,3 +110,7 @@ def check(url: str, as_json: bool, family_mode: bool) -> None:
         return
 
     _print_technical_view(url, result)
+
+
+if __name__ == "__main__":
+    main()
