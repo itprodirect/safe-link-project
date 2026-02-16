@@ -1,6 +1,7 @@
 """Smoke tests for Link Safety Hub."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -37,6 +38,13 @@ def test_cli_check_json() -> None:
     assert '"overall_risk": 0' in result.output
 
 
+def test_cli_check_json_unicode_url_is_console_safe() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["check", "https://\u0430\u0440\u0440\u04cf\u0435.com", "--json"])
+    assert result.exit_code == 0
+    assert "\\u0430" in result.output
+
+
 def test_cli_check_technical_view_shows_finding_codes() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["check", "https://xn--pple-43d.com"])
@@ -51,6 +59,7 @@ def test_cli_check_family_view_hides_technical_codes() -> None:
     result = runner.invoke(main, ["check", "https://xn--pple-43d.com", "--family"])
     assert result.exit_code == 0
     assert "What this means:" in result.output
+    assert "Signal confidence:" in result.output
     assert "Why this may be risky:" in result.output
     assert "HMG002_PUNYCODE_VISIBILITY" not in result.output
     assert "Safer next steps:" in result.output
@@ -61,6 +70,80 @@ def test_cli_allowlist_domain_suppresses_domain_lookalike_findings() -> None:
     result = runner.invoke(
         main,
         ["check", "https://paypaI.com", "--allowlist-domain", "paypai.com", "--json"],
+    )
+    assert result.exit_code == 0
+    assert '"findings": []' in result.output
+
+
+def test_cli_allowlist_category_limits_suppression_scope() -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "check",
+            "https://paypaI.com",
+            "--allowlist-domain",
+            "paypai.com",
+            "--allowlist-category",
+            "HMG",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "ASCII001_AMBIGUOUS_GLYPHS" in result.output
+
+
+def test_cli_allowlist_category_all_can_suppress_url_findings() -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "check",
+            "https://login.google.com.evil.com",
+            "--allowlist-domain",
+            "evil.com",
+            "--allowlist-category",
+            "ALL",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    assert '"findings": []' in result.output
+
+
+def test_cli_allowlist_file_is_applied(tmp_path: Path) -> None:
+    allowlist_file = tmp_path / "allowlist.txt"
+    allowlist_file.write_text("# trusted domains\npaypai.com\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "check",
+            "https://paypaI.com",
+            "--allowlist-file",
+            str(allowlist_file),
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    assert '"findings": []' in result.output
+
+
+def test_cli_allowlist_file_with_utf8_bom_is_applied(tmp_path: Path) -> None:
+    allowlist_file = tmp_path / "allowlist-bom.txt"
+    allowlist_file.write_bytes("# trusted domains\npaypai.com\n".encode("utf-8-sig"))
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "check",
+            "https://paypaI.com",
+            "--allowlist-file",
+            str(allowlist_file),
+            "--json",
+        ],
     )
     assert result.exit_code == 0
     assert '"findings": []' in result.output

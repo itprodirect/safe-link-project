@@ -2,8 +2,8 @@
 
 from collections.abc import Sequence
 
-from lsh.core.models import AnalysisInput, Finding, Severity
-from lsh.core.orchestrator import AnalysisOrchestrator
+from lsh.core.models import AnalysisInput, Confidence, Finding, Severity
+from lsh.core.orchestrator import AnalysisOrchestrator, build_summary
 from lsh.modules.homoglyph import HomoglyphDetector
 
 
@@ -46,3 +46,18 @@ def test_orchestrator_accepts_custom_summary_builder() -> None:
     ).analyze(AnalysisInput(input_type="url", content="https://example.com"))
 
     assert result.summary == "0:0"
+
+
+def test_build_summary_mentions_limited_confidence_for_low_confidence_findings() -> None:
+    finding = Finding(
+        module="test",
+        category="TST001",
+        severity=Severity.INFO,
+        confidence=Confidence.LOW,
+        risk_score=65,
+        title="Test finding",
+        explanation="Test explanation.",
+        family_explanation="Test family explanation.",
+    )
+    summary = build_summary([finding], 65)
+    assert "confidence is limited" in summary.lower()

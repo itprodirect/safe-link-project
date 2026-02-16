@@ -9,9 +9,9 @@ Modules detect. Core orchestrates and scores. Adapters render.
 ### Core Layer (`src/lsh/core/`)
 
 - `models.py`: canonical data contracts (`AnalysisInput`, `Finding`, `AnalysisResult`)
-- `allowlist.py`: normalized domain allowlist helpers for false-positive suppression
+- `allowlist.py`: normalized domain allowlist helpers with category-prefix scoping
 - `scorer.py`: severity mapping and finding normalization
-- `orchestrator.py`: module execution + aggregate result construction
+- `orchestrator.py`: module execution + aggregate result construction + confidence-aware summary text
 - `rules.py`: shared detection constants for brand, URL-parameter, and ASCII heuristics
 
 ### Module Layer (`src/lsh/modules/`)
@@ -31,7 +31,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 2. CLI creates `AnalysisInput`.
 3. CLI calls `AnalysisOrchestrator.analyze(...)`.
 4. Orchestrator runs each module and normalizes findings.
-5. Orchestrator returns `AnalysisResult`.
+5. Orchestrator returns `AnalysisResult` with risk/severity and summary wording influenced by finding confidence.
 6. CLI renders technical, family, or JSON output.
 
 ## Contract Requirements

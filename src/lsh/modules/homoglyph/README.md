@@ -28,9 +28,9 @@ Findings include:
 
 ## Current Limitations
 
-- no allowlist support for known-safe IDN domains yet
+- allowlist support is domain-level only (no per-rule granularity yet)
 - no brand impersonation dictionary yet
-- no confidence labels yet
+- confidence labels are coarse and may be recalibrated as modules expand
 
 ## Notes
 

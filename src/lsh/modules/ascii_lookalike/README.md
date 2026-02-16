@@ -13,3 +13,4 @@ Offline detector for ASCII-only brand impersonation patterns.
 - Checks the registrable-domain label
 - Conservative by design to limit false positives
 - No network lookups
+- Supports domain allowlist suppression (default allowlist scope includes `ASCII`)

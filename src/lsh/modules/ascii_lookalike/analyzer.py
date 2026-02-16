@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lsh.core.allowlist import allowlist_domains_for_input, is_hostname_allowlisted
+from lsh.core.allowlist import should_suppress_for_allowlist
 from lsh.core.models import (
     AnalysisInput,
     Confidence,
@@ -70,7 +70,7 @@ class AsciiLookalikeDetector(ModuleInterface):
         hostname = extract_hostname(input.content)
         if hostname is None:
             return []
-        if is_hostname_allowlisted(hostname, allowlist_domains_for_input(input)):
+        if should_suppress_for_allowlist(input, hostname, category_prefix="ASCII"):
             return []
 
         if parse_ip_literal(hostname) is not None:

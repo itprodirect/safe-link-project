@@ -414,3 +414,63 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (33 tests)
+
+## 2026-02-16 11:55 - P1 continuation: scoped allowlists, allowlist files, and confidence-aware family summaries
+
+**Agent:** Codex
+
+**Goal:** Implement all remaining P1 suggestions: per-category allowlist control, allowlist file support, and confidence-aware family summary behavior.
+
+**Module(s) Touched:** core, adapters:cli, modules, docs
+
+**Changes:**
+- Expanded allowlist engine in `src/lsh/core/allowlist.py`:
+  - category-prefix support (`HMG`, `ASCII`, `URL`, `NET`, `ALL`)
+  - default suppression scope (`HMG` + `ASCII`)
+  - `should_suppress_for_allowlist(...)` helper
+- Updated modules to use scoped allowlist suppression:
+  - `src/lsh/modules/homoglyph/analyzer.py`
+  - `src/lsh/modules/ascii_lookalike/analyzer.py`
+  - `src/lsh/modules/url_structure/analyzer.py`
+  - `src/lsh/modules/net_ip/analyzer.py`
+- Enhanced CLI in `src/lsh/adapters/cli.py`:
+  - added `--allowlist-file` (repeatable)
+  - added `--allowlist-category` (repeatable)
+  - improved allowlist file parsing (comments + UTF-8 BOM resilience)
+  - JSON output now uses `ensure_ascii=True` for Windows codepage safety
+  - family output now includes `Signal confidence`
+- Added confidence-aware summary wording in `src/lsh/core/orchestrator.py` for low-confidence findings
+- Added tests:
+  - `tests/core/test_allowlist.py`
+  - `tests/core/test_orchestrator.py` confidence-summary case
+  - `tests/test_smoke.py` CLI scoped allowlist/file/Unicode JSON safety coverage
+  - updated module tests remain green
+- Updated docs:
+  - `README.md`
+  - `docs/MODULES.md`
+  - `docs/ARCHITECTURE.md`
+  - `ROADMAP.md`
+  - `docs/ROADMAP.md`
+  - `PLAN_REVIEW.md`
+  - `docs/PLAN_REVIEW.md`
+  - module READMEs under `src/lsh/modules/*/README.md`
+
+**Decisions:**
+- Kept default allowlist scope at `HMG` + `ASCII` so structural/network warnings are not silently hidden unless explicitly requested.
+- Added `ALL` category escape hatch for advanced users/team workflows where broad suppression is intentional.
+- Used ASCII-safe JSON output to avoid Windows terminal encoding crashes for Unicode-heavy outputs.
+
+**Open Questions:**
+- Should CLI persist allowlist profiles (for example per-user config file) instead of requiring repeated flags?
+- Should summary confidence use only highest-confidence findings or risk-weighted confidence aggregation?
+- Should we expose per-rule toggles beyond category prefixes for very fine-grained enterprise tuning?
+
+**Next:**
+- Session 3 redirect module (opt-in network path with hop/time limits)
+- Optional: add `--allowlist-file` default path support via env var/config
+- Optional: publish confidence calibration guidance in user docs with examples
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (42 tests)

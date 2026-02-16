@@ -52,7 +52,7 @@ lsh check https://xn--pple-43d.com --family
 ## CLI Usage
 
 ```bash
-lsh check <url> [--json] [--family] [--allowlist-domain DOMAIN ...]
+lsh check <url> [--json] [--family] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
 ```
 
 Examples:
@@ -75,6 +75,12 @@ lsh check "https://example.com/redirect?url=https://google.com"
 
 # Suppress expected lookalike findings for trusted domains
 lsh check "https://paypaI.com" --allowlist-domain paypai.com
+
+# Load allowlist domains from file (one domain per line; # comments supported)
+lsh check "https://paypaI.com" --allowlist-file allowlist.txt
+
+# Suppress only selected categories for allowlisted domains
+lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-category HMG
 ```
 
 ## Detection Categories (Current)
@@ -88,6 +94,9 @@ lsh check "https://paypaI.com" --allowlist-domain paypai.com
 
 - `confidence` label on each finding (`LOW`, `MEDIUM`, `HIGH`)
 - `--allowlist-domain` to suppress domain-lookalike findings for known-safe domains
+- `--allowlist-file` for shared/team allowlist inputs
+- `--allowlist-category` for scoped suppression (`HMG`, `ASCII`, `URL`, `NET`, `ALL`)
+- Family mode now prints `Signal confidence` and uses confidence-aware summary wording
 
 ## Project Structure
 

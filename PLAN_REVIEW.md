@@ -15,7 +15,7 @@ Status updated: 2026-02-16
 
 1. Redirect module is not implemented yet.
 2. Email auth and QR modules are not implemented yet.
-3. False-positive management is started (`allowlist_domains` + confidence labels) but not yet complete.
+3. False-positive management is in progress (`allowlist_domains`, `--allowlist-file`, scoped categories, confidence labels) but not yet complete.
 4. Dependency security gate (`pip-audit`) is not in CI yet.
 5. Docs exist in two locations (root + `docs/`) and require discipline to stay in sync.
 

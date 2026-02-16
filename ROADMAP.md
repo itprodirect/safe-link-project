@@ -9,6 +9,7 @@ Completed:
 - Session 2A: orchestrator extraction + CLI family mode + stronger tests
 - Session 2B: offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
 - Session 2C: P1 start (`confidence` labels + domain allowlist path)
+- Session 2D: P1 continuation (scoped allowlist categories/files + confidence-aware family summaries)
 
 In progress:
 
@@ -35,15 +36,15 @@ Definition of done:
 - `ruff`, `mypy`, and `pytest` all pass
 - docs and session log updated
 
-### Session 3 - Email Auth Module
+### Session 4 - Email Auth Module
 
 Goal: parse email headers and evaluate SPF, DKIM, DMARC state.
 
-### Session 4 - QR Decode Module
+### Session 5 - QR Decode Module
 
 Goal: decode QR payload and pass URL into analysis pipeline.
 
-### Session 5 - Family Formatter Module
+### Session 6 - Family Formatter Module
 
 Goal: move plain-language rendering out of CLI adapter into reusable layer.
 

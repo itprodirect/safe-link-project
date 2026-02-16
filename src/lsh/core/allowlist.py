@@ -8,6 +8,9 @@ from urllib.parse import urlparse
 from lsh.core.models import AnalysisInput
 from lsh.core.url_tools import normalize_hostname
 
+SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES = frozenset({"HMG", "ASCII", "URL", "NET"})
+DEFAULT_ALLOWLIST_CATEGORY_PREFIXES = frozenset({"HMG", "ASCII"})
+
 
 def _idna_ascii(hostname: str) -> str | None:
     try:
@@ -72,6 +75,28 @@ def allowlist_domains_for_input(analysis_input: AnalysisInput) -> set[str]:
     return normalized
 
 
+def allowlist_category_prefixes_for_input(analysis_input: AnalysisInput) -> set[str]:
+    """Return category prefixes that allowlist rules should suppress."""
+    raw_value = analysis_input.metadata.get("allowlist_categories")
+    if raw_value is None:
+        return set(DEFAULT_ALLOWLIST_CATEGORY_PREFIXES)
+
+    raw_categories: Iterable[str]
+    if isinstance(raw_value, str):
+        raw_categories = [part.strip() for part in raw_value.split(",")]
+    elif isinstance(raw_value, list):
+        raw_categories = [item for item in raw_value if isinstance(item, str)]
+    else:
+        return set(DEFAULT_ALLOWLIST_CATEGORY_PREFIXES)
+
+    normalized = {category.strip().upper() for category in raw_categories if category.strip()}
+    if "ALL" in normalized:
+        return set(SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES)
+    return {
+        category for category in normalized if category in SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES
+    }
+
+
 def is_hostname_allowlisted(hostname: str, allowlist_domains: set[str]) -> bool:
     """Check exact/suffix match against allowlist with IDNA form expansion."""
     if not allowlist_domains:
@@ -84,3 +109,21 @@ def is_hostname_allowlisted(hostname: str, allowlist_domains: set[str]) -> bool:
                 return True
     return False
 
+
+def should_suppress_for_allowlist(
+    analysis_input: AnalysisInput,
+    hostname: str,
+    *,
+    category_prefix: str,
+) -> bool:
+    """Return True when hostname is allowlisted for this category prefix."""
+    category = category_prefix.strip().upper()
+    if category not in SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES:
+        return False
+
+    allowlist_domains = allowlist_domains_for_input(analysis_input)
+    if not is_hostname_allowlisted(hostname, allowlist_domains):
+        return False
+
+    categories = allowlist_category_prefixes_for_input(analysis_input)
+    return category in categories

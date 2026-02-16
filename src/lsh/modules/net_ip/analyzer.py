@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from lsh.core.allowlist import should_suppress_for_allowlist
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.url_tools import IPAddress, extract_hostname, parse_ip_literal
 
@@ -34,6 +35,8 @@ class NetIPDetector(ModuleInterface):
 
         hostname = extract_hostname(input.content)
         if hostname is None:
+            return []
+        if should_suppress_for_allowlist(input, hostname, category_prefix="NET"):
             return []
 
         parsed_ip = parse_ip_literal(hostname)

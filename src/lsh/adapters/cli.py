@@ -1,10 +1,11 @@
 """CLI adapter for Link Safety Hub."""
 
 import sys
+from pathlib import Path
 
 import click
 
-from lsh.core.models import AnalysisInput, AnalysisResult, Finding
+from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
 from lsh.modules import (
     AsciiLookalikeDetector,
@@ -59,6 +60,47 @@ def _collect_family_explanations(findings: list[Finding], limit: int = 3) -> lis
     return explanations
 
 
+def _overall_confidence(findings: list[Finding]) -> Confidence:
+    ranking = {Confidence.LOW: 1, Confidence.MEDIUM: 2, Confidence.HIGH: 3}
+    return max(findings, key=lambda finding: ranking[finding.confidence]).confidence
+
+
+def _load_allowlist_domains(
+    allowlist_domains: tuple[str, ...],
+    allowlist_files: tuple[str, ...],
+) -> list[str]:
+    """Collect allowlist domains from CLI values and file inputs."""
+    collected: list[str] = []
+    seen: set[str] = set()
+
+    def add(value: str) -> None:
+        normalized = value.strip().lstrip("\ufeff").strip()
+        if not normalized:
+            return
+        if normalized in seen:
+            return
+        seen.add(normalized)
+        collected.append(normalized)
+
+    for domain in allowlist_domains:
+        add(domain)
+
+    for file_path in allowlist_files:
+        path = Path(file_path)
+        try:
+            raw_text = path.read_text(encoding="utf-8")
+        except OSError as exc:  # pragma: no cover - click path checks most failures
+            raise click.ClickException(
+                f"Could not read allowlist file '{file_path}': {exc}"
+            ) from exc
+
+        for line in raw_text.splitlines():
+            candidate = line.lstrip("\ufeff").split("#", maxsplit=1)[0].strip()
+            add(candidate)
+
+    return collected
+
+
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
     """Render technical CLI output with finding codes."""
     click.echo(f"URL: {_safe_console_text(url)}")
@@ -88,6 +130,8 @@ def _print_family_view(url: str, result: AnalysisResult) -> None:
     click.echo(f"Link checked: {_safe_console_text(url)}")
     click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
     click.echo(f"What this means: {result.summary}")
+    if result.findings:
+        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
 
     explanations = _collect_family_explanations(result.findings)
     if explanations:
@@ -126,16 +170,44 @@ def main() -> None:
     multiple=True,
     help="Suppress domain-lookalike findings for these trusted domains.",
 )
-def check(url: str, as_json: bool, family_mode: bool, allowlist_domains: tuple[str, ...]) -> None:
+@click.option(
+    "--allowlist-file",
+    "allowlist_files",
+    multiple=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=str),
+    help="Read allowlisted domains from a file (one domain per line, # comments allowed).",
+)
+@click.option(
+    "--allowlist-category",
+    "allowlist_categories",
+    multiple=True,
+    type=click.Choice(["HMG", "ASCII", "URL", "NET", "ALL"], case_sensitive=False),
+    help="Category prefixes suppressed for allowlisted domains (default: HMG,ASCII).",
+)
+def check(
+    url: str,
+    as_json: bool,
+    family_mode: bool,
+    allowlist_domains: tuple[str, ...],
+    allowlist_files: tuple[str, ...],
+    allowlist_categories: tuple[str, ...],
+) -> None:
     """Analyze a URL for safety issues."""
+    resolved_allowlist = _load_allowlist_domains(allowlist_domains, allowlist_files)
+    metadata: dict[str, object] = {}
+    if resolved_allowlist:
+        metadata["allowlist_domains"] = resolved_allowlist
+    if allowlist_categories:
+        metadata["allowlist_categories"] = [category.upper() for category in allowlist_categories]
+
     analysis_input = AnalysisInput(
         input_type="url",
         content=url,
-        metadata={"allowlist_domains": list(allowlist_domains)},
+        metadata=metadata,
     )
     result = _URL_ORCHESTRATOR.analyze(analysis_input)
     if as_json:
-        click.echo(result.model_dump_json(indent=2))
+        click.echo(result.model_dump_json(indent=2, ensure_ascii=True))
         return
 
     if family_mode:

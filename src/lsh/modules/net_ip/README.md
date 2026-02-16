@@ -15,3 +15,4 @@ Raw IP links are less transparent than domain names and are common in suspicious
 
 - URL input only
 - No network lookups
+- Can be allowlist-suppressed only when `NET` (or `ALL`) is explicitly selected in allowlist categories

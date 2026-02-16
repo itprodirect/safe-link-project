@@ -5,10 +5,15 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
-from lsh.core.models import AnalysisInput, AnalysisResult, Finding, ModuleInterface
+from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding, ModuleInterface
 from lsh.core.scorer import normalize, score_to_severity
 
 SummaryBuilder = Callable[[Sequence[Finding], int], str]
+
+
+def _highest_confidence(findings: Sequence[Finding]) -> Confidence:
+    ranking = {Confidence.LOW: 1, Confidence.MEDIUM: 2, Confidence.HIGH: 3}
+    return max(findings, key=lambda finding: ranking[finding.confidence]).confidence
 
 
 def build_summary(findings: Sequence[Finding], overall_risk: int) -> str:
@@ -19,20 +24,42 @@ def build_summary(findings: Sequence[Finding], overall_risk: int) -> str:
             "For important accounts, type the website address yourself."
         )
 
+    confidence = _highest_confidence(findings)
+
     if overall_risk >= 81:
+        if confidence == Confidence.LOW:
+            return (
+                "High-risk warning from limited-confidence signals. "
+                "Do not open this link until you verify it through a trusted channel."
+            )
         return (
             "High-risk warning: this link may impersonate a trusted site. "
             "Do not open it, and visit the real site by typing the address yourself."
         )
     if overall_risk >= 61:
+        if confidence == Confidence.LOW:
+            return (
+                "This link has warning signs, but confidence is limited. "
+                "Avoid clicking until you verify the destination."
+            )
         return (
             "This link has strong warning signs. "
             "Avoid clicking and verify with the sender through a trusted channel."
         )
     if overall_risk >= 41:
+        if confidence == Confidence.LOW:
+            return (
+                "Some suspicious traits were found with limited confidence. "
+                "Pause and verify before opening."
+            )
         return (
             "This link has suspicious traits. "
             "Pause and confirm the destination before opening."
+        )
+    if confidence == Confidence.LOW:
+        return (
+            "A mild, low-confidence warning sign was found. "
+            "Use caution, and double-check the destination before signing in."
         )
     return (
         "A mild warning sign was found. "

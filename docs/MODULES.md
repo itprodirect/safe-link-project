@@ -28,7 +28,7 @@ Finding codes:
 
 Known limitations:
 
-- no allowlist support yet
+- allowlist support is first-pass (domain-level only, no per-rule granularity)
 - no brand impersonation scoring yet
 - URL extraction from free text not implemented
 
@@ -117,7 +117,10 @@ Finding codes:
 ## P1 Controls (Started)
 
 - Domain allowlist support via input metadata (`allowlist_domains`)
-- CLI passthrough: `--allowlist-domain`
-- Current allowlist suppression scope:
-  - homoglyph findings (`HMG*`)
-  - ASCII lookalike findings (`ASCII*`)
+- Category-scope support via input metadata (`allowlist_categories`)
+- CLI passthrough:
+  - `--allowlist-domain`
+  - `--allowlist-file`
+  - `--allowlist-category`
+- Default allowlist suppression scope is `HMG` + `ASCII`
+- `--allowlist-category ALL` enables suppression for all categories (`HMG`, `ASCII`, `URL`, `NET`)

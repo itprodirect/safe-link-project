@@ -5,7 +5,7 @@ from __future__ import annotations
 import unicodedata
 from typing import Any
 
-from lsh.core.allowlist import allowlist_domains_for_input, is_hostname_allowlisted
+from lsh.core.allowlist import should_suppress_for_allowlist
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.url_tools import extract_hostname, parse_ip_literal
 
@@ -179,7 +179,7 @@ class HomoglyphDetector(ModuleInterface):
             ]
         if parse_ip_literal(hostname) is not None:
             return []
-        if is_hostname_allowlisted(hostname, allowlist_domains_for_input(input)):
+        if should_suppress_for_allowlist(input, hostname, category_prefix="HMG"):
             return []
 
         unicode_hostname = _idna_to_unicode(hostname) or hostname

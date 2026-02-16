@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qsl
 
+from lsh.core.allowlist import should_suppress_for_allowlist
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.rules import DECEPTIVE_PREFIX_HINTS, KNOWN_BRAND_TOKENS, NESTED_URL_PARAM_KEYS
 from lsh.core.url_tools import normalize_hostname, parse_url_like, registrable_domain
@@ -50,6 +51,9 @@ class URLStructureDetector(ModuleInterface):
             return []
 
         hostname = normalize_hostname(raw_hostname)
+        if should_suppress_for_allowlist(input, hostname, category_prefix="URL"):
+            return []
+
         registrable = registrable_domain(hostname)
         host_labels = [label for label in hostname.split(".") if label]
         registrable_labels = [label for label in registrable.split(".") if label]

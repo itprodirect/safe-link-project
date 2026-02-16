@@ -13,3 +13,4 @@ Offline detector for classic URL-format deception patterns.
 - URL input only
 - Uses `urllib.parse` and offline hostname heuristics
 - No network lookups
+- Can be allowlist-suppressed only when `URL` (or `ALL`) is explicitly selected in allowlist categories

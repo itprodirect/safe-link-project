@@ -7,6 +7,7 @@
 - [x] Session 2A: Orchestrator extraction and family-mode CLI rendering
 - [x] Session 2B: Offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
 - [x] Session 2C: P1 start (`confidence` labels + domain allowlist path)
+- [x] Session 2D: P1 continuation (`--allowlist-file`, scoped categories, confidence-aware family summaries)
 - [ ] Session 3: Redirect chain module (next)
 
 ## Next Session: 3 Redirect Chain Expansion
@@ -60,6 +61,6 @@ Phase 1 is complete when:
 - Risk: network-dependent logic increases flaky tests  
   Mitigation: isolate network tests and mock external calls by default.
 - Risk: false positives from internationalized domains  
-  Mitigation: add allowlist and confidence controls in follow-up sessions.
+  Mitigation: keep expanding allowlist controls and confidence calibration guidance.
 - Risk: docs drift from implementation  
   Mitigation: update docs in the same PR/commit as behavior changes.

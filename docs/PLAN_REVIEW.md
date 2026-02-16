@@ -1,6 +1,6 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-02-16 after offline URL trust-signal expansion.
+Status note: updated on 2026-02-16 after scoped allowlist + confidence UX upgrades.
 
 ## What Is Working Well
 
@@ -23,7 +23,7 @@ Required guardrails:
 - tight timeouts
 - no content fetching beyond what is needed for redirect resolution
 
-### 2. False Positive Strategy Is Not Implemented
+### 2. False Positive Strategy Is In Progress
 
 Current Unicode checks can flag legitimate international domains, and brand-token heuristics are intentionally conservative.
 
@@ -31,10 +31,13 @@ What changed:
 
 - Added initial `confidence` labels on findings
 - Added initial domain allowlist flow (`allowlist_domains` / `--allowlist-domain`)
+- Added scoped allowlist categories (`--allowlist-category`)
+- Added allowlist file support (`--allowlist-file`)
+- Added confidence-aware family summary wording and confidence visibility
 
 What still remains:
 
-- per-category allowlist granularity
+- per-rule allowlist granularity
 - explicit confidence calibration guidance in docs for end users
 
 Recommended follow-up:
