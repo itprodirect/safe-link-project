@@ -51,6 +51,34 @@ def test_email_auth_failures_are_reported() -> None:
     assert "EML301_DMARC_FAIL" in codes
 
 
+def test_email_auth_prefers_nearest_auth_results_over_older_hops() -> None:
+    detector = EmailAuthDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="email_headers",
+            content=(
+                "Authentication-Results: mx.recipient; spf=pass; dkim=pass; dmarc=pass\n"
+                "Authentication-Results: mx.forwarder; spf=fail; dkim=fail; dmarc=fail\n\n"
+            ),
+        )
+    )
+    assert findings == []
+
+
+def test_email_auth_does_not_override_auth_results_with_received_spf() -> None:
+    detector = EmailAuthDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="email_headers",
+            content=(
+                "Authentication-Results: mx.example; spf=pass; dkim=pass; dmarc=pass\n"
+                "Received-SPF: fail (example) client-ip=203.0.113.10;\n\n"
+            ),
+        )
+    )
+    assert findings == []
+
+
 def test_email_auth_received_spf_is_used_for_spf_status() -> None:
     detector = EmailAuthDetector()
     findings = detector.analyze(

@@ -14,6 +14,10 @@ def test_ambiguous_glyph_domain_is_flagged() -> None:
     assert "ASCII001_AMBIGUOUS_GLYPHS" in _codes("https://paypaI.com")
 
 
+def test_ambiguous_glyph_domain_is_flagged_for_multi_part_suffix() -> None:
+    assert "ASCII001_AMBIGUOUS_GLYPHS" in _codes("https://paypaI.co.in")
+
+
 def test_leet_substitution_domain_is_flagged() -> None:
     assert "ASCII002_LEET_SUBSTITUTION" in _codes("https://micros0ft.com")
 

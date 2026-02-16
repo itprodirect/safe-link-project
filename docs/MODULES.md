@@ -59,6 +59,7 @@ Detections:
 - userinfo before `@` (`user:pass@host`) with explicit true-host evidence
 - deceptive subdomain prefixes like `login.google.com.evil.com`
 - nested URL parameters such as `?url=https://...`
+- registrable-domain comparisons use offline heuristics for common suffix structures
 
 Finding codes:
 
@@ -121,6 +122,7 @@ Detections:
 - SPF fail/weak/missing states
 - DKIM fail/weak/missing states
 - DMARC fail/weak/missing states
+- nearest-header precedence is used to avoid worst-hop aggregation across forwarded paths
 
 Finding codes:
 

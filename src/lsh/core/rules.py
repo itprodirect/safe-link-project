@@ -53,8 +53,21 @@ NESTED_URL_PARAM_KEYS = frozenset(
     }
 )
 
-# Small public-suffix heuristic list for registrable-domain extraction.
-# This avoids adding a network or heavy dependency for now.
+# Common second-level labels used under country-code TLDs (for example co.in, com.au).
+COMMON_COUNTRY_SECOND_LEVEL_LABELS = frozenset(
+    {
+        "ac",
+        "co",
+        "com",
+        "edu",
+        "gov",
+        "mil",
+        "net",
+        "org",
+    }
+)
+
+# Fallback multi-part suffixes used by registrable-domain extraction heuristics.
 COMMON_MULTI_PART_SUFFIXES = frozenset(
     {
         "co.uk",
@@ -97,6 +110,7 @@ ASCII_LEET_SUBSTITUTIONS: dict[str, str] = {
 __all__ = [
     "ASCII_AMBIGUOUS_GROUPS",
     "ASCII_LEET_SUBSTITUTIONS",
+    "COMMON_COUNTRY_SECOND_LEVEL_LABELS",
     "COMMON_MULTI_PART_SUFFIXES",
     "DECEPTIVE_PREFIX_HINTS",
     "KNOWN_BRAND_TOKENS",

@@ -15,3 +15,4 @@ Offline email-header analyzer for SPF, DKIM, and DMARC trust signals.
 - Local header analysis only (`email_headers` and `email_file`)
 - No DNS/network validation in this phase
 - Deterministic parsing from `Authentication-Results` and `Received-SPF`
+- Uses nearest auth-result header precedence to reduce forwarded-mail false positives

@@ -12,7 +12,7 @@ Implemented now:
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
-  - `url_structure` (`@` userinfo tricks, deceptive subdomains, nested URL params)
+- `url_structure` (`@` userinfo tricks, deceptive subdomains, nested URL params)
   - `net_ip` (private/public IP literal host detection)
 - Opt-in network module:
   - `redirect` (HEAD-only redirect chain analysis with hop/timeout safeguards)
@@ -100,6 +100,10 @@ lsh email-check headers.txt --file --json
 - `NET*`: IP literal network-scope signals
 - `RED*`: opt-in redirect-chain signals
 - `EML*`: email authentication header signals (SPF/DKIM/DMARC)
+
+Notes:
+
+- Registrable-domain checks use offline heuristics for common country-code suffix patterns.
 
 ## P1 False-Positive Controls
 

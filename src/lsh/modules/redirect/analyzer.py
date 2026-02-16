@@ -15,11 +15,23 @@ _DEFAULT_MAX_HOPS = 5
 _DEFAULT_TIMEOUT_SECONDS = 3.0
 _MAX_HOPS_HARD_CAP = 15
 _USER_AGENT = "LinkSafetyHub/0.1 (+https://github.com/itprodirect/safe-link-project)"
+_TRUTHY_VALUES = frozenset({"1", "true", "yes", "on"})
+_FALSY_VALUES = frozenset({"0", "false", "no", "off", ""})
 
 
 def _network_enabled(input: AnalysisInput) -> bool:
     raw = input.metadata.get("network_enabled", False)
-    return bool(raw)
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, (int, float)):
+        return raw != 0
+    if isinstance(raw, str):
+        normalized = raw.strip().lower()
+        if normalized in _TRUTHY_VALUES:
+            return True
+        if normalized in _FALSY_VALUES:
+            return False
+    return False
 
 
 def _max_hops(input: AnalysisInput) -> int:

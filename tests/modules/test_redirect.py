@@ -80,6 +80,24 @@ def test_redirect_network_disabled_skips_requests(monkeypatch: pytest.MonkeyPatc
     assert findings == []
 
 
+def test_redirect_string_false_does_not_enable_network(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _forbidden_session() -> _FakeSession:
+        raise AssertionError("network session should not be created for string false")
+
+    monkeypatch.setattr("lsh.modules.redirect.analyzer.requests.Session", _forbidden_session)
+    detector = RedirectChainDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="url",
+            content="https://example.com",
+            metadata={"network_enabled": "false"},
+        )
+    )
+    assert findings == []
+
+
 def test_redirect_chain_and_cross_domain_are_detected(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_session = _FakeSession(
         [

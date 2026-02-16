@@ -10,6 +10,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 
 - `models.py`: canonical data contracts (`AnalysisInput`, `Finding`, `AnalysisResult`)
 - `allowlist.py`: normalized domain allowlist helpers with category-prefix scoping
+- `url_tools.py`: shared URL parsing and registrable-domain extraction (offline heuristics)
 - `scorer.py`: severity mapping and finding normalization
 - `orchestrator.py`: module execution + aggregate result construction + confidence-aware summary text
 - `rules.py`: shared detection constants for brand, URL-parameter, and ASCII heuristics

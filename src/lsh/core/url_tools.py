@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 from urllib.parse import ParseResult, urlparse
 
-from lsh.core.rules import COMMON_MULTI_PART_SUFFIXES
+from lsh.core.rules import COMMON_COUNTRY_SECOND_LEVEL_LABELS, COMMON_MULTI_PART_SUFFIXES
 
 IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 
@@ -47,11 +47,19 @@ def is_ip_literal(hostname: str) -> bool:
 
 
 def registrable_domain(hostname: str) -> str:
-    """Best-effort registrable-domain extraction using offline heuristics."""
+    """Best-effort registrable-domain extraction for host comparisons."""
     host = normalize_hostname(hostname)
+    if not host:
+        return host
+    if parse_ip_literal(host) is not None:
+        return host
+
     labels = [label for label in host.split(".") if label]
     if len(labels) <= 2:
         return host
+
+    if len(labels[-1]) == 2 and labels[-2] in COMMON_COUNTRY_SECOND_LEVEL_LABELS:
+        return ".".join(labels[-3:])
 
     suffix = ".".join(labels[-2:])
     if suffix in COMMON_MULTI_PART_SUFFIXES and len(labels) >= 3:
@@ -62,4 +70,3 @@ def registrable_domain(hostname: str) -> str:
 def registrable_labels(hostname: str) -> list[str]:
     """Split registrable domain into labels."""
     return [label for label in registrable_domain(hostname).split(".") if label]
-

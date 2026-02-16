@@ -51,6 +51,50 @@ def _is_weak_or_missing(status: str) -> bool:
     return status == "missing" or status in _WEAK_STATUSES
 
 
+def _statuses_from_auth_results_header(header_value: str) -> dict[str, str | None]:
+    """Extract per-protocol statuses from one Authentication-Results header."""
+    statuses: dict[str, str | None] = {"spf": None, "dkim": None, "dmarc": None}
+    for match in _AUTH_RESULT_PATTERN.finditer(header_value):
+        protocol = match.group(1).lower()
+        raw_status = match.group(2).lower()
+        statuses[protocol] = _pick_worst_status(statuses[protocol], raw_status)
+    return statuses
+
+
+def _first_received_spf_status(received_spf_values: list[str]) -> str | None:
+    """Return SPF status from the first parseable Received-SPF header."""
+    for header_value in received_spf_values:
+        spf_match = _RECEIVED_SPF_PATTERN.search(header_value)
+        if spf_match is None:
+            continue
+        return _normalize_status(spf_match.group(1).lower())
+    return None
+
+
+def _nearest_auth_statuses(
+    auth_results_values: list[str],
+    received_spf_values: list[str],
+) -> dict[str, str]:
+    """Select statuses from nearest auth headers to reduce multi-hop false positives."""
+    selected: dict[str, str | None] = {"spf": None, "dkim": None, "dmarc": None}
+    for header_value in auth_results_values:
+        parsed_statuses = _statuses_from_auth_results_header(header_value)
+        for protocol, status in parsed_statuses.items():
+            if selected[protocol] is None and status is not None:
+                selected[protocol] = status
+        if all(status is not None for status in selected.values()):
+            break
+
+    if selected["spf"] is None:
+        selected["spf"] = _first_received_spf_status(received_spf_values)
+
+    return {
+        "spf": selected["spf"] or "missing",
+        "dkim": selected["dkim"] or "missing",
+        "dmarc": selected["dmarc"] or "missing",
+    }
+
+
 class EmailAuthDetector(ModuleInterface):
     """Analyze email headers for SPF, DKIM, and DMARC trust signals."""
 
@@ -92,21 +136,10 @@ class EmailAuthDetector(ModuleInterface):
         parser = HeaderParser(policy=policy.default)
         message = parser.parsestr(raw_headers, headersonly=True)
 
-        auth_results_values = list(message.get_all("Authentication-Results", []))
-        received_spf_values = list(message.get_all("Received-SPF", []))
-
-        statuses: dict[str, str | None] = {"spf": None, "dkim": None, "dmarc": None}
-        for header_value in auth_results_values:
-            for match in _AUTH_RESULT_PATTERN.finditer(str(header_value)):
-                protocol = match.group(1).lower()
-                raw_status = match.group(2).lower()
-                statuses[protocol] = _pick_worst_status(statuses[protocol], raw_status)
-
-        for header_value in received_spf_values:
-            spf_match = _RECEIVED_SPF_PATTERN.search(str(header_value))
-            if spf_match is None:
-                continue
-            statuses["spf"] = _pick_worst_status(statuses["spf"], spf_match.group(1).lower())
+        auth_results_values = [
+            str(value) for value in message.get_all("Authentication-Results", [])
+        ]
+        received_spf_values = [str(value) for value in message.get_all("Received-SPF", [])]
 
         if not auth_results_values and not received_spf_values:
             return [
@@ -136,11 +169,7 @@ class EmailAuthDetector(ModuleInterface):
                 )
             ]
 
-        normalized_statuses = {
-            "spf": statuses["spf"] or "missing",
-            "dkim": statuses["dkim"] or "missing",
-            "dmarc": statuses["dmarc"] or "missing",
-        }
+        normalized_statuses = _nearest_auth_statuses(auth_results_values, received_spf_values)
 
         findings: list[Finding] = []
         cumulative_risk = 0

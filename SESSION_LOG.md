@@ -606,3 +606,54 @@ Development session history. Each entry documents what was done, why, and what's
 - `mypy src tests` passed
 - `pytest -q` passed (55 tests)
 - Note: local `pip install -e ".[dev]"` failed in this environment due network/socket restrictions, so `pip-audit` binary could not be executed locally after wiring.
+
+## 2026-02-16 13:44 - Session 4B: Trust-signal hardening pass (review follow-through)
+
+**Agent:** Codex
+
+**Goal:** Resolve review findings by improving registrable-domain accuracy, enforcing strict redirect opt-in parsing, and reducing forwarded-email false positives.
+
+**Module(s) Touched:** core:url_tools/rules, modules:redirect, modules:email_auth, tests, docs
+
+**Changes:**
+- Improved registrable-domain extraction heuristics in `src/lsh/core/url_tools.py`:
+  - Added generic ccTLD second-level handling (`co`, `com`, `net`, `org`, etc.) so domains like `paypaI.co.in` map to primary label `paypai`.
+  - Kept deterministic offline behavior (no network calls).
+- Added shared second-level constant in `src/lsh/core/rules.py`:
+  - `COMMON_COUNTRY_SECOND_LEVEL_LABELS`
+- Hardened redirect opt-in boolean parsing in `src/lsh/modules/redirect/analyzer.py`:
+  - String values like `"false"`/`"0"` now stay disabled.
+  - Unknown non-boolean values default to disabled.
+- Refined email-auth status selection in `src/lsh/modules/email_auth/analyzer.py`:
+  - Uses nearest-header precedence for `Authentication-Results`.
+  - Uses `Received-SPF` only as SPF fallback when nearest auth-results SPF is missing.
+  - Prevents worst-hop aggregation across forwarded paths.
+- Expanded tests:
+  - `tests/modules/test_ascii_lookalike.py`: added `.co.in` ambiguous-glyph case.
+  - `tests/modules/test_url_structure.py`: added deceptive subdomain case on `.co.in`.
+  - `tests/modules/test_redirect.py`: added string-false opt-in guard.
+  - `tests/modules/test_email_auth.py`: added nearest-header precedence and Received-SPF fallback guard.
+- Updated docs to reflect heuristic/precedence behavior:
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `src/lsh/modules/url_structure/README.md`
+  - `src/lsh/modules/email_auth/README.md`
+
+**Decisions:**
+- Chose a dependency-free registrable-domain fix over adding a new library in this pass, so improvements remain fully offline, deterministic, and locally testable.
+- Defaulted ambiguous `network_enabled` metadata to disabled to honor explicit opt-in safety for network analysis.
+- Prioritized nearest auth headers to lower false positives from legitimate forwarding chains.
+
+**Open Questions:**
+- Should we add a larger maintained suffix fixture for uncommon ccTLD patterns beyond the current generic+explicit heuristic?
+- Should email-auth expose a strict mode that still reports older-hop failures as low-confidence context?
+
+**Next:**
+- Consider confidence calibration pass for new `.co.*` and forwarded-email scenarios using curated fixture sets.
+- Add optional “explain status source header index” evidence for email findings if operators want forensic traceability.
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (60 tests)

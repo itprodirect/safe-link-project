@@ -11,6 +11,6 @@ Offline detector for classic URL-format deception patterns.
 ## Scope
 
 - URL input only
-- Uses `urllib.parse` and offline hostname heuristics
+- Uses `urllib.parse` plus offline hostname/registrable-domain heuristics
 - No network lookups
 - Can be allowlist-suppressed only when `URL` (or `ALL`) is explicitly selected in allowlist categories
