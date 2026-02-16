@@ -11,11 +11,14 @@ Modules detect. Core orchestrates and scores. Adapters render.
 - `models.py`: canonical data contracts (`AnalysisInput`, `Finding`, `AnalysisResult`)
 - `scorer.py`: severity mapping and finding normalization
 - `orchestrator.py`: module execution + aggregate result construction
-- `rules.py`: shared detection constants/rules placeholder
+- `rules.py`: shared detection constants for brand, URL-parameter, and ASCII heuristics
 
 ### Module Layer (`src/lsh/modules/`)
 
 - `homoglyph/`: IDN/homoglyph risk detector (offline)
+- `ascii_lookalike/`: ASCII glyph/leet brand lookalike detector (offline)
+- `url_structure/`: URL deception-pattern detector (offline)
+- `net_ip/`: IP literal classifier (offline)
 
 ### Adapter Layer (`src/lsh/adapters/`)
 

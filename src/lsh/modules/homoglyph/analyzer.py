@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import unicodedata
 from typing import Any
-from urllib.parse import urlparse
 
 from lsh.core.models import AnalysisInput, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.url_tools import extract_hostname, parse_ip_literal
 
 try:
     import confusables  # type: ignore[import-untyped]
@@ -28,19 +28,6 @@ _SCRIPT_NAME_MAP: tuple[tuple[str, str], ...] = (
 )
 _MAX_LOOKALIKE_FORMS = 3
 _MAX_CHAR_MAPPING_EVIDENCE = 3
-
-
-def _extract_hostname_from_url(url: str) -> str | None:
-    """Extract a hostname from a URL-like string."""
-    parsed = urlparse(url)
-    hostname = parsed.hostname
-    if hostname is None and "://" not in url:
-        hostname = urlparse(f"//{url}").hostname
-    if hostname is None:
-        return None
-
-    normalized = hostname.strip().rstrip(".").lower()
-    return normalized or None
 
 
 def _idna_to_ascii(hostname: str) -> str | None:
@@ -168,7 +155,7 @@ class HomoglyphDetector(ModuleInterface):
         if input.input_type != "url":
             return []
 
-        hostname = _extract_hostname_from_url(input.content)
+        hostname = extract_hostname(input.content)
         if hostname is None:
             return [
                 Finding(
@@ -188,6 +175,8 @@ class HomoglyphDetector(ModuleInterface):
                     ],
                 )
             ]
+        if parse_ip_literal(hostname) is not None:
+            return []
 
         unicode_hostname = _idna_to_unicode(hostname) or hostname
         unicode_hostname = unicode_hostname.lower()
@@ -314,7 +303,7 @@ class HomoglyphDetector(ModuleInterface):
         lookalike_forms = [
             form for form in _ascii_lookalike_forms(unicode_hostname) if form != unicode_hostname
         ]
-        if lookalike_forms:
+        if _has_non_ascii(unicode_hostname) and lookalike_forms:
             evidence = [Evidence(label="ASCII Lookalike", value=lookalike_forms[0])]
             for extra_form in lookalike_forms[1:_MAX_LOOKALIKE_FORMS]:
                 evidence.append(Evidence(label="Alternate Lookalike", value=extra_form))

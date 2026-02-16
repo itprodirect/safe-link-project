@@ -31,3 +31,8 @@ Findings include:
 - no allowlist support for known-safe IDN domains yet
 - no brand impersonation dictionary yet
 - no confidence labels yet
+
+## Notes
+
+- IP literal hostnames are intentionally skipped; they are handled by `net_ip`.
+- ASCII-only lookalikes are intentionally handled by `ascii_lookalike`.

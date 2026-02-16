@@ -9,7 +9,11 @@ Implemented now:
 - Core models and scoring in `src/lsh/core/`
 - Dedicated orchestrator layer in `src/lsh/core/orchestrator.py`
 - CLI adapter in `src/lsh/adapters/cli.py`
-- Module #1 Homoglyph / IDN detector in `src/lsh/modules/homoglyph/`
+- URL-focused offline modules:
+  - `homoglyph` (Unicode/IDN spoofing)
+  - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
+  - `url_structure` (`@` userinfo tricks, deceptive subdomains, nested URL params)
+  - `net_ip` (private/public IP literal host detection)
 - Two output modes:
   - Technical (default): finding codes, evidence-driven categories
   - Family (`--family`): plain-language summary and safer actions
@@ -62,7 +66,20 @@ lsh check https://xn--pple-43d.com --family
 
 # JSON output
 lsh check https://xn--pple-43d.com --json
+
+# URL structure trick
+lsh check "http://google.com:80@evil.com"
+
+# Nested redirect-style query param
+lsh check "https://example.com/redirect?url=https://google.com"
 ```
+
+## Detection Categories (Current)
+
+- `HMG*`: Unicode/IDN homoglyph risk signals
+- `ASCII*`: ASCII lookalike brand-style signals
+- `URL*`: URL-structure deception signals
+- `NET*`: IP literal network-scope signals
 
 ## Project Structure
 
@@ -76,7 +93,10 @@ safe-link-project/
       orchestrator.py
       scorer.py
     modules/
+      ascii_lookalike/
       homoglyph/
+      net_ip/
+      url_structure/
   tests/
     core/
     modules/

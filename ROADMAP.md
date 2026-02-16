@@ -7,14 +7,15 @@ Completed:
 - Session 0: repo green and core scaffold
 - Session 1: Homoglyph / IDN detector
 - Session 2A: orchestrator extraction + CLI family mode + stronger tests
+- Session 2B: offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
 
 In progress:
 
-- Session 2B: redirect-chain expansion (network opt-in)
+- Session 3: redirect-chain expansion (network opt-in)
 
 ## Session Plan (Immediate)
 
-### Session 2B - Redirect Module
+### Session 3 - Redirect Module
 
 Goal: support safe redirect expansion without breaking offline defaults.
 

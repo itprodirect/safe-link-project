@@ -16,7 +16,7 @@ Detections:
 - non-ASCII character signal
 - punycode visibility (`xn--`)
 - mixed-script labels
-- confusable character checks
+- confusable character checks (Unicode-focused; IP literals are skipped)
 
 Finding codes:
 
@@ -31,6 +31,56 @@ Known limitations:
 - no allowlist support yet
 - no brand impersonation scoring yet
 - URL extraction from free text not implemented
+
+### Module #1B: ASCII Lookalike Detector
+
+- Path: `src/lsh/modules/ascii_lookalike/`
+- Input type: `url`
+- Network requirement: none (offline)
+
+Detections:
+
+- visually ambiguous ASCII glyph swaps (for example `i/l/1`)
+- leet substitutions (for example `0/o`, `1/l`) that normalize to known brand tokens
+
+Finding codes:
+
+- `ASCII001_AMBIGUOUS_GLYPHS`
+- `ASCII002_LEET_SUBSTITUTION`
+
+### Module #1C: URL Structure Detector
+
+- Path: `src/lsh/modules/url_structure/`
+- Input type: `url`
+- Network requirement: none (offline)
+
+Detections:
+
+- userinfo before `@` (`user:pass@host`) with explicit true-host evidence
+- deceptive subdomain prefixes like `login.google.com.evil.com`
+- nested URL parameters such as `?url=https://...`
+
+Finding codes:
+
+- `URL001_USERINFO_PRESENT`
+- `URL002_DECEPTIVE_SUBDOMAIN`
+- `URL003_NESTED_URL_PARAMETER`
+
+### Module #1D: Net IP Detector
+
+- Path: `src/lsh/modules/net_ip/`
+- Input type: `url`
+- Network requirement: none (offline)
+
+Detections:
+
+- private/local IP literal hostnames
+- public IP literal hostnames
+
+Finding codes:
+
+- `NET001_PRIVATE_IP_LITERAL`
+- `NET002_PUBLIC_IP_LITERAL`
 
 ## Planned Next
 

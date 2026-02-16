@@ -9,12 +9,13 @@ Status updated: 2026-02-16
 3. Homoglyph detector is implemented and covered by tests.
 4. CLI orchestration is now extracted into `core/orchestrator.py`.
 5. Family mode output is now a real CLI path (`--family`).
+6. Offline URL trust-signal coverage now includes `ASCII*`, `URL*`, and `NET*` findings.
 
 ## Remaining Gaps
 
 1. Redirect module is not implemented yet.
 2. Email auth and QR modules are not implemented yet.
-3. False-positive management (allowlist, confidence levels) is not implemented.
+3. False-positive management (allowlist, confidence levels) is only partially implemented.
 4. Dependency security gate (`pip-audit`) is not in CI yet.
 5. Docs exist in two locations (root + `docs/`) and require discipline to stay in sync.
 

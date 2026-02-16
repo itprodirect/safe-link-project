@@ -64,3 +64,9 @@ def test_homoglyph_punycode_input_surfaces_unicode_and_punycode_views() -> None:
         evidence.value for evidence in punycode_finding.evidence if evidence.label == "Unicode View"
     )
     assert not unicode_view.startswith("xn--")
+
+
+def test_homoglyph_skips_ip_literals() -> None:
+    detector = HomoglyphDetector()
+    findings = detector.analyze(AnalysisInput(input_type="url", content="http://127.0.0.1"))
+    assert findings == []

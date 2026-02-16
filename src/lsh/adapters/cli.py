@@ -1,12 +1,32 @@
 """CLI adapter for Link Safety Hub."""
 
+import sys
+
 import click
 
 from lsh.core.models import AnalysisInput, AnalysisResult, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
-from lsh.modules import HomoglyphDetector
+from lsh.modules import (
+    AsciiLookalikeDetector,
+    HomoglyphDetector,
+    NetIPDetector,
+    URLStructureDetector,
+)
 
-_URL_ORCHESTRATOR = AnalysisOrchestrator(modules=[HomoglyphDetector()])
+_URL_ORCHESTRATOR = AnalysisOrchestrator(
+    modules=[
+        NetIPDetector(),
+        URLStructureDetector(),
+        AsciiLookalikeDetector(),
+        HomoglyphDetector(),
+    ]
+)
+
+
+def _safe_console_text(value: str) -> str:
+    """Best-effort console-safe text rendering for non-UTF terminals."""
+    encoding = sys.stdout.encoding or "utf-8"
+    return value.encode(encoding, errors="replace").decode(encoding, errors="replace")
 
 
 def _collect_recommendations(findings: list[Finding], limit: int = 3) -> list[str]:
@@ -41,7 +61,7 @@ def _collect_family_explanations(findings: list[Finding], limit: int = 3) -> lis
 
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
     """Render technical CLI output with finding codes."""
-    click.echo(f"URL: {url}")
+    click.echo(f"URL: {_safe_console_text(url)}")
     click.echo(f"Risk: {result.overall_risk}/100 ({result.overall_severity.value})")
     click.echo(f"Summary: {result.summary}")
     if not result.findings:
@@ -62,7 +82,7 @@ def _print_technical_view(url: str, result: AnalysisResult) -> None:
 
 def _print_family_view(url: str, result: AnalysisResult) -> None:
     """Render plain-language output intended for non-technical users."""
-    click.echo(f"Link checked: {url}")
+    click.echo(f"Link checked: {_safe_console_text(url)}")
     click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
     click.echo(f"What this means: {result.summary}")
 

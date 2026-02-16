@@ -5,9 +5,10 @@
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
 - [x] Session 2A: Orchestrator extraction and family-mode CLI rendering
-- [ ] Session 2B: Redirect chain module (next)
+- [x] Session 2B: Offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
+- [ ] Session 3: Redirect chain module (next)
 
-## Next Session: 2B Redirect Chain Expansion
+## Next Session: 3 Redirect Chain Expansion
 
 ### Goal
 

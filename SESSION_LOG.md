@@ -287,3 +287,80 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (19 tests)
+
+---
+
+## 2026-02-16 10:40 - Offline URL trust-signal expansion (ASCII, URL structure, IP)
+
+**Agent:** Codex
+
+**Goal:** Improve perceived correctness and user trust for common link tricks while staying offline and conservative on false positives.
+
+**Module(s) Touched:** core, adapters:cli, modules:homoglyph/ascii_lookalike/url_structure/net_ip, docs
+
+**Changes:**
+- Added shared URL/IP helpers in `src/lsh/core/url_tools.py`:
+  - robust URL-like parsing (`parse_url_like`)
+  - hostname extraction/normalization
+  - IP literal parsing
+  - lightweight registrable-domain heuristic
+- Expanded shared detection constants in `src/lsh/core/rules.py`:
+  - brand token set
+  - deceptive prefix hints
+  - nested URL parameter keys
+  - ASCII ambiguous/leet mappings
+- Added module `src/lsh/modules/url_structure/`:
+  - `URL001_USERINFO_PRESENT`
+  - `URL002_DECEPTIVE_SUBDOMAIN`
+  - `URL003_NESTED_URL_PARAMETER`
+- Added module `src/lsh/modules/net_ip/`:
+  - `NET001_PRIVATE_IP_LITERAL`
+  - `NET002_PUBLIC_IP_LITERAL`
+- Added module `src/lsh/modules/ascii_lookalike/`:
+  - `ASCII001_AMBIGUOUS_GLYPHS`
+  - `ASCII002_LEET_SUBSTITUTION`
+- Updated `src/lsh/modules/homoglyph/analyzer.py`:
+  - skip IP literals
+  - only emit `HMG004_CONFUSABLE_CHARACTERS` for non-ASCII hostnames
+- Updated module wiring:
+  - `src/lsh/modules/__init__.py`
+  - `src/lsh/adapters/cli.py` orchestrator now runs `net_ip`, `url_structure`, `ascii_lookalike`, `homoglyph`
+- Added console-safe URL rendering in CLI to avoid Windows codepage crashes on Unicode input
+- Added/expanded tests:
+  - `tests/modules/test_url_structure.py`
+  - `tests/modules/test_net_ip.py`
+  - `tests/modules/test_ascii_lookalike.py`
+  - `tests/core/test_url_stack.py`
+  - updated `tests/modules/test_homoglyph.py`
+- Updated docs:
+  - `README.md`
+  - `docs/MODULES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+  - `PLAN_REVIEW.md`
+  - `ROADMAP.md`
+  - `src/lsh/modules/homoglyph/README.md`
+
+**Decisions:**
+- Chose lightweight offline registrable-domain heuristics instead of adding `tldextract` now.
+  - Why: lower dependency/maintenance cost, no PSL update complexity, sufficient accuracy for high-signal initial patterns.
+  - Tradeoff: imperfect handling for some country-code edge cases; documented and acceptable for this phase.
+- Kept risk levels conservative for new detectors (mostly LOW/MEDIUM) to reduce user alarm fatigue.
+- Scoped ASCII lookalike detection to brand-like token matches (not all ambiguous ASCII strings) to reduce false positives.
+- Separated IP literal logic into dedicated `NET*` findings and removed misleading homoglyph behavior on IP hosts.
+
+**Open Questions:**
+- Should we add optional `tldextract`/PSL-backed parsing behind a feature flag for higher registrable-domain accuracy?
+- Should ASCII lookalike detection support user-configurable brand token sets?
+- Should summary text become category-aware (e.g., mention URL-structure tricks explicitly) instead of only risk-band text?
+
+**Next:**
+- Session 3: redirect-chain expander with strict opt-in network path and timeout/hop guards
+- Add allowlist/confidence controls for false-positive management
+- Consider CI dependency audit (`pip-audit`)
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (30 tests)

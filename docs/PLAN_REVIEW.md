@@ -1,6 +1,6 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-02-16 after orchestrator refactor.
+Status note: updated on 2026-02-16 after offline URL trust-signal expansion.
 
 ## What Is Working Well
 
@@ -25,7 +25,7 @@ Required guardrails:
 
 ### 2. False Positive Strategy Is Not Implemented
 
-Current homoglyph checks can flag legitimate international domains.
+Current Unicode checks can flag legitimate international domains, and brand-token heuristics are intentionally conservative.
 
 Recommended follow-up:
 
@@ -57,6 +57,10 @@ Recommended:
 - Family-mode CLI output added
 - Strict typing improvements in tests
 - Core model defaults switched to `Field(default_factory=...)`
+- Added offline URL-structure checks (`URL001`-`URL003`)
+- Added IP literal checks (`NET001`/`NET002`)
+- Added ASCII lookalike checks (`ASCII001`/`ASCII002`)
+- Prevented homoglyph confusable logic on IP literals and ASCII-only spoof cases
 
 ## Next Session Priority
 
