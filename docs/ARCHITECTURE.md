@@ -21,6 +21,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 - `url_structure/`: URL deception-pattern detector (offline)
 - `net_ip/`: IP literal classifier (offline)
 - `redirect/`: opt-in redirect chain detector (HEAD-only network checks)
+- `email_auth/`: local email header auth analyzer (SPF/DKIM/DMARC parsing)
 
 ### Adapter Layer (`src/lsh/adapters/`)
 
@@ -28,7 +29,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 
 ## Runtime Flow
 
-1. CLI parses input (`lsh check <url>`).
+1. CLI parses input (`lsh check <url>` or `lsh email-check <headers_or_file>`).
 2. CLI creates `AnalysisInput`.
 3. CLI calls `AnalysisOrchestrator.analyze(...)`.
 4. Orchestrator runs each module and normalizes findings.
@@ -49,7 +50,7 @@ Every module must:
 
 1. Add input-aware module routing in orchestrator (by `input_type`).
 2. Move family explainer logic into a dedicated module layer component.
-3. Add dedicated email/QR adapters while keeping core contracts stable.
+3. Add QR adapter flows while keeping core contracts stable.
 4. Keep adapters focused on I/O only.
 
 ## Testing Requirements

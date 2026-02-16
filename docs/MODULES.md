@@ -109,12 +109,31 @@ Finding codes:
 - `RED006_REQUEST_ERROR`
 - `RED007_NON_HTTP_REDIRECT_TARGET`
 
-## Planned Next
-
 ### Module #5: Email Auth Checker
 
-- Path: `src/lsh/modules/email_auth/` (planned)
+- Path: `src/lsh/modules/email_auth/`
 - Input types: `email_headers`, `email_file`
+- Network requirement: none in this phase (header-only analysis)
+
+Detections:
+
+- missing authentication result headers
+- SPF fail/weak/missing states
+- DKIM fail/weak/missing states
+- DMARC fail/weak/missing states
+
+Finding codes:
+
+- `EML000_EMPTY_INPUT`
+- `EML001_NO_AUTH_HEADERS`
+- `EML101_SPF_FAIL`
+- `EML102_SPF_WEAK_OR_MISSING`
+- `EML201_DKIM_FAIL`
+- `EML202_DKIM_WEAK_OR_MISSING`
+- `EML301_DMARC_FAIL`
+- `EML302_DMARC_WEAK_OR_MISSING`
+
+## Planned Next
 
 ### Module #7: QR Decoder
 

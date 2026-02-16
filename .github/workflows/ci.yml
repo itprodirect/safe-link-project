@@ -35,6 +35,11 @@ jobs:
       - name: Type check
         run: mypy src/
 
+      - name: Dependency audit (informational)
+        if: matrix.python-version == '3.11'
+        continue-on-error: true
+        run: pip-audit --progress-spinner off
+
       - name: Test
         run: pytest -v --tb=short -m "not network"
 

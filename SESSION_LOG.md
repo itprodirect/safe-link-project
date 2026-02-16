@@ -544,3 +544,65 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (48 tests)
+
+## 2026-02-16 13:20 - Session 4: Email auth module and dependency-audit wiring
+
+**Agent:** Codex
+
+**Goal:** Implement local email-header authentication analysis (SPF/DKIM/DMARC) and wire dependency auditing (`pip-audit`) into project tooling and CI.
+
+**Module(s) Touched:** modules:email_auth, adapters:cli, docs/process, ci/tooling
+
+**Changes:**
+- Added email auth module:
+  - `src/lsh/modules/email_auth/analyzer.py`
+  - `src/lsh/modules/email_auth/__init__.py`
+  - `src/lsh/modules/email_auth/README.md`
+- Implemented deterministic header parsing from local content (`Authentication-Results`, `Received-SPF`) with findings:
+  - `EML000_EMPTY_INPUT`
+  - `EML001_NO_AUTH_HEADERS`
+  - `EML101/102` (SPF fail vs weak/missing)
+  - `EML201/202` (DKIM fail vs weak/missing)
+  - `EML301/302` (DMARC fail vs weak/missing)
+- Wired module exports in `src/lsh/modules/__init__.py`
+- Added new CLI command `email-check` in `src/lsh/adapters/cli.py`:
+  - `lsh email-check <headers_or_file>`
+  - options: `--json`, `--family`, `--file`
+  - inline-header or file-path resolution with BOM-aware text loading
+  - dedicated email summary builder and technical/family output views
+- Added tests:
+  - `tests/modules/test_email_auth.py`
+  - updated `tests/test_smoke.py` for email command and file-input coverage
+- Added dependency audit tooling:
+  - `pyproject.toml` dev dependency: `pip-audit>=2.7`
+  - `Makefile` target: `audit` (`pip-audit --progress-spinner off`)
+  - CI step in `.github/workflows/ci.yml`: dependency audit (informational on Python 3.11)
+- Updated docs and roadmap state:
+  - `README.md`
+  - `CLAUDE.md`
+  - `ROADMAP.md`
+  - `PLAN_REVIEW.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+
+**Decisions:**
+- Kept Session 4 email-auth analysis offline and header-only (no DNS/network lookups) for deterministic behavior and low complexity.
+- Modeled weak/missing auth states as lower-risk findings to avoid over-alerting on potentially legitimate forwarding scenarios.
+- Wired `pip-audit` as informational in CI first (`continue-on-error: true`) to establish visibility without instantly breaking the main pipeline.
+
+**Open Questions:**
+- Should `pip-audit` become blocking in CI once a baseline triage pass is complete?
+- Should email-auth findings include per-header source-line evidence (raw auth-result snippets) for forensic workflows?
+
+**Next:**
+- Session 5: QR decode module and URL pipeline handoff
+- Consider tightening `pip-audit` policy from informational to enforced after dependency baseline review
+- Continue P1 refinement with per-rule allowlist controls
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (55 tests)
+- Note: local `pip install -e ".[dev]"` failed in this environment due network/socket restrictions, so `pip-audit` binary could not be executed locally after wiring.

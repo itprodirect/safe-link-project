@@ -1,4 +1,4 @@
-.PHONY: install test lint typecheck format check clean
+.PHONY: install test lint typecheck format audit check clean
 
 install:
 	python -m venv .venv
@@ -18,6 +18,9 @@ format:
 
 typecheck:
 	mypy src/
+
+audit:
+	pip-audit --progress-spinner off
 
 # Run all checks (use before committing)
 check: lint typecheck test

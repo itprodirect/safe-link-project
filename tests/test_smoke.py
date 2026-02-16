@@ -21,6 +21,7 @@ def test_cli_help() -> None:
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
     assert "Link Safety Hub" in result.output
+    assert "email-check" in result.output
 
 
 def test_cli_check_help_includes_network_options() -> None:
@@ -30,6 +31,26 @@ def test_cli_check_help_includes_network_options() -> None:
     assert "--network" in result.output
     assert "--max-hops" in result.output
     assert "--timeout" in result.output
+
+
+def test_cli_email_check_json_inline_headers() -> None:
+    runner = CliRunner()
+    headers = "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass"
+    result = runner.invoke(main, ["email-check", headers, "--json"])
+    assert result.exit_code == 0
+    assert "EML101_SPF_FAIL" in result.output
+
+
+def test_cli_email_check_file_input(tmp_path: Path) -> None:
+    headers_file = tmp_path / "headers.txt"
+    headers_file.write_text(
+        "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass\n",
+        encoding="utf-8",
+    )
+    runner = CliRunner()
+    result = runner.invoke(main, ["email-check", str(headers_file), "--json"])
+    assert result.exit_code == 0
+    assert '"findings": []' in result.output
 
 
 def test_cli_check_stub() -> None:

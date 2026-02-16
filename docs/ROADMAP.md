@@ -9,35 +9,35 @@
 - [x] Session 2C: P1 start (`confidence` labels + domain allowlist path)
 - [x] Session 2D: P1 continuation (`--allowlist-file`, scoped categories, confidence-aware family summaries)
 - [x] Session 3: Redirect chain module (`--network`, `--max-hops`, `--timeout`)
-- [ ] Session 4: Email auth module (next)
+- [x] Session 4: Email auth module + dependency-audit wiring
+- [ ] Session 5: QR decode module (next)
 
-## Next Session: 4 Email Auth Checker
+## Next Session: 5 QR Decoder
 
 ### Goal
 
-Add local email-header authentication analysis (SPF/DKIM/DMARC state parsing).
+Add local QR decode analysis and route decoded URLs into existing URL safety pipeline.
 
 ### Work Items
 
-1. Create `src/lsh/modules/email_auth/` with parser and analyzer scaffolding.
-2. Add CLI path for email-header input.
-3. Emit structured findings for SPF/DKIM/DMARC signal presence and obvious failures.
-4. Add unit tests with representative header fixtures.
+1. Create `src/lsh/modules/qr_decode/` with decode + extraction flow.
+2. Add CLI path for QR image input.
+3. Run decoded URLs through existing URL module pipeline.
+4. Add fixtures and deterministic tests.
 5. Update docs and session log.
 
 ### Definition of Done
 
-- Email auth findings are explainable and deterministic for local header input.
+- QR results are deterministic for local image inputs.
 - `ruff`, `mypy`, `pytest` all pass.
 - Docs reflect new behavior.
 
 ## Near-Term Sequence
 
-1. Email auth checker (#5)
-2. QR decoder (#7)
-3. Family formatter module (#9)
-4. Input-type routing for multi-input orchestrator
-5. Dependency auditing in CI (`pip-audit`)
+1. QR decoder (#7)
+2. Family formatter module (#9)
+3. Input-type routing for multi-input orchestrator
+4. Tighten dependency-audit policy in CI (`pip-audit`)
 
 ## Phase Exit Criteria
 

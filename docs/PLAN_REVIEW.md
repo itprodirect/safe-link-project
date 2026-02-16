@@ -47,13 +47,13 @@ Recommended follow-up:
 - confidence labels on findings
 - explicit "suspicious but could be legitimate" language path
 
-### 3. CI Security Checks Need Expansion
+### 3. CI Security Checks Are Started (Not Yet Enforced)
 
-`ruff`, `mypy`, and `pytest` are in place, but dependency vulnerability scanning is not.
+`ruff`, `mypy`, and `pytest` are in place. `pip-audit` is now wired in local tooling and CI as informational.
 
 Recommended:
 
-- add `pip-audit` in CI
+- tighten CI policy from informational to enforced once baseline is stable
 - add periodic dependency refresh cadence
 
 ### 4. Documentation Sync Risk
@@ -76,9 +76,11 @@ Recommended:
 - Added ASCII lookalike checks (`ASCII001`/`ASCII002`)
 - Prevented homoglyph confusable logic on IP literals and ASCII-only spoof cases
 - Added opt-in redirect-chain checks with hop/timeout guardrails (`RED*`)
+- Added local email-auth checks (`EML*`) for SPF/DKIM/DMARC header signals
+- Added `pip-audit` target and informational CI step
 
 ## Next Session Priority
 
-1. Email-auth module implementation with local header parsing.
-2. Add `pip-audit` to local and CI checks.
+1. QR decode module implementation and URL pipeline handoff.
+2. Tighten `pip-audit` CI policy after baseline review.
 3. Continue false-positive controls with per-rule allowlist granularity.

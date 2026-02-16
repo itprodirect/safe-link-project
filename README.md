@@ -16,6 +16,8 @@ Implemented now:
   - `net_ip` (private/public IP literal host detection)
 - Opt-in network module:
   - `redirect` (HEAD-only redirect chain analysis with hop/timeout safeguards)
+- Email-auth module:
+  - `email_auth` (local SPF/DKIM/DMARC header signal analysis)
 - Two output modes:
   - Technical (default): finding codes, evidence-driven categories
   - Family (`--family`): plain-language summary and safer actions
@@ -24,7 +26,6 @@ Implemented now:
 
 Planned next:
 
-- Module #5 Email auth checks (SPF/DKIM/DMARC)
 - Module #7 QR decode pipeline
 - Module #9 Family mode as a reusable formatter layer
 
@@ -54,6 +55,7 @@ lsh check https://xn--pple-43d.com --family
 
 ```bash
 lsh check <url> [--json] [--family] [--network] [--max-hops N] [--timeout SECONDS] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
+lsh email-check <headers_or_file> [--json] [--family] [--file]
 ```
 
 Examples:
@@ -85,6 +87,9 @@ lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-categor
 
 # Opt-in redirect-chain checks (HEAD only)
 lsh check "https://bit.ly/example" --network --max-hops 5 --timeout 3.0
+
+# Email header authentication analysis
+lsh email-check headers.txt --file --json
 ```
 
 ## Detection Categories (Current)
@@ -94,6 +99,7 @@ lsh check "https://bit.ly/example" --network --max-hops 5 --timeout 3.0
 - `URL*`: URL-structure deception signals
 - `NET*`: IP literal network-scope signals
 - `RED*`: opt-in redirect-chain signals
+- `EML*`: email authentication header signals (SPF/DKIM/DMARC)
 
 ## P1 False-Positive Controls
 
@@ -117,6 +123,7 @@ safe-link-project/
       scorer.py
     modules/
       ascii_lookalike/
+      email_auth/
       homoglyph/
       net_ip/
       redirect/
@@ -142,6 +149,9 @@ pytest -v --tb=short
 
 # One command gate
 make check
+
+# Dependency audit
+make audit
 ```
 
 ## Session Logging Process

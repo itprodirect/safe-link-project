@@ -11,33 +11,30 @@ Completed:
 - Session 2C: P1 start (`confidence` labels + domain allowlist path)
 - Session 2D: P1 continuation (scoped allowlist categories/files + confidence-aware family summaries)
 - Session 3: redirect-chain expansion (network opt-in)
+- Session 4: email-auth module + dependency audit wiring
 
 In progress:
 
-- Session 4: email-auth module planning/implementation
+- Session 5: QR module planning/implementation
 
 ## Session Plan (Immediate)
 
-### Session 4 - Email Auth Module
+### Session 5 - QR Decode Module
 
-Goal: parse local email headers and score SPF/DKIM/DMARC trust signals.
+Goal: decode local QR content and route decoded URLs into the URL-analysis pipeline.
 
 Scope:
 
-- Add `src/lsh/modules/email_auth/` scaffold
-- Parse header fields and normalize auth signal extraction
-- Emit structured findings with recommendations
+- Add `src/lsh/modules/qr_decode/` scaffold
+- Decode QR payload from image input
+- Route decoded URLs into existing URL safety checks
 - Add fixture-driven unit tests
 
 Definition of done:
 
-- `lsh email-check <headers_or_file>` path is available and deterministic
+- `lsh qr-scan <image>` path is available and deterministic
 - `ruff`, `mypy`, and `pytest` all pass
 - docs and session log updated
-
-### Session 5 - QR Decode Module
-
-Goal: decode QR payload and pass URL into analysis pipeline.
 
 ### Session 6 - Family Formatter Module
 

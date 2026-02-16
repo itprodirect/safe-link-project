@@ -1,6 +1,7 @@
 """CLI adapter for Link Safety Hub."""
 
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
 from lsh.modules import (
     AsciiLookalikeDetector,
+    EmailAuthDetector,
     HomoglyphDetector,
     NetIPDetector,
     RedirectChainDetector,
@@ -23,6 +25,39 @@ _URL_ORCHESTRATOR = AnalysisOrchestrator(
         HomoglyphDetector(),
         RedirectChainDetector(),
     ]
+)
+_EMAIL_ORCHESTRATOR: AnalysisOrchestrator
+
+
+def _build_email_summary(findings: Sequence[Finding], overall_risk: int) -> str:
+    """Build a concise summary tuned for email authentication results."""
+    if not findings:
+        return "No obvious email authentication issues were found in the provided headers."
+
+    if overall_risk >= 81:
+        return (
+            "High-risk email-authentication warning. "
+            "Do not trust links or urgent requests until independently verified."
+        )
+    if overall_risk >= 61:
+        return (
+            "This message has strong authentication warning signs. "
+            "Verify sender identity through a trusted channel."
+        )
+    if overall_risk >= 41:
+        return (
+            "This message has authentication concerns. "
+            "Use caution before acting on requests."
+        )
+    return (
+        "A mild email authentication warning sign was found. "
+        "Double-check sensitive requests before taking action."
+    )
+
+
+_EMAIL_ORCHESTRATOR = AnalysisOrchestrator(
+    modules=[EmailAuthDetector()],
+    summary_builder=_build_email_summary,
 )
 
 
@@ -103,6 +138,29 @@ def _load_allowlist_domains(
     return collected
 
 
+def _read_text_file(path: Path) -> str:
+    """Read text from disk with BOM-aware utf-8 first and latin-1 fallback."""
+    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+        try:
+            return path.read_text(encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+    raise click.ClickException(f"Could not decode file '{path}' as text.")
+
+
+def _resolve_email_input(source: str, treat_as_file: bool) -> tuple[str, str, str]:
+    """Resolve email headers input from inline text or file path."""
+    candidate_path = Path(source)
+    use_file = treat_as_file or candidate_path.is_file()
+    if not use_file:
+        return "email_headers", source, "inline headers"
+
+    if not candidate_path.exists() or not candidate_path.is_file():
+        raise click.ClickException(f"Email header file not found: {source}")
+
+    return "email_file", _read_text_file(candidate_path), str(candidate_path)
+
+
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
     """Render technical CLI output with finding codes."""
     click.echo(f"URL: {_safe_console_text(url)}")
@@ -150,6 +208,54 @@ def _print_family_view(url: str, result: AnalysisResult) -> None:
 
     click.echo("- Keep using trusted bookmarks for important accounts.")
     click.echo("- If unsure, verify with the sender in a separate message or call.")
+
+
+def _print_technical_email_view(source_label: str, result: AnalysisResult) -> None:
+    """Render technical output for email header analysis."""
+    click.echo(f"Email source: {_safe_console_text(source_label)}")
+    click.echo(f"Risk: {result.overall_risk}/100 ({result.overall_severity.value})")
+    click.echo(f"Summary: {result.summary}")
+    if not result.findings:
+        return
+
+    click.echo("Findings:")
+    for finding in result.findings:
+        click.echo(
+            f"- [{finding.category}] {finding.title} "
+            f"({finding.risk_score}/100, confidence={finding.confidence.value})"
+        )
+
+    recommendations = _collect_recommendations(result.findings)
+    if not recommendations:
+        return
+
+    click.echo("What to do next:")
+    for recommendation in recommendations:
+        click.echo(f"- {recommendation}")
+
+
+def _print_family_email_view(source_label: str, result: AnalysisResult) -> None:
+    """Render family-oriented output for email header analysis."""
+    click.echo(f"Email checked: {_safe_console_text(source_label)}")
+    click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
+    click.echo(f"What this means: {result.summary}")
+    if result.findings:
+        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
+
+    explanations = _collect_family_explanations(result.findings)
+    if explanations:
+        click.echo("Why this may be risky:")
+        for explanation in explanations:
+            click.echo(f"- {explanation}")
+
+    recommendations = _collect_recommendations(result.findings)
+    click.echo("Safer next steps:")
+    if recommendations:
+        for recommendation in recommendations:
+            click.echo(f"- {recommendation}")
+        return
+
+    click.echo("- Be careful with urgent requests until sender identity is confirmed.")
 
 
 @click.group()
@@ -245,6 +351,44 @@ def check(
         return
 
     _print_technical_view(url, result)
+
+
+@main.command("email-check")
+@click.argument("headers_or_file")
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+@click.option(
+    "--family",
+    "family_mode",
+    is_flag=True,
+    help="Use plain-language output with simplified findings.",
+)
+@click.option(
+    "--file",
+    "treat_as_file",
+    is_flag=True,
+    help="Treat input as a file path even if the file does not exist yet.",
+)
+def email_check(
+    headers_or_file: str,
+    as_json: bool,
+    family_mode: bool,
+    treat_as_file: bool,
+) -> None:
+    """Analyze email headers for SPF/DKIM/DMARC trust signals."""
+    input_type, content, source_label = _resolve_email_input(headers_or_file, treat_as_file)
+    result = _EMAIL_ORCHESTRATOR.analyze(
+        AnalysisInput(input_type=input_type, content=content)
+    )
+
+    if as_json:
+        click.echo(result.model_dump_json(indent=2, ensure_ascii=True))
+        return
+
+    if family_mode:
+        _print_family_email_view(source_label, result)
+        return
+
+    _print_technical_email_view(source_label, result)
 
 
 if __name__ == "__main__":

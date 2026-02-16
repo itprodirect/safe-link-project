@@ -46,6 +46,7 @@ dev = [
     "pyzbar>=0.1.9",
     "Pillow>=10.0",
     "dnspython>=2.4",
+    "pip-audit>=2.7",
     "pytest>=7.4",
     "pytest-cov>=4.1",
     "ruff>=0.4",

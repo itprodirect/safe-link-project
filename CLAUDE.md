@@ -18,11 +18,11 @@ Implemented:
   - `url_structure`
   - `net_ip`
   - `redirect` (opt-in network mode)
+- `email_auth` module for local SPF/DKIM/DMARC header analysis
 - Family output mode (`lsh check <url> --family`)
 
 Not implemented yet:
 
-- Email auth module (#5)
 - QR decode module (#7)
 - Standalone Family explainer module (#9)
 
@@ -69,11 +69,10 @@ Not implemented yet:
 
 ## Current Build Priority
 
-1. Email auth checker
-2. QR decoder
-3. Standalone family explainer module
-4. Additional module orchestration routing by `input_type`
-5. Dependency audit wiring (`pip-audit`) in local/CI workflows
+1. QR decoder
+2. Standalone family explainer module
+3. Additional module orchestration routing by `input_type`
+4. Dependency audit policy hardening (`pip-audit` enforcement workflow)
 
 ## What Not To Do
 
