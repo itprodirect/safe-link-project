@@ -23,7 +23,7 @@ class AnalysisInput(BaseModel):
 
     input_type: Literal["url", "email_headers", "email_file", "qr_image", "text"]
     content: str
-    metadata: dict[str, Any] = {}
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class Evidence(BaseModel):
@@ -43,8 +43,8 @@ class Finding(BaseModel):
     title: str
     explanation: str
     family_explanation: str
-    evidence: list[Evidence] = []
-    recommendations: list[str] = []
+    evidence: list[Evidence] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
 
 
 class AnalysisResult(BaseModel):

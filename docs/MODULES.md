@@ -2,21 +2,23 @@
 
 Each module lives under `src/lsh/modules/<name>/` and implements `ModuleInterface`.
 
-## Module #1: Homoglyph / IDN Detector (Implemented)
+## Implemented
 
-- Directory: `src/lsh/modules/homoglyph/`
-- Input types currently supported: `url`
-- Network required: No (offline only)
+### Module #1: Homoglyph / IDN Detector
 
-Implemented detections:
+- Path: `src/lsh/modules/homoglyph/`
+- Input type: `url`
+- Network requirement: none (offline)
 
-- Hostname extraction from URL
-- Non-ASCII hostname detection
-- IDNA/punycode visibility (`unicode` and `xn--...` forms)
-- Mixed-script label detection (for example Latin + Cyrillic)
-- Confusable character analysis using `confusables`
+Detections:
 
-Finding codes emitted:
+- hostname extraction
+- non-ASCII character signal
+- punycode visibility (`xn--`)
+- mixed-script labels
+- confusable character checks
+
+Finding codes:
 
 - `HMG000_INVALID_URL`
 - `HMG001_NON_ASCII_HOSTNAME`
@@ -24,47 +26,39 @@ Finding codes emitted:
 - `HMG003_MIXED_SCRIPT_HOSTNAME`
 - `HMG004_CONFUSABLE_CHARACTERS`
 
-Evidence behavior:
-
-- Includes hostname views, signal-specific context, and explainable scoring fields:
-  - `Risk Delta`
-  - `Cumulative Risk`
-
 Known limitations:
 
-- No allowlist for known-safe IDN domains yet
-- No brand impersonation matching yet
-- No `text` input URL extraction yet
+- no allowlist support yet
+- no brand impersonation scoring yet
+- URL extraction from free text not implemented
 
-## Module #2: Redirect Chain Expander (Planned, Next)
+## Planned Next
 
-- Directory: `src/lsh/modules/redirect/`
-- Input types: `url`
-- Network: Yes (opt-in)
-- Planned output: hop-by-hop findings with explicit safety limits
+### Module #2: Redirect Chain Expander
 
-## Module #5: Email Auth Checker (Planned)
+- Path: `src/lsh/modules/redirect/` (planned)
+- Input type: `url`
+- Network: opt-in only
+- Key controls: hop cap, timeout, safe request policy
 
-- Directory: `src/lsh/modules/email_auth/`
+### Module #5: Email Auth Checker
+
+- Path: `src/lsh/modules/email_auth/` (planned)
 - Input types: `email_headers`, `email_file`
-- Network: optional for DNS verification
 
-## Module #7: QR Decoder (Planned)
+### Module #7: QR Decoder
 
-- Directory: `src/lsh/modules/qr_decode/`
-- Input types: `qr_image`
-- Network: no (decode), optional for downstream URL analysis
+- Path: `src/lsh/modules/qr_decode/` (planned)
+- Input type: `qr_image`
 
-## Module #9: Family Mode Explainer (Planned)
+### Module #9: Family Explainer
 
-- Directory: `src/lsh/modules/family_mode/`
-- Input: `Finding` objects
-- Network: No
+- Path: `src/lsh/modules/family_mode/` (planned)
+- Input: findings and result summary
 
-## Other Planned Modules
+## Cross-Module Rules
 
-- #3 Domain Risk Profiler
-- #4 Content Snapshot Analyzer
-- #6 Attachment Triage
-- #8 Password Hygiene
-- #10 Offline Inbox Scanner
+1. Use shared `Finding` schema.
+2. Keep behavior deterministic and testable.
+3. Emit evidence and recommendations for every non-info signal.
+4. Avoid storing state in module instances.

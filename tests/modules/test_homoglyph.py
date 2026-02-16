@@ -1,10 +1,10 @@
 """Focused tests for the Homoglyph / IDN detector module."""
 
-from lsh.core.models import AnalysisInput
+from lsh.core.models import AnalysisInput, Finding
 from lsh.modules.homoglyph import HomoglyphDetector
 
 
-def _codes(findings: list) -> set[str]:
+def _codes(findings: list[Finding]) -> set[str]:
     return {finding.category for finding in findings}
 
 

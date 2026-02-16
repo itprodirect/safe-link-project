@@ -2,68 +2,53 @@
 
 ## Design Principle
 
-Modules are independent analyzers. Shared contracts live in `lsh.core`. Adapters handle input/output only.
+Modules detect. Core orchestrates and scores. Adapters render.
 
-## Current Implementation (2026-02-13)
+## Implemented Architecture (2026-02-16)
 
-Implemented components:
+### Core Layer (`src/lsh/core/`)
 
-- Core models: `src/lsh/core/models.py`
-- Scorer and severity mapping: `src/lsh/core/scorer.py`
-- CLI adapter: `src/lsh/adapters/cli.py`
-- Homoglyph module: `src/lsh/modules/homoglyph/analyzer.py`
+- `models.py`: canonical data contracts (`AnalysisInput`, `Finding`, `AnalysisResult`)
+- `scorer.py`: severity mapping and finding normalization
+- `orchestrator.py`: module execution + aggregate result construction
+- `rules.py`: shared detection constants/rules placeholder
 
-Current flow:
+### Module Layer (`src/lsh/modules/`)
 
-1. CLI receives `lsh check <url>`
-2. CLI builds `AnalysisInput(input_type="url", content=<url>)`
-3. CLI runs enabled URL modules (currently Homoglyph only)
-4. Findings are normalized via scorer
-5. CLI computes overall risk/severity and prints summary + actions
+- `homoglyph/`: IDN/homoglyph risk detector (offline)
 
-## Target Architecture (Phase 1 completion)
+### Adapter Layer (`src/lsh/adapters/`)
 
-Planned near-term refactor:
+- `cli.py`: command parsing and view rendering (technical and family modes)
 
-- Extract orchestration from CLI into a dedicated orchestrator layer
-- Route by `input_type` to relevant modules
-- Keep modules stateless and side-effect free
+## Runtime Flow
 
-Target flow:
+1. CLI parses input (`lsh check <url>`).
+2. CLI creates `AnalysisInput`.
+3. CLI calls `AnalysisOrchestrator.analyze(...)`.
+4. Orchestrator runs each module and normalizes findings.
+5. Orchestrator returns `AnalysisResult`.
+6. CLI renders technical, family, or JSON output.
 
-1. Adapter parses user input
-2. Orchestrator selects modules
-3. Modules return `Finding` lists
-4. Scorer normalizes severity
-5. Family mode (or adapter view) formats plain-language output
-
-## Contracts
-
-Key models:
-
-- `AnalysisInput`
-- `Finding`
-- `Evidence`
-- `AnalysisResult`
-- `Severity`
-- `ModuleInterface`
+## Contract Requirements
 
 Every module must:
 
-1. Implement `ModuleInterface`
-2. Accept `AnalysisInput`
-3. Return `list[Finding]`
-4. Avoid persistent state
-5. Handle errors gracefully
+1. Implement `ModuleInterface`.
+2. Accept `AnalysisInput`.
+3. Return `list[Finding]`.
+4. Remain stateless across calls.
+5. Avoid hidden side effects.
 
-## CLI Notes
+## Near-Term Architecture Moves
 
-Implemented command:
+1. Add input-aware module routing in orchestrator (by `input_type`).
+2. Add redirect module and network policy controls.
+3. Move family explainer logic into a dedicated module layer component.
+4. Keep adapters focused on I/O only.
 
-- `lsh check <url>`
+## Testing Requirements
 
-Planned commands:
-
-- `lsh email-check <headers_or_file>`
-- `lsh qr-scan <image>`
-- `lsh inbox-scan <mbox_or_eml>`
+- Unit tests per module for known-good and known-bad inputs
+- Orchestrator tests for aggregate semantics
+- CLI tests for output mode behavior

@@ -1,18 +1,33 @@
 # Homoglyph / IDN Detector
 
-Offline URL hostname analyzer for Unicode lookalike risk:
+Offline detector for lookalike domain risks in URL hostnames.
 
-- extracts hostname from URL input
-- surfaces Unicode vs IDNA punycode views
-- flags non-ASCII hostnames
-- flags mixed-script labels (for example Latin + Cyrillic)
-- uses `confusables` to identify likely ASCII lookalikes
+## What It Checks
 
-Findings are emitted with explicit codes:
+- hostname extraction from URL input
+- Unicode vs IDNA punycode representation
+- non-ASCII hostname signal
+- mixed-script labels (for example Latin + Cyrillic in one label)
+- confusable Unicode character mappings via `confusables`
 
+## Finding Codes
+
+- `HMG000_INVALID_URL`
 - `HMG001_NON_ASCII_HOSTNAME`
 - `HMG002_PUNYCODE_VISIBILITY`
 - `HMG003_MIXED_SCRIPT_HOSTNAME`
 - `HMG004_CONFUSABLE_CHARACTERS`
 
-Each finding contains evidence with both technical detail and incremental risk context (`Risk Delta`, `Cumulative Risk`).
+## Evidence Model
+
+Findings include:
+
+- hostname views (Unicode and IDNA)
+- incremental score context (`Risk Delta`, `Cumulative Risk`)
+- signal-specific evidence for explainability
+
+## Current Limitations
+
+- no allowlist support for known-safe IDN domains yet
+- no brand impersonation dictionary yet
+- no confidence labels yet

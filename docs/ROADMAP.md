@@ -1,52 +1,63 @@
 # Roadmap
 
-## Phase 1: Personal CLI Toolbelt
+## Current Progress (2026-02-16)
 
-Goal: local-first CLI for link, email, and QR safety checks.
+- [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
+- [x] Session 1: Homoglyph / IDN module with focused tests
+- [x] Session 2A: Orchestrator extraction and family-mode CLI rendering
+- [ ] Session 2B: Redirect chain module (next)
 
-## Session Checkpoint (as of 2026-02-13)
+## Next Session: 2B Redirect Chain Expansion
 
-- [x] Session 0: repo green (core models/scorer + CLI skeleton)
-- [x] Session 1: Homoglyph / IDN detector vertical slice
-- [ ] Session 2: Redirect expander (opt-in network mode)
+### Goal
 
-## Session 2 Scope (Next Session)
+Add safe redirect-chain analysis with explicit network opt-in.
 
-Goal: add safe redirect expansion without breaking offline-by-default behavior.
+### Work Items
 
-- Add Redirect module scaffold under `src/lsh/modules/redirect/`
-- Keep default behavior offline
-- Add explicit network opt-in flag for redirect expansion
-- Add hop cap and timeout controls
-- Return structured findings with evidence and recommendations
-- Add focused tests (including mocked chains and timeout case)
-- Update CLI summary output to include redirect guidance
+1. Create `src/lsh/modules/redirect/` with `analyzer.py`, `__init__.py`, `README.md`.
+2. Add CLI flags:
+   - `--network` (default false)
+   - `--max-hops` (default sensible cap)
+   - timeout option
+3. Ensure offline mode remains default.
+4. Add tests for:
+   - no redirect
+   - redirect chain
+   - loop / max-hop guard
+   - timeout handling
+5. Update architecture and module docs.
+6. Append session log.
 
-Definition of done:
+### Definition of Done
 
-- `lsh check <url>` remains valid offline
-- network mode can expand redirect chains safely
-- `ruff`, `mypy`, and `pytest` all pass
-- `SESSION_LOG.md` appended
+- Redirect analysis only runs when `--network` is present.
+- Redirect findings are explainable and consistent with scoring model.
+- `ruff`, `mypy`, `pytest` all pass.
+- Docs reflect new behavior.
 
-## Remaining Phase 1 Build Order
+## Near-Term Sequence
 
-1. Redirect Chain Expander (#2)
-2. Email Auth Checker (#5)
-3. QR Decoder (#7)
-4. Family Mode Explainer (#9)
-5. Orchestrator extraction from CLI
-6. CLI subcommands and flags parity (`--json`, future `--family`)
+1. Redirect chain module (#2)
+2. Email auth checker (#5)
+3. QR decoder (#7)
+4. Family formatter module (#9)
+5. Input-type routing for multi-input orchestrator
 
-## Phase 1 Exit Criteria
+## Phase Exit Criteria
 
-- URL checks produce risk score, evidence, and actionable summary
-- Redirect analysis is safe and opt-in when network is required
-- Email and QR modules are implemented and wired
-- Tests and typing/lint checks are green in CI
+Phase 1 is complete when:
 
-## Phase 2+
+- URL checks include module-based findings and clear guidance
+- Redirect support is safe and opt-in
+- Email and QR commands exist with parity for `--json` and family output
+- CI is green on PRs and local make/check workflow is stable
 
-- Phase 2: API + web adapter
-- Phase 3: inbox workflows and domain profiling
-- Phase 4: hardening and distribution strategy
+## Risks and Mitigations
+
+- Risk: network-dependent logic increases flaky tests  
+  Mitigation: isolate network tests and mock external calls by default.
+- Risk: false positives from internationalized domains  
+  Mitigation: add allowlist and confidence controls in follow-up sessions.
+- Risk: docs drift from implementation  
+  Mitigation: update docs in the same PR/commit as behavior changes.

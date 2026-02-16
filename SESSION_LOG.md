@@ -235,4 +235,63 @@ Development session history. Each entry documents what was done, why, and what's
 - Add redirect-focused test plan with mocked chains and timeout coverage
 
 **Tests:** N/A - docs-only session
+<<<<<<< HEAD
 >>>>>>> e430ae0 (docs: sync Session 1 status and Session 2 handoff docs)
+||||||| parent of f831a1e (feat(core): extract orchestrator and sync docs workflow)
+=======
+
+---
+
+## 2026-02-16 09:40 - Orchestrator refactor, family UX improvements, and documentation sync
+
+**Agent:** Codex
+
+**Goal:** Make substantial forward progress by extracting orchestration from CLI, improving user-facing CLI UX, tightening quality checks, and fully syncing project documentation/process files
+
+**Module(s) Touched:** core, adapters:cli, docs/process
+
+**Changes:**
+- Added `src/lsh/core/orchestrator.py` with `AnalysisOrchestrator` and shared `build_summary()`
+- Updated `src/lsh/adapters/cli.py` to use orchestrator instead of module execution/scoring inline
+- Added `--family` output mode for plain-language CLI rendering
+- Added dedicated CLI render helpers for technical and family views
+- Updated `src/lsh/core/models.py` to use `Field(default_factory=...)` for list/dict defaults
+- Updated `src/lsh/core/__init__.py` exports
+- Added `tests/core/test_orchestrator.py` for aggregate behavior and custom summary hook
+- Expanded `tests/test_smoke.py` for technical and family-mode CLI coverage
+- Tightened typing in `tests/modules/test_homoglyph.py`
+- Rewrote and synchronized markdown docs across root and `docs/`:
+  - `README.md`
+  - `CLAUDE.md`
+  - `ROADMAP.md`
+  - `PLAN_REVIEW.md`
+  - `SKILL.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+  - `docs/GITHUB_STRATEGY.md`
+  - `docs/SECURITY.md`
+  - `src/lsh/modules/homoglyph/README.md`
+
+**Decisions:**
+- Extracted orchestration into core now (before adding redirect module) because continuing to grow CLI-local orchestration would increase coupling and make future modules harder to add safely.
+- Added family output mode now because user-facing clarity is part of product value, and the existing summary/recommendation model already supported this with low implementation risk.
+- Included `mypy src tests` in validation during this session to catch strict-typing drift early, even though legacy docs mostly referenced `mypy src`.
+- Rewrote stale markdown docs as part of this same session because code and process docs were diverging, and that creates immediate onboarding and execution risk.
+
+**Open Questions:**
+- Should `--family` and `--json` be mutually exclusive by design, or should family formatting metadata also be represented in JSON output?
+- Should allowlist/false-positive controls be implemented before redirect module, or after redirect module lands?
+- Do you want root docs and `docs/` to remain mirrored, or should one become canonical and the other reduced to pointers?
+
+**Next:**
+- Session 2B: implement redirect module with strict opt-in network behavior (`--network`, hop cap, timeout)
+- Add dependency vulnerability scanning (`pip-audit`) to local and CI checks
+- Introduce first-pass false-positive controls for homoglyph findings (allowlist or confidence labels)
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (19 tests)
+>>>>>>> f831a1e (feat(core): extract orchestrator and sync docs workflow)

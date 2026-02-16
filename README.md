@@ -1,70 +1,84 @@
 # Link Safety Hub
 
-Modular security toolbelt for inspecting links, messages, emails, and QR codes.
+Modular, local-first security CLI for analyzing suspicious links and giving clear next steps.
 
-## Current Status (2026-02-13)
+## Current Status (2026-02-16)
 
 Implemented now:
 
-- Core models and scorer (`src/lsh/core/`)
-- CLI entrypoint with URL analysis (`lsh check <url>`)
-- Module #1 Homoglyph / IDN detector (`src/lsh/modules/homoglyph/`)
-- Family-friendly summary and actionable guidance in CLI output
-- Focused tests for Homoglyph/IDN scenarios
+- Core models and scoring in `src/lsh/core/`
+- Dedicated orchestrator layer in `src/lsh/core/orchestrator.py`
+- CLI adapter in `src/lsh/adapters/cli.py`
+- Module #1 Homoglyph / IDN detector in `src/lsh/modules/homoglyph/`
+- Two output modes:
+  - Technical (default): finding codes, evidence-driven categories
+  - Family (`--family`): plain-language summary and safer actions
+- JSON output for machine-readable integrations (`--json`)
+- Automated checks: `ruff`, `mypy`, `pytest`
 
 Planned next:
 
-- Module #2 Redirect Chain Expander (Session 2)
-- Email Auth checker, QR decoder, Family Mode pipeline layer
-- Dedicated orchestrator component (instead of CLI-local orchestration)
+- Module #2 Redirect chain expansion with explicit network opt-in
+- Module #5 Email auth checks (SPF/DKIM/DMARC)
+- Module #7 QR decode pipeline
+- Module #9 Family mode as a reusable formatter layer
 
 ## Quick Start
 
-```bash
-git clone https://github.com/YOUR_USERNAME/link-safety-hub.git
-cd link-safety-hub
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+### Windows PowerShell
 
-# URL safety check (offline)
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
 lsh check https://example.com
+lsh check https://xn--pple-43d.com --family
+```
+
+### macOS / Linux
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+lsh check https://example.com
+lsh check https://xn--pple-43d.com --family
+```
+
+## CLI Usage
+
+```bash
+lsh check <url> [--json] [--family]
+```
+
+Examples:
+
+```bash
+# Technical output
+lsh check https://xn--pple-43d.com
+
+# Plain-language output
+lsh check https://xn--pple-43d.com --family
 
 # JSON output
 lsh check https://xn--pple-43d.com --json
 ```
 
-## Current CLI Commands
-
-- `lsh check <url>`
-
-Note: `email-check`, `qr-scan`, and `inbox-scan` are planned but not implemented yet.
-
-## Modules
-
-| # | Module | Status | Description |
-|---|--------|--------|-------------|
-| 1 | Homoglyph / IDN Detector | Implemented (MVP) | Detects lookalike Unicode and punycode hostname risks |
-| 2 | Redirect Chain Expander | Planned | Safely unwinds shortened URLs |
-| 3 | Domain Risk Profiler | Planned | Age, TLD, DNS, typosquat detection |
-| 4 | Content Snapshot Analyzer | Planned | Safe headless fetch, fake login detection |
-| 5 | Email Auth Checker | Planned | SPF/DKIM/DMARC validation |
-| 6 | Attachment Triage | Planned | Static file analysis and URL extraction |
-| 7 | QR / Smishing Decoder | Planned | Decode QR payloads and re-analyze URLs |
-| 8 | Password Hygiene | Planned | Local strength and reuse checks |
-| 9 | Family Mode Explainer | Planned | Plain-language explanation layer |
-| 10 | Offline Inbox Scanner | Planned | Batch scan exported mailbox data |
-
 ## Project Structure
 
 ```text
-link-safety-hub/
+safe-link-project/
   src/lsh/
-    core/
     adapters/
+      cli.py
+    core/
+      models.py
+      orchestrator.py
+      scorer.py
     modules/
       homoglyph/
   tests/
+    core/
     modules/
   docs/
   SESSION_LOG.md
@@ -74,31 +88,39 @@ link-safety-hub/
 
 ```bash
 # Lint
-ruff check src/ tests/
+ruff check src tests
 
 # Type check
-mypy src/
+mypy src tests
 
-# Tests
+# Run tests
 pytest -v --tb=short
+
+# One command gate
+make check
 ```
 
-## Session Logging
+## Session Logging Process
 
-Every coding session appends an entry to `SESSION_LOG.md` with:
+Every coding session must append to `SESSION_LOG.md` with:
 
 - goal
 - files touched
 - decisions with reasoning
 - open questions
 - next steps
+- tests run and status
 
-## Documentation
+Before starting a new session, read the last 2-3 entries.
+
+## Documentation Index
 
 - Architecture: `docs/ARCHITECTURE.md`
 - Module specs: `docs/MODULES.md`
-- Build plan: `docs/ROADMAP.md`
-- Security guidance: `docs/SECURITY.md`
+- Roadmap: `docs/ROADMAP.md`
+- Plan review and risks: `docs/PLAN_REVIEW.md`
+- Security and responsible use: `docs/SECURITY.md`
+- GitHub workflow strategy: `docs/GITHUB_STRATEGY.md`
 
 ## License
 

@@ -37,6 +37,24 @@ def test_cli_check_json() -> None:
     assert '"overall_risk": 0' in result.output
 
 
+def test_cli_check_technical_view_shows_finding_codes() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["check", "https://xn--pple-43d.com"])
+    assert result.exit_code == 0
+    assert "Findings:" in result.output
+    assert "HMG002_PUNYCODE_VISIBILITY" in result.output
+
+
+def test_cli_check_family_view_hides_technical_codes() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["check", "https://xn--pple-43d.com", "--family"])
+    assert result.exit_code == 0
+    assert "What this means:" in result.output
+    assert "Why this may be risky:" in result.output
+    assert "HMG002_PUNYCODE_VISIBILITY" not in result.output
+    assert "Safer next steps:" in result.output
+
+
 def test_models_analysis_input() -> None:
     inp = AnalysisInput(input_type="url", content="https://example.com")
     assert inp.input_type == "url"
