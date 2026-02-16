@@ -43,6 +43,7 @@ def test_cli_check_technical_view_shows_finding_codes() -> None:
     assert result.exit_code == 0
     assert "Findings:" in result.output
     assert "HMG002_PUNYCODE_VISIBILITY" in result.output
+    assert "confidence=" in result.output
 
 
 def test_cli_check_family_view_hides_technical_codes() -> None:
@@ -53,6 +54,16 @@ def test_cli_check_family_view_hides_technical_codes() -> None:
     assert "Why this may be risky:" in result.output
     assert "HMG002_PUNYCODE_VISIBILITY" not in result.output
     assert "Safer next steps:" in result.output
+
+
+def test_cli_allowlist_domain_suppresses_domain_lookalike_findings() -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["check", "https://paypaI.com", "--allowlist-domain", "paypai.com", "--json"],
+    )
+    assert result.exit_code == 0
+    assert '"findings": []' in result.output
 
 
 def test_models_analysis_input() -> None:

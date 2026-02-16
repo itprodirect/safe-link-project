@@ -5,7 +5,8 @@ from __future__ import annotations
 import unicodedata
 from typing import Any
 
-from lsh.core.models import AnalysisInput, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.allowlist import allowlist_domains_for_input, is_hostname_allowlisted
+from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.url_tools import extract_hostname, parse_ip_literal
 
 try:
@@ -162,6 +163,7 @@ class HomoglyphDetector(ModuleInterface):
                     module=self.name,
                     category="HMG000_INVALID_URL",
                     severity=Severity.INFO,
+                    confidence=Confidence.LOW,
                     risk_score=10,
                     title="Could not extract a hostname from input",
                     explanation="URL parsing failed, so hostname safety checks could not run.",
@@ -177,6 +179,8 @@ class HomoglyphDetector(ModuleInterface):
             ]
         if parse_ip_literal(hostname) is not None:
             return []
+        if is_hostname_allowlisted(hostname, allowlist_domains_for_input(input)):
+            return []
 
         unicode_hostname = _idna_to_unicode(hostname) or hostname
         unicode_hostname = unicode_hostname.lower()
@@ -189,6 +193,7 @@ class HomoglyphDetector(ModuleInterface):
             *,
             code: str,
             risk_delta: int,
+            confidence: Confidence,
             title: str,
             explanation: str,
             family_explanation: str,
@@ -202,6 +207,7 @@ class HomoglyphDetector(ModuleInterface):
                     module=self.name,
                     category=code,
                     severity=Severity.INFO,
+                    confidence=confidence,
                     risk_score=cumulative_risk,
                     title=title,
                     explanation=explanation,
@@ -221,6 +227,7 @@ class HomoglyphDetector(ModuleInterface):
             add_finding(
                 code="HMG001_NON_ASCII_HOSTNAME",
                 risk_delta=25,
+                confidence=Confidence.MEDIUM,
                 title="Hostname contains non-ASCII characters",
                 explanation=(
                     "The domain includes Unicode characters, so visual lookalike checks are needed "
@@ -246,6 +253,7 @@ class HomoglyphDetector(ModuleInterface):
             add_finding(
                 code="HMG002_PUNYCODE_VISIBILITY",
                 risk_delta=15,
+                confidence=Confidence.LOW,
                 title="IDN punycode form is present",
                 explanation=(
                     "IDNA conversion shows a punycode hostname. "
@@ -283,6 +291,7 @@ class HomoglyphDetector(ModuleInterface):
             add_finding(
                 code="HMG003_MIXED_SCRIPT_HOSTNAME",
                 risk_delta=risk_delta,
+                confidence=Confidence.HIGH,
                 title="Hostname label mixes writing systems",
                 explanation=(
                     "One or more domain labels mix scripts (for example Latin + Cyrillic), "
@@ -314,6 +323,7 @@ class HomoglyphDetector(ModuleInterface):
             add_finding(
                 code="HMG004_CONFUSABLE_CHARACTERS",
                 risk_delta=25,
+                confidence=Confidence.HIGH,
                 title="Confusable hostname characters detected",
                 explanation=(
                     "Unicode confusable analysis found hostname characters that can be read as "

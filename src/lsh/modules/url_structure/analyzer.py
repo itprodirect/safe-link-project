@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qsl
 
-from lsh.core.models import AnalysisInput, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.rules import DECEPTIVE_PREFIX_HINTS, KNOWN_BRAND_TOKENS, NESTED_URL_PARAM_KEYS
 from lsh.core.url_tools import normalize_hostname, parse_url_like, registrable_domain
 
@@ -61,6 +61,7 @@ class URLStructureDetector(ModuleInterface):
             *,
             code: str,
             risk_delta: int,
+            confidence: Confidence,
             title: str,
             explanation: str,
             family_explanation: str,
@@ -74,6 +75,7 @@ class URLStructureDetector(ModuleInterface):
                     module=self.name,
                     category=code,
                     severity=Severity.INFO,
+                    confidence=confidence,
                     risk_score=cumulative_risk,
                     title=title,
                     explanation=explanation,
@@ -94,6 +96,7 @@ class URLStructureDetector(ModuleInterface):
             add_finding(
                 code="URL001_USERINFO_PRESENT",
                 risk_delta=40,
+                confidence=Confidence.HIGH,
                 title="URL contains hidden userinfo before '@'",
                 explanation=(
                     "The URL contains userinfo (`user:pass@host`) before the actual host. "
@@ -127,6 +130,7 @@ class URLStructureDetector(ModuleInterface):
                 add_finding(
                     code="URL002_DECEPTIVE_SUBDOMAIN",
                     risk_delta=risk_delta,
+                    confidence=Confidence.MEDIUM,
                     title="Subdomain includes trusted-looking brand tokens",
                     explanation=(
                         "The host prefix contains brand-like tokens, but the registrable domain "
@@ -163,9 +167,13 @@ class URLStructureDetector(ModuleInterface):
 
         if best_nested_signal is not None:
             risk_delta, key, value, nested_host, nested_registrable = best_nested_signal
+            confidence = (
+                Confidence.MEDIUM if nested_registrable != registrable else Confidence.LOW
+            )
             add_finding(
                 code="URL003_NESTED_URL_PARAMETER",
                 risk_delta=risk_delta,
+                confidence=confidence,
                 title="Query parameter contains another full URL",
                 explanation=(
                     "The URL query includes a nested destination URL, which can indicate "

@@ -52,7 +52,7 @@ lsh check https://xn--pple-43d.com --family
 ## CLI Usage
 
 ```bash
-lsh check <url> [--json] [--family]
+lsh check <url> [--json] [--family] [--allowlist-domain DOMAIN ...]
 ```
 
 Examples:
@@ -72,6 +72,9 @@ lsh check "http://google.com:80@evil.com"
 
 # Nested redirect-style query param
 lsh check "https://example.com/redirect?url=https://google.com"
+
+# Suppress expected lookalike findings for trusted domains
+lsh check "https://paypaI.com" --allowlist-domain paypai.com
 ```
 
 ## Detection Categories (Current)
@@ -80,6 +83,11 @@ lsh check "https://example.com/redirect?url=https://google.com"
 - `ASCII*`: ASCII lookalike brand-style signals
 - `URL*`: URL-structure deception signals
 - `NET*`: IP literal network-scope signals
+
+## P1 False-Positive Controls
+
+- `confidence` label on each finding (`LOW`, `MEDIUM`, `HIGH`)
+- `--allowlist-domain` to suppress domain-lookalike findings for known-safe domains
 
 ## Project Structure
 

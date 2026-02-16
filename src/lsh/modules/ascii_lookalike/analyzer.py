@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from lsh.core.models import AnalysisInput, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.allowlist import allowlist_domains_for_input, is_hostname_allowlisted
+from lsh.core.models import (
+    AnalysisInput,
+    Confidence,
+    Evidence,
+    Finding,
+    ModuleInterface,
+    Severity,
+)
 from lsh.core.rules import ASCII_AMBIGUOUS_GROUPS, ASCII_LEET_SUBSTITUTIONS, KNOWN_BRAND_TOKENS
 from lsh.core.url_tools import extract_hostname, parse_ip_literal, registrable_domain
 
@@ -62,6 +70,8 @@ class AsciiLookalikeDetector(ModuleInterface):
         hostname = extract_hostname(input.content)
         if hostname is None:
             return []
+        if is_hostname_allowlisted(hostname, allowlist_domains_for_input(input)):
+            return []
 
         if parse_ip_literal(hostname) is not None:
             return []
@@ -81,6 +91,7 @@ class AsciiLookalikeDetector(ModuleInterface):
             *,
             code: str,
             risk_delta: int,
+            confidence: Confidence,
             title: str,
             explanation: str,
             family_explanation: str,
@@ -94,6 +105,7 @@ class AsciiLookalikeDetector(ModuleInterface):
                     module=self.name,
                     category=code,
                     severity=Severity.INFO,
+                    confidence=confidence,
                     risk_score=cumulative_risk,
                     title=title,
                     explanation=explanation,
@@ -118,6 +130,7 @@ class AsciiLookalikeDetector(ModuleInterface):
             add_finding(
                 code="ASCII001_AMBIGUOUS_GLYPHS",
                 risk_delta=25,
+                confidence=Confidence.MEDIUM,
                 title="ASCII glyph ambiguity resembles a common brand",
                 explanation=(
                     "The registrable domain label differs by one ambiguous ASCII glyph "
@@ -141,6 +154,7 @@ class AsciiLookalikeDetector(ModuleInterface):
             add_finding(
                 code="ASCII002_LEET_SUBSTITUTION",
                 risk_delta=30,
+                confidence=Confidence.MEDIUM,
                 title="Digit-to-letter substitution resembles a common brand",
                 explanation=(
                     "The domain label uses digit substitutions (for example 0->o or 1->l) "

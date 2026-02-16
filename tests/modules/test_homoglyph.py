@@ -70,3 +70,15 @@ def test_homoglyph_skips_ip_literals() -> None:
     detector = HomoglyphDetector()
     findings = detector.analyze(AnalysisInput(input_type="url", content="http://127.0.0.1"))
     assert findings == []
+
+
+def test_homoglyph_respects_allowlist_domains() -> None:
+    detector = HomoglyphDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="url",
+            content="https://\u0430\u0440\u0440\u04cf\u0435.com",
+            metadata={"allowlist_domains": ["\u0430\u0440\u0440\u04cf\u0435.com"]},
+        )
+    )
+    assert findings == []

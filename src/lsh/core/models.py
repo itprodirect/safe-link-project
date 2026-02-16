@@ -18,6 +18,14 @@ class Severity(StrEnum):
     CRITICAL = "CRITICAL"
 
 
+class Confidence(StrEnum):
+    """Detector confidence labels for user trust calibration."""
+
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
 class AnalysisInput(BaseModel):
     """What goes into a module."""
 
@@ -39,6 +47,7 @@ class Finding(BaseModel):
     module: str
     category: str
     severity: Severity
+    confidence: Confidence = Confidence.MEDIUM
     risk_score: int = Field(ge=0, le=100)
     title: str
     explanation: str

@@ -364,3 +364,53 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (30 tests)
+
+## 2026-02-16 11:15 - P1 start: confidence labels and domain allowlist controls
+
+**Agent:** Codex
+
+**Goal:** Start P1 false-positive management by adding confidence labels and a practical allowlist path without changing offline architecture.
+
+**Module(s) Touched:** core, adapters:cli, modules:homoglyph/ascii_lookalike, docs
+
+**Changes:**
+- Added `Confidence` enum and `confidence` field on `Finding` in `src/lsh/core/models.py`
+- Added `src/lsh/core/allowlist.py` for normalized domain allowlist handling (supports URL/domain inputs and IDNA forms)
+- Added CLI option `--allowlist-domain` and metadata wiring in `src/lsh/adapters/cli.py`
+- Updated technical CLI rendering to include finding confidence (`confidence=...`)
+- Applied allowlist suppression to:
+  - `src/lsh/modules/homoglyph/analyzer.py`
+  - `src/lsh/modules/ascii_lookalike/analyzer.py`
+- Set confidence levels across modules:
+  - URL structure, ASCII, NET, HMG findings
+- Added tests:
+  - `tests/modules/test_homoglyph.py` allowlist coverage
+  - `tests/modules/test_ascii_lookalike.py` allowlist coverage
+  - `tests/test_smoke.py` CLI allowlist + confidence rendering coverage
+- Updated docs:
+  - `README.md`
+  - `docs/MODULES.md`
+  - `docs/ARCHITECTURE.md`
+  - `ROADMAP.md`
+  - `docs/ROADMAP.md`
+  - `PLAN_REVIEW.md`
+  - `docs/PLAN_REVIEW.md`
+
+**Decisions:**
+- Implemented allowlist as metadata-driven domain suppression first (rather than global config files) because it keeps behavior explicit per invocation and easy to test.
+- Scoped allowlist suppression initially to domain-lookalike detectors (`HMG*`, `ASCII*`) to avoid hiding structural/network signals that may still matter.
+- Added confidence labels now to improve trust calibration without changing risk-band scoring semantics.
+
+**Open Questions:**
+- Should allowlist scope be configurable per finding category/module?
+- Should we expose allowlist from file path (`--allowlist-file`) for team workflows?
+- Should summary text include confidence-aware phrasing when high-risk findings are low confidence?
+
+**Next:**
+- Continue P1 with confidence calibration docs/examples and allowlist granularity controls.
+- Begin Session 3 redirect module once P1 core controls settle.
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -q` passed (33 tests)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lsh.core.models import AnalysisInput, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.url_tools import IPAddress, extract_hostname, parse_ip_literal
 
 
@@ -46,6 +46,7 @@ class NetIPDetector(ModuleInterface):
                     module=self.name,
                     category="NET001_PRIVATE_IP_LITERAL",
                     severity=Severity.INFO,
+                    confidence=Confidence.LOW,
                     risk_score=20,
                     title="URL uses a private or local IP address",
                     explanation=(
@@ -73,6 +74,7 @@ class NetIPDetector(ModuleInterface):
                 module=self.name,
                 category="NET002_PUBLIC_IP_LITERAL",
                 severity=Severity.INFO,
+                confidence=Confidence.MEDIUM,
                 risk_score=25,
                 title="URL uses a public IP address instead of a domain",
                 explanation=(

@@ -6,6 +6,7 @@
 - [x] Session 1: Homoglyph / IDN module with focused tests
 - [x] Session 2A: Orchestrator extraction and family-mode CLI rendering
 - [x] Session 2B: Offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
+- [x] Session 2C: P1 start (`confidence` labels + domain allowlist path)
 - [ ] Session 3: Redirect chain module (next)
 
 ## Next Session: 3 Redirect Chain Expansion

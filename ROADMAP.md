@@ -8,6 +8,7 @@ Completed:
 - Session 1: Homoglyph / IDN detector
 - Session 2A: orchestrator extraction + CLI family mode + stronger tests
 - Session 2B: offline URL trust-signal expansion (`ASCII*`, `URL*`, `NET*`)
+- Session 2C: P1 start (`confidence` labels + domain allowlist path)
 
 In progress:
 

@@ -69,7 +69,10 @@ def _print_technical_view(url: str, result: AnalysisResult) -> None:
 
     click.echo("Findings:")
     for finding in result.findings:
-        click.echo(f"- [{finding.category}] {finding.title} ({finding.risk_score}/100)")
+        click.echo(
+            f"- [{finding.category}] {finding.title} "
+            f"({finding.risk_score}/100, confidence={finding.confidence.value})"
+        )
 
     recommendations = _collect_recommendations(result.findings)
     if not recommendations:
@@ -117,9 +120,19 @@ def main() -> None:
     is_flag=True,
     help="Use plain-language output with simplified findings.",
 )
-def check(url: str, as_json: bool, family_mode: bool) -> None:
+@click.option(
+    "--allowlist-domain",
+    "allowlist_domains",
+    multiple=True,
+    help="Suppress domain-lookalike findings for these trusted domains.",
+)
+def check(url: str, as_json: bool, family_mode: bool, allowlist_domains: tuple[str, ...]) -> None:
     """Analyze a URL for safety issues."""
-    analysis_input = AnalysisInput(input_type="url", content=url)
+    analysis_input = AnalysisInput(
+        input_type="url",
+        content=url,
+        metadata={"allowlist_domains": list(allowlist_domains)},
+    )
     result = _URL_ORCHESTRATOR.analyze(analysis_input)
     if as_json:
         click.echo(result.model_dump_json(indent=2))

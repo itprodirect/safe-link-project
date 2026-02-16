@@ -21,3 +21,15 @@ def test_leet_substitution_domain_is_flagged() -> None:
 def test_leet_substitution_for_paypal_is_flagged() -> None:
     codes = _codes("https://paypa1.com")
     assert "ASCII002_LEET_SUBSTITUTION" in codes
+
+
+def test_ascii_lookalike_respects_allowlist_domains() -> None:
+    detector = AsciiLookalikeDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="url",
+            content="https://paypaI.com",
+            metadata={"allowlist_domains": ["paypai.com"]},
+        )
+    )
+    assert findings == []

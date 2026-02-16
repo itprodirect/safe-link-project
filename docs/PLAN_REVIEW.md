@@ -27,6 +27,16 @@ Required guardrails:
 
 Current Unicode checks can flag legitimate international domains, and brand-token heuristics are intentionally conservative.
 
+What changed:
+
+- Added initial `confidence` labels on findings
+- Added initial domain allowlist flow (`allowlist_domains` / `--allowlist-domain`)
+
+What still remains:
+
+- per-category allowlist granularity
+- explicit confidence calibration guidance in docs for end users
+
 Recommended follow-up:
 
 - allowlist support by hostname/domain pattern

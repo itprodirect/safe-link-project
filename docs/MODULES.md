@@ -112,3 +112,12 @@ Finding codes:
 2. Keep behavior deterministic and testable.
 3. Emit evidence and recommendations for every non-info signal.
 4. Avoid storing state in module instances.
+5. Set `confidence` intentionally (`LOW`, `MEDIUM`, `HIGH`) for user-calibrated trust.
+
+## P1 Controls (Started)
+
+- Domain allowlist support via input metadata (`allowlist_domains`)
+- CLI passthrough: `--allowlist-domain`
+- Current allowlist suppression scope:
+  - homoglyph findings (`HMG*`)
+  - ASCII lookalike findings (`ASCII*`)
