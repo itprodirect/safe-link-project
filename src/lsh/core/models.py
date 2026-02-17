@@ -26,6 +26,16 @@ class Confidence(StrEnum):
     HIGH = "HIGH"
 
 
+class NormalizedURL(BaseModel):
+    """Result of URL canonicalization: original input plus canonical form."""
+
+    original: str
+    canonical: str
+    original_host: str = ""
+    canonical_host: str = ""
+    normalization_notes: list[str] = Field(default_factory=list)
+
+
 class AnalysisInput(BaseModel):
     """What goes into a module."""
 

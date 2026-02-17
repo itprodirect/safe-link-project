@@ -7,6 +7,7 @@ from urllib.parse import parse_qsl
 
 from lsh.core.allowlist import should_suppress_for_allowlist
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
+from lsh.core.normalizer import iterative_percent_decode
 from lsh.core.rules import DECEPTIVE_PREFIX_HINTS, KNOWN_BRAND_TOKENS, NESTED_URL_PARAM_KEYS
 from lsh.core.url_tools import normalize_hostname, parse_url_like, registrable_domain
 
@@ -39,7 +40,7 @@ class URLStructureDetector(ModuleInterface):
 
     @property
     def version(self) -> str:
-        return "0.1.0"
+        return "0.2.0"
 
     def analyze(self, input: AnalysisInput) -> list[Finding]:
         if input.input_type != "url":
@@ -199,4 +200,125 @@ class URLStructureDetector(ModuleInterface):
                 ],
             )
 
+        # --- URL004: Fragment deception ---
+        fragment = parsed.fragment
+        if fragment:
+            fragment_finding = self._check_fragment_deception(
+                fragment, hostname, cumulative_risk
+            )
+            if fragment_finding is not None:
+                findings.append(fragment_finding)
+                cumulative_risk = fragment_finding.risk_score
+
+        # --- URL005: Excessive / suspicious percent-encoding ---
+        _decoded_url, decode_rounds = iterative_percent_decode(input.content)
+        encoding_signals: list[str] = []
+
+        if decode_rounds >= 2:
+            encoding_signals.append(f"double-encoding ({decode_rounds} rounds)")
+        if re.search(r"%[0-9a-fA-F]{2}", parsed.netloc or ""):
+            encoding_signals.append("encoded hostname")
+        if re.search(r"%2[eE]%2[eE]|%2[eE]\.|\.%2[eE]", input.content):
+            encoding_signals.append("encoded path traversal")
+
+        if encoding_signals:
+            risk_delta = 15 + 5 * len(encoding_signals)
+            add_finding(
+                code="URL005_EXCESSIVE_ENCODING",
+                risk_delta=risk_delta,
+                confidence=Confidence.MEDIUM,
+                title="URL uses suspicious percent-encoding",
+                explanation=(
+                    f"Encoding signals detected: {', '.join(encoding_signals)}. "
+                    "Legitimate URLs rarely encode hostnames, use path traversal, "
+                    "or require multiple decode rounds."
+                ),
+                family_explanation=(
+                    "This link is scrambled in a way that normal websites "
+                    "don't use. It may be trying to hide something."
+                ),
+                extra_evidence=[
+                    Evidence(label="Decode Rounds", value=str(decode_rounds)),
+                    Evidence(label="Signals", value=", ".join(encoding_signals)),
+                ],
+                recommendations=[
+                    "Avoid links that appear excessively encoded.",
+                    "Verify the destination through a trusted channel.",
+                ],
+            )
+
         return findings
+
+    def _check_fragment_deception(
+        self,
+        fragment: str,
+        hostname: str,
+        cumulative_risk: int,
+    ) -> Finding | None:
+        """Detect fragments designed to make the URL look like a different destination."""
+        # Check for @ in fragment mimicking userinfo of a "real" domain
+        if "@" in fragment:
+            pseudo_domain = fragment.split("@", 1)[1].split("/")[0].split("?")[0]
+            pseudo_tokens = _tokens(pseudo_domain)
+            brand_matches = sorted(pseudo_tokens & KNOWN_BRAND_TOKENS)
+            if brand_matches:
+                risk = min(100, cumulative_risk + 30)
+                return Finding(
+                    module=self.name,
+                    category="URL004_FRAGMENT_DECEPTION",
+                    severity=Severity.INFO,
+                    confidence=Confidence.MEDIUM,
+                    risk_score=risk,
+                    title="Fragment mimics a trusted domain with '@'",
+                    explanation=(
+                        f"The URL fragment contains '@{pseudo_domain}', which may "
+                        "trick users into thinking this links to a trusted site. "
+                        "Browsers ignore the fragment for navigation."
+                    ),
+                    family_explanation=(
+                        "The end of this link makes it look like it goes to a "
+                        f"trusted site ({', '.join(brand_matches)}), but that part "
+                        "is just decoration — the real destination is different."
+                    ),
+                    evidence=[
+                        Evidence(label="Hostname", value=hostname),
+                        Evidence(label="Fragment", value=fragment),
+                        Evidence(label="Pseudo Domain", value=pseudo_domain),
+                        Evidence(label="Brand Matches", value=", ".join(brand_matches)),
+                    ],
+                    recommendations=[
+                        "Ignore everything after '#' in a URL.",
+                        "Verify the real host before the '#' sign.",
+                    ],
+                )
+
+        # Check for fragment that looks like a full URL
+        if fragment.startswith("http://") or fragment.startswith("https://"):
+            risk = min(100, cumulative_risk + 25)
+            return Finding(
+                module=self.name,
+                category="URL004_FRAGMENT_DECEPTION",
+                severity=Severity.INFO,
+                confidence=Confidence.MEDIUM,
+                risk_score=risk,
+                title="Fragment contains a full URL",
+                explanation=(
+                    "The URL fragment contains a full URL, likely an attempt to "
+                    "disguise the real destination. Browsers ignore everything "
+                    "after '#' for navigation."
+                ),
+                family_explanation=(
+                    "This link has another web address hidden after a '#' sign. "
+                    "That hidden part is just for show — the real destination is different."
+                ),
+                evidence=[
+                    Evidence(label="Hostname", value=hostname),
+                    Evidence(label="Fragment URL", value=fragment),
+                ],
+                recommendations=[
+                    "Ignore everything after '#' in a URL.",
+                    "Verify the real host before the '#' sign.",
+                ],
+            )
+
+        return None

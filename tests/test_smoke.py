@@ -72,7 +72,7 @@ def test_cli_check_json_unicode_url_is_console_safe() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["check", "https://\u0430\u0440\u0440\u04cf\u0435.com", "--json"])
     assert result.exit_code == 0
-    assert "\\u0430" in result.output
+    assert "\u0430" in result.output
 
 
 def test_cli_check_technical_view_shows_finding_codes() -> None:

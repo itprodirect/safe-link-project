@@ -81,6 +81,11 @@ Recommended:
 
 ## Next Session Priority
 
-1. QR decode module implementation and URL pipeline handoff.
-2. Tighten `pip-audit` CI policy after baseline review.
-3. Continue false-positive controls with per-rule allowlist granularity.
+1. URL normalization & adversarial detection hardening (Session 5):
+   - Canonicalization pipeline (`normalizer.py`) for integer/octal/hex IPs, localhost, IPv6-mapped IPv4.
+   - 6 new detection rules for evasion techniques.
+   - Compound scoring with numeric confidence and computed severity.
+   - 15-case adversarial regression suite.
+2. QR decode module implementation and URL pipeline handoff (Session 6).
+3. Tighten `pip-audit` CI policy after baseline review.
+4. Continue false-positive controls with per-rule allowlist granularity.

@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
 from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding, ModuleInterface
-from lsh.core.scorer import normalize, score_to_severity
+from lsh.core.scorer import aggregate_findings, normalize, score_to_severity
 
 SummaryBuilder = Callable[[Sequence[Finding], int], str]
 
@@ -82,7 +82,7 @@ class AnalysisOrchestrator:
     def analyze(self, analysis_input: AnalysisInput) -> AnalysisResult:
         """Run all modules, normalize findings, and return one analysis result."""
         findings = normalize(self._run_modules(analysis_input))
-        overall_risk = max((finding.risk_score for finding in findings), default=0)
+        overall_risk = aggregate_findings(findings)
         return AnalysisResult(
             input=analysis_input,
             findings=findings,

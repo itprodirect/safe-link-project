@@ -657,3 +657,61 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -q` passed (60 tests)
+
+---
+
+## 2026-02-17 - Session 5: URL normalization and adversarial detection hardening
+
+**Agent:** Claude Code (Claude Opus 4.6)
+
+**Goal:** Harden the URL analysis pipeline to catch evasion techniques: integer/octal/hex/abbreviated IPs, localhost aliases, fragment deception, excessive encoding, IPv6-mapped IPv4, and mixed notation. Add canonicalization layer and compound scoring.
+
+**Module(s) Touched:** core (normalizer, models, scorer, orchestrator), modules (net_ip, url_structure), tests, docs
+
+**Changes:**
+- Created `src/lsh/core/normalizer.py` with full URL canonicalization pipeline:
+  - Iterative percent-decode (max 5 rounds)
+  - Cross-platform IP parsing (integer, octal, hex, mixed, abbreviated) without socket.inet_aton
+  - Localhost alias resolution
+  - IPv6-mapped IPv4 extraction
+  - Default port removal, trailing dot stripping, path normalization
+- Added `NormalizedURL` model to `src/lsh/core/models.py`
+- Added 6 new detection rules in `src/lsh/modules/net_ip/analyzer.py`:
+  - `NET003_OBFUSCATED_IP` (integer/octal/hex/abbreviated IP encoding)
+  - `NET004_LOCALHOST_ALIAS` (localhost, localhost.localdomain, etc.)
+  - `NET005_IPV6_MAPPED_V4` (::ffff:x.x.x.x wrapping)
+  - `NET006_MIXED_NOTATION` (mixed hex/octal/decimal in dotted quads)
+- Added 2 new detection rules in `src/lsh/modules/url_structure/analyzer.py`:
+  - `URL004_FRAGMENT_DECEPTION` (fragment mimicking trusted domain with @ or full URL)
+  - `URL005_EXCESSIVE_ENCODING` (encoded hostname, path traversal, double-encoding)
+- Updated `src/lsh/core/scorer.py`:
+  - Added `confidence_score()` numeric mapping for Confidence enum
+  - Added `compute_severity_score()` (risk * confidence)
+  - Added `aggregate_findings()` compound scoring (worst-floor + diminishing bonuses at 0.15^i, cap 100)
+- Updated `src/lsh/core/orchestrator.py` to use compound aggregation instead of max-score-wins
+- Fixed pre-existing `model_dump_json(ensure_ascii=True)` bug in `cli.py` (unsupported in Pydantic 2.11)
+- Created `tests/core/test_normalizer.py` (47 unit tests)
+- Created `tests/test_adversarial_urls.py` (35 parametrized + targeted tests for 15 adversarial cases)
+- Updated `docs/ROADMAP.md` and `docs/PLAN_REVIEW.md` for session scope
+
+**Decisions:**
+- Used next-available rule IDs (NET003-NET006, URL004-URL005) instead of the session plan's IDs to avoid collisions with existing NET002_PUBLIC_IP_LITERAL and URL003_NESTED_URL_PARAMETER.
+- Kept Severity enum and bands unchanged (INFO/LOW/MEDIUM/HIGH/CRITICAL) to avoid a massive refactor across all modules and tests. The plan's SAFE/INFO/CAUTION/WARNING/DANGER bands can be adopted in a future session.
+- Kept Confidence as StrEnum with numeric mapping rather than switching to float, preserving backward compatibility with existing modules and display logic.
+- Made IP parsing fully deterministic and cross-platform by not using socket.inet_aton (different octal behavior on Linux vs Windows).
+- Broadened URL005_EXCESSIVE_ENCODING to detect encoded hostnames and path traversal (not just round count), since the test cases require catching single-round-but-suspicious patterns.
+
+**Open Questions:**
+- Should severity band labels be migrated to the plan's SAFE/INFO/CAUTION/WARNING/DANGER scheme in a dedicated refactor session?
+- Should the normalizer be run as a shared pre-processing step (cached on AnalysisInput) instead of per-module?
+- Should fragment deception check use a larger brand list or configurable patterns?
+
+**Next:**
+- Session 6: QR decode module and URL pipeline handoff
+- Optional: detection rules documentation page (docs/DETECTION_RULES.md)
+- Optional: severity band label migration
+
+**Tests:**
+- `ruff check src tests` passed
+- `mypy src tests` passed
+- `pytest -v --tb=short` passed (142 tests, up from 60)

@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-02-16)
+## Current Progress (2026-02-17)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -10,34 +10,39 @@
 - [x] Session 2D: P1 continuation (`--allowlist-file`, scoped categories, confidence-aware family summaries)
 - [x] Session 3: Redirect chain module (`--network`, `--max-hops`, `--timeout`)
 - [x] Session 4: Email auth module + dependency-audit wiring
-- [ ] Session 5: QR decode module (next)
+- [ ] Session 5: URL normalization and adversarial detection hardening (current)
+- [ ] Session 6: QR decode module
 
-## Next Session: 5 QR Decoder
+## Next Session: 5 URL Normalization & Adversarial Detection
 
 ### Goal
 
-Add local QR decode analysis and route decoded URLs into existing URL safety pipeline.
+Harden the URL analysis pipeline to catch evasion techniques that bypass current detection: integer IPs, octal notation, localhost, fragment deception, excessive encoding, and IPv6-mapped IPv4. Add a canonicalization layer and compound scoring.
 
 ### Work Items
 
-1. Create `src/lsh/modules/qr_decode/` with decode + extraction flow.
-2. Add CLI path for QR image input.
-3. Run decoded URLs through existing URL module pipeline.
-4. Add fixtures and deterministic tests.
-5. Update docs and session log.
+1. Create `src/lsh/core/normalizer.py` with two-phase canonicalization pipeline.
+2. Add `NormalizedURL` model to `models.py`.
+3. Add 6 new detection rules: `NET002_OBFUSCATED_IP`, `NET003_LOCALHOST_ALIAS`, `URL003_FRAGMENT_DECEPTION`, `URL004_EXCESSIVE_ENCODING`, `URL005_MIXED_NOTATION`, `NET004_IPV6_MAPPED_V4`.
+4. Update scoring: numeric confidence, computed severity, compound aggregation.
+5. Write adversarial test suite (15 parametrized cases) and normalizer unit tests.
+6. Integration smoke test and validation.
 
 ### Definition of Done
 
-- QR results are deterministic for local image inputs.
+- Normalizer canonicalizes integer/octal/hex/abbreviated IPs, localhost, IPv6-mapped IPv4.
+- All 15 adversarial test cases pass.
+- Compound scoring replaces max-score-wins.
 - `ruff`, `mypy`, `pytest` all pass.
-- Docs reflect new behavior.
+- Docs and session log reflect new behavior.
 
 ## Near-Term Sequence
 
-1. QR decoder (#7)
-2. Family formatter module (#9)
-3. Input-type routing for multi-input orchestrator
-4. Tighten dependency-audit policy in CI (`pip-audit`)
+1. URL normalization & adversarial detection (Session 5, current)
+2. QR decoder (#7)
+3. Family formatter module (#9)
+4. Input-type routing for multi-input orchestrator
+5. Tighten dependency-audit policy in CI (`pip-audit`)
 
 ## Phase Exit Criteria
 

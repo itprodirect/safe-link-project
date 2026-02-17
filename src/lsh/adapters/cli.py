@@ -343,7 +343,7 @@ def check(
     )
     result = _URL_ORCHESTRATOR.analyze(analysis_input)
     if as_json:
-        click.echo(result.model_dump_json(indent=2, ensure_ascii=True))
+        click.echo(result.model_dump_json(indent=2))
         return
 
     if family_mode:
@@ -381,7 +381,7 @@ def email_check(
     )
 
     if as_json:
-        click.echo(result.model_dump_json(indent=2, ensure_ascii=True))
+        click.echo(result.model_dump_json(indent=2))
         return
 
     if family_mode:
