@@ -72,6 +72,39 @@ def test_homoglyph_skips_ip_literals() -> None:
     assert findings == []
 
 
+def test_homoglyph_latin_diacritics_have_reduced_risk() -> None:
+    """Legitimate IDN domains with Latin diacritics (münchen.de) should score low."""
+    detector = HomoglyphDetector()
+    findings = detector.analyze(
+        AnalysisInput(input_type="url", content="https://m\u00fcnchen.de")
+    )
+    codes = _codes(findings)
+    # Should flag non-ASCII and confusable, but NOT mixed scripts
+    assert "HMG001_NON_ASCII_HOSTNAME" in codes
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" not in codes
+    # All findings should be LOW confidence for Latin diacritics
+    for finding in findings:
+        if finding.category in ("HMG001_NON_ASCII_HOSTNAME", "HMG004_CONFUSABLE_CHARACTERS"):
+            assert finding.confidence.value == "LOW"
+    # Total cumulative risk should be <= 40
+    max_risk = max(f.risk_score for f in findings)
+    assert max_risk <= 40
+
+
+def test_homoglyph_cyrillic_attack_is_still_critical() -> None:
+    """Cross-script attacks must remain high-risk despite the Latin diacritics heuristic."""
+    detector = HomoglyphDetector()
+    findings = detector.analyze(
+        AnalysisInput(input_type="url", content="https://xn--pple-43d.com")
+    )
+    codes = _codes(findings)
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in codes
+    assert "HMG004_CONFUSABLE_CHARACTERS" in codes
+    hmg004 = next(f for f in findings if f.category == "HMG004_CONFUSABLE_CHARACTERS")
+    assert hmg004.confidence.value == "HIGH"
+    assert hmg004.risk_score == 100
+
+
 def test_homoglyph_respects_allowlist_domains() -> None:
     detector = HomoglyphDetector()
     findings = detector.analyze(

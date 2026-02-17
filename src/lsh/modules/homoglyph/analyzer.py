@@ -89,6 +89,24 @@ def _mixed_script_labels(hostname: str) -> list[tuple[str, list[str]]]:
     return mixed
 
 
+def _is_single_script_latin(hostname: str) -> bool:
+    """Return True when every non-ASCII alphabetic character is Latin Extended.
+
+    Domains like münchen.de (ü = LATIN SMALL LETTER U WITH DIAERESIS) use
+    diacritics within the Latin script. These are far less suspicious than
+    cross-script attacks (e.g. Cyrillic characters that mimic Latin ones).
+    """
+    for character in hostname:
+        if character == "." or character.isascii():
+            continue
+        if not character.isalpha():
+            continue
+        name = unicodedata.name(character, "")
+        if "LATIN" not in name:
+            return False
+    return True
+
+
 def _ascii_lookalike_forms(hostname: str) -> list[str]:
     """Generate ASCII lookalike forms using the confusables package."""
     if confusables is None:
@@ -223,11 +241,22 @@ class HomoglyphDetector(ModuleInterface):
                 )
             )
 
+        # Pre-compute: single-script Latin with diacritics (e.g., münchen.de)
+        # reduces risk for HMG001 and HMG004 when no mixed scripts are present.
+        mixed_labels = _mixed_script_labels(unicode_hostname)
+        is_latin_diacritics = (
+            _has_non_ascii(unicode_hostname)
+            and not mixed_labels
+            and _is_single_script_latin(unicode_hostname)
+        )
+
         if _has_non_ascii(unicode_hostname):
+            hmg001_delta = 10 if is_latin_diacritics else 25
+            hmg001_conf = Confidence.LOW if is_latin_diacritics else Confidence.MEDIUM
             add_finding(
                 code="HMG001_NON_ASCII_HOSTNAME",
-                risk_delta=25,
-                confidence=Confidence.MEDIUM,
+                risk_delta=hmg001_delta,
+                confidence=hmg001_conf,
                 title="Hostname contains non-ASCII characters",
                 explanation=(
                     "The domain includes Unicode characters, so visual lookalike checks are needed "
@@ -275,7 +304,6 @@ class HomoglyphDetector(ModuleInterface):
                 ],
             )
 
-        mixed_labels = _mixed_script_labels(unicode_hostname)
         if mixed_labels:
             mixed_script_set = {script for _, scripts in mixed_labels for script in scripts}
             if {"Latin", "Cyrillic"}.issubset(mixed_script_set):
@@ -320,10 +348,12 @@ class HomoglyphDetector(ModuleInterface):
             for mapping in _confusable_character_examples(unicode_hostname):
                 evidence.append(Evidence(label="Character Mapping", value=mapping))
 
+            hmg004_delta = 5 if is_latin_diacritics else 25
+            hmg004_conf = Confidence.LOW if is_latin_diacritics else Confidence.HIGH
             add_finding(
                 code="HMG004_CONFUSABLE_CHARACTERS",
-                risk_delta=25,
-                confidence=Confidence.HIGH,
+                risk_delta=hmg004_delta,
+                confidence=hmg004_conf,
                 title="Confusable hostname characters detected",
                 explanation=(
                     "Unicode confusable analysis found hostname characters that can be read as "

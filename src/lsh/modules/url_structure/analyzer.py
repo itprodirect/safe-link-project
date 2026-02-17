@@ -100,7 +100,7 @@ class URLStructureDetector(ModuleInterface):
             displayed_target = parsed.netloc.rsplit("@", maxsplit=1)[0]
             add_finding(
                 code="URL001_USERINFO_PRESENT",
-                risk_delta=40,
+                risk_delta=55,
                 confidence=Confidence.HIGH,
                 title="URL contains hidden userinfo before '@'",
                 explanation=(
