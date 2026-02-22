@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
+from lsh.core.context import build_runtime_context, set_runtime_context
 from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding, ModuleInterface
 from lsh.core.scorer import aggregate_findings, normalize, score_to_severity
 
@@ -81,6 +82,7 @@ class AnalysisOrchestrator:
 
     def analyze(self, analysis_input: AnalysisInput) -> AnalysisResult:
         """Run all modules, normalize findings, and return one analysis result."""
+        set_runtime_context(analysis_input, build_runtime_context(analysis_input))
         findings = normalize(self._run_modules(analysis_input))
         overall_risk = aggregate_findings(findings)
         return AnalysisResult(
