@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from lsh.adapters.cli import main
@@ -22,6 +23,7 @@ def test_cli_help() -> None:
     assert result.exit_code == 0
     assert "Link Safety Hub" in result.output
     assert "email-check" in result.output
+    assert "qr-scan" in result.output
 
 
 def test_cli_check_help_includes_network_options() -> None:
@@ -31,6 +33,14 @@ def test_cli_check_help_includes_network_options() -> None:
     assert "--network" in result.output
     assert "--max-hops" in result.output
     assert "--timeout" in result.output
+
+
+def test_cli_qr_scan_help() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["qr-scan", "--help"])
+    assert result.exit_code == 0
+    assert "--all" in result.output
+    assert "--family" in result.output
 
 
 def test_cli_email_check_json_inline_headers() -> None:
@@ -53,6 +63,45 @@ def test_cli_email_check_file_input(tmp_path: Path) -> None:
     assert '"findings": []' in result.output
 
 
+def test_cli_qr_scan_json_routes_decoded_url_into_url_pipeline(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    image_path = tmp_path / "code.png"
+    image_path.write_bytes(b"not-a-real-png")
+
+    def fake_decode(_image_path: str) -> list[str]:
+        return ["http://google.com:80@evil.com", "plain text payload"]
+
+    monkeypatch.setattr("lsh.adapters.cli.decode_qr_payloads_from_image", fake_decode)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["qr-scan", str(image_path), "--json"])
+    assert result.exit_code == 0
+    assert '"selected_url": "http://google.com:80@evil.com"' in result.output
+    assert "URL001_USERINFO_PRESENT" in result.output
+
+
+def test_cli_qr_scan_handles_decoder_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from lsh.modules.qr_decode import QRDecodeUnavailableError
+
+    image_path = tmp_path / "code.png"
+    image_path.write_bytes(b"not-a-real-png")
+
+    def fake_decode(_image_path: str) -> list[str]:
+        raise QRDecodeUnavailableError("zbar backend missing")
+
+    monkeypatch.setattr("lsh.adapters.cli.decode_qr_payloads_from_image", fake_decode)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["qr-scan", str(image_path)])
+    assert result.exit_code != 0
+    assert "QR scanning unavailable" in result.output
+
+
 def test_cli_check_stub() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["check", "https://example.com"])
@@ -72,7 +121,7 @@ def test_cli_check_json_unicode_url_is_console_safe() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["check", "https://\u0430\u0440\u0440\u04cf\u0435.com", "--json"])
     assert result.exit_code == 0
-    assert "\u0430" in result.output
+    assert "\\u0430" in result.output
 
 
 def test_cli_check_technical_view_shows_finding_codes() -> None:

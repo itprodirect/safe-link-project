@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class Severity(StrEnum):
@@ -42,6 +42,7 @@ class AnalysisInput(BaseModel):
     input_type: Literal["url", "email_headers", "email_file", "qr_image", "text"]
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+    _runtime_context: Any = PrivateAttr(default=None)
 
 
 class Evidence(BaseModel):

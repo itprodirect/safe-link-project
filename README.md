@@ -1,52 +1,83 @@
 # Link Safety Hub
 
-Modular, local-first security CLI for analyzing suspicious links and giving clear next steps.
+Modular, local-first security CLI for analyzing suspicious links and email headers and giving clear next steps.
 
-## Current Status (2026-02-16)
+## Current Status (2026-02-23)
 
 Implemented now:
 
-- Core models and scoring in `src/lsh/core/`
+- Core contracts, scoring, allowlist logic, and URL utilities in `src/lsh/core/`
 - Dedicated orchestrator layer in `src/lsh/core/orchestrator.py`
+- URL normalization and adversarial parsing helpers in `src/lsh/core/normalizer.py`
+- Shared per-analysis URL runtime context/preprocessing cache in `src/lsh/core/context.py`
 - CLI adapter in `src/lsh/adapters/cli.py`
+- Reusable family formatter layer in `src/lsh/formatters/family.py`
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
-- `url_structure` (`@` userinfo tricks, deceptive subdomains, nested URL params)
-  - `net_ip` (private/public IP literal host detection)
+  - `url_structure` (`@` userinfo, deceptive subdomains, nested URLs, fragment deception, suspicious encoding)
+  - `net_ip` (private/public IP literals plus obfuscated IP formats, localhost aliases, IPv6-mapped IPv4)
 - Opt-in network module:
   - `redirect` (HEAD-only redirect chain analysis with hop/timeout safeguards)
 - Email-auth module:
   - `email_auth` (local SPF/DKIM/DMARC header signal analysis)
+- QR decode module + CLI handoff:
+  - `qr_decode` helpers for local QR payload decoding
+  - `lsh qr-scan <image>` to decode and run decoded URLs through the existing URL pipeline
 - Two output modes:
   - Technical (default): finding codes, evidence-driven categories
   - Family (`--family`): plain-language summary and safer actions
 - JSON output for machine-readable integrations (`--json`)
-- Automated checks: `ruff`, `mypy`, `pytest`
+- Adversarial regression coverage (obfuscated IPs, fragment deception, encoding evasion)
+- Aggregate scoring policy clarified: overall risk is `risk_score`-based; `confidence` is for trust-calibration messaging
 
-Planned next:
+Not implemented yet:
 
-- Module #7 QR decode pipeline
-- Module #9 Family mode as a reusable formatter layer
+- Full migration of all URL detectors to shared runtime context (`net_ip` and `url_structure` are migrated first)
+- Input-type module routing in orchestrator (instead of relying on detector early returns)
+- Python API adapter for a future web UI
 
 ## Quick Start
 
-### Windows PowerShell
+### Install (Windows PowerShell)
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-lsh check https://example.com
-lsh check https://xn--pple-43d.com --family
+python -m pip install -e ".[dev]"
 ```
 
-### macOS / Linux
+### Install (Git Bash on Windows / macOS / Linux)
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+source .venv/Scripts/activate  # Git Bash on Windows
+# source .venv/bin/activate    # macOS / Linux
+python -m pip install -e ".[dev]"
+```
+
+## Golden Path
+
+```bash
+# URL checks (technical)
+lsh check "http://google.com:80@evil.com"
+
+# JSON output (Windows-safe: Unicode is ASCII-escaped)
+lsh check --json "https://ｅxample.com"
+
+# Email header file analysis (CLI uses positional path + --file; no --headers-file flag)
+lsh email-check headers.txt --file --json
+
+# QR scan -> analyze first decoded URL payload
+lsh qr-scan suspicious-qr.png --json
+
+# Analyze all decoded URL payloads
+lsh qr-scan suspicious-qr.png --all --family
+```
+
+### Quick Smoke Examples
+
+```powershell
 lsh check https://example.com
 lsh check https://xn--pple-43d.com --family
 ```
@@ -56,6 +87,7 @@ lsh check https://xn--pple-43d.com --family
 ```bash
 lsh check <url> [--json] [--family] [--network] [--max-hops N] [--timeout SECONDS] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
 lsh email-check <headers_or_file> [--json] [--family] [--file]
+lsh qr-scan <image_path> [--json] [--family] [--all]
 ```
 
 Examples:
@@ -90,20 +122,41 @@ lsh check "https://bit.ly/example" --network --max-hops 5 --timeout 3.0
 
 # Email header authentication analysis
 lsh email-check headers.txt --file --json
+
+# QR scan -> URL analysis (first decoded URL payload by default)
+lsh qr-scan suspicious-qr.png --json
+
+# Analyze every decoded URL payload in the image
+lsh qr-scan suspicious-qr.png --all --family
 ```
 
 ## Detection Categories (Current)
 
 - `HMG*`: Unicode/IDN homoglyph risk signals
 - `ASCII*`: ASCII lookalike brand-style signals
-- `URL*`: URL-structure deception signals
-- `NET*`: IP literal network-scope signals
+- `URL*`: URL-structure deception signals (`URL001`-`URL005`)
+- `NET*`: IP literal and obfuscated-IP network-scope signals (`NET001`-`NET006`)
 - `RED*`: opt-in redirect-chain signals
 - `EML*`: email authentication header signals (SPF/DKIM/DMARC)
 
 Notes:
 
 - Registrable-domain checks use offline heuristics for common country-code suffix patterns.
+- URL hardening helpers live in `src/lsh/core/normalizer.py`.
+- Orchestrator now builds one shared URL runtime context per analysis (including normalized/canonical URL data); `net_ip` and `url_structure` consume it, with additional detector migrations planned.
+- Overall risk aggregation uses finding `risk_score` values only; `confidence` is shown to users and used for messaging, not aggregate math.
+
+## Common Issues
+
+- `make: command not found` (common on Windows):
+  - Use direct commands instead: `python -m pytest -q`, `ruff check .`, `mypy .`
+- Redirect checks did not run:
+  - Network checks are off by default. Enable redirect analysis with `--network`.
+- `qr-scan` says the QR decoder/backend is unavailable:
+  - QR scanning depends on `Pillow` + `pyzbar`, and `pyzbar` also requires a system `zbar` backend.
+  - The CLI returns a friendly error; URL and email commands still work normally.
+- JSON output shows escaped Unicode (for example `\uff45`) on Windows:
+  - This is intentional for console safety on non-UTF terminals (such as `cp1252`) and still produces valid JSON.
 
 ## P1 False-Positive Controls
 
@@ -122,14 +175,22 @@ safe-link-project/
     adapters/
       cli.py
     core/
+      allowlist.py
+      context.py
       models.py
+      normalizer.py
       orchestrator.py
+      rules.py
       scorer.py
+      url_tools.py
+    formatters/
+      family.py
     modules/
       ascii_lookalike/
       email_auth/
       homoglyph/
       net_ip/
+      qr_decode/
       redirect/
       url_structure/
   tests/
@@ -145,7 +206,7 @@ safe-link-project/
 # Lint
 ruff check src tests
 
-# Type check
+# Type check (stricter local pass)
 mypy src tests
 
 # Run tests
@@ -157,6 +218,11 @@ make check
 # Dependency audit
 make audit
 ```
+
+Notes:
+
+- `make` targets are Unix-style; on Windows PowerShell, run the underlying `ruff` / `mypy` / `pytest` commands directly unless using WSL/Git Bash.
+- CI currently type-checks `src/` and runs tests with `-m "not network"`.
 
 ## Session Logging Process
 
@@ -173,12 +239,19 @@ Before starting a new session, read the last 2-3 entries.
 
 ## Documentation Index
 
+Canonical project docs live under `docs/` (planning docs were de-duplicated from the repo root).
+
 - Architecture: `docs/ARCHITECTURE.md`
 - Module specs: `docs/MODULES.md`
 - Roadmap: `docs/ROADMAP.md`
 - Plan review and risks: `docs/PLAN_REVIEW.md`
 - Security and responsible use: `docs/SECURITY.md`
 - GitHub workflow strategy: `docs/GITHUB_STRATEGY.md`
+
+Agent workflow docs:
+
+- `CLAUDE.md`
+- `SKILL.md`
 
 ## License
 

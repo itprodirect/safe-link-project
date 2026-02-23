@@ -1,91 +1,127 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-02-16 after scoped allowlist + confidence UX upgrades.
+Status note: updated on 2026-02-23 after the alpha integration pass (shared URL runtime context, formatter extraction, QR handoff, scoring cleanup).
 
 ## What Is Working Well
 
 - Modular contract-first design is holding up.
-- Core scorer and result shape are stable.
-- Homoglyph detector provides actionable findings with evidence.
-- New orchestrator keeps CLI adapter thinner and easier to evolve.
-- Family-mode output reduces technical overload for non-technical users.
+- URL coverage is materially stronger after adversarial hardening (`NET003-006`, `URL004-005`).
+- Core normalizer helpers are deterministic and well covered by tests.
+- Orchestrator now provides shared URL runtime preprocessing context (first migration path in place).
+- Orchestrator keeps the CLI adapter thin and easy to evolve.
+- Family-mode output and confidence labels improve non-technical usability.
+- Family formatting is now reusable outside the CLI (`src/lsh/formatters/family.py`).
+- QR decode URL handoff is implemented (`lsh qr-scan`) without changing detector logic.
 
 ## What Still Needs Work
 
-### 1. Redirect Safety Layer (resolved in Session 3)
+### 1. Shared URL Preprocessing Is Partially Implemented (Migration In Progress)
 
-The roadmap expected redirect expansion and now has an implemented module with explicit controls.
+`src/lsh/core/context.py` now builds a shared URL runtime context once per analysis and attaches it to `AnalysisInput` as non-serialized runtime state.
 
-Implemented guardrails:
+Why this matters:
 
-- network must be opt-in
-- max-hop cap
-- tight timeouts
-- HEAD-only requests
-- no content fetching beyond what is needed for redirect resolution
+- reduces repeated parsing/normalization work
+- creates a stable path for raw + canonical URL semantics across detectors
+- improves adapter readiness for future API/web entry points
 
-### 2. False Positive Strategy Is In Progress
+Recommended follow-up:
 
-Current Unicode checks can flag legitimate international domains, and brand-token heuristics are intentionally conservative.
+- migrate remaining URL detectors (`homoglyph`, `ascii_lookalike`, optionally `redirect`) to the shared context
+- document which checks run on raw vs canonical forms
 
-What changed:
+### 2. Scoring Ambiguity Was Resolved (Risk-Only Aggregate)
 
-- Added initial `confidence` labels on findings
-- Added initial domain allowlist flow (`allowlist_domains` / `--allowlist-domain`)
-- Added scoped allowlist categories (`--allowlist-category`)
-- Added allowlist file support (`--allowlist-file`)
-- Added confidence-aware family summary wording and confidence visibility
+`src/lsh/core/scorer.py` now clearly documents the policy and removes the unused confidence-weighting helpers.
+
+Current policy:
+
+- overall risk aggregation uses finding `risk_score` values only
+- `confidence` remains user-facing trust calibration metadata (summary/formatter behavior)
+
+Follow-up:
+
+- continue calibration work on individual detector `risk_score` values and confidence labels
+
+### 3. QR Path Is Implemented (Local-Only, Optional Dependencies)
+
+`src/lsh/modules/qr_decode/` and `lsh qr-scan` now exist.
+
+Current behavior:
+
+- decodes local QR payloads via optional `Pillow` + `pyzbar`/zbar backend
+- filters HTTP(S) URL payloads
+- routes decoded URL payloads into the existing URL orchestrator
+- handles missing QR backend dependencies with friendly errors
+
+Follow-up:
+
+- consider structured multi-result API shapes for batch/web use
+- add fixture-based decode tests when a stable cross-platform fixture path is chosen
+
+### 4. Family Rendering Extraction Is Complete (Next: API/Web Variants)
+
+Family rendering now uses `src/lsh/formatters/family.py`.
+
+Recommended follow-up:
+
+- add API/web-oriented structured formatter outputs and response wrappers
+- keep CLI focused on parsing and transport only
+
+### 5. False Positive Strategy Is In Progress
+
+Current controls are a good start:
+
+- `confidence` labels
+- domain allowlist (`--allowlist-domain`, `--allowlist-file`)
+- scoped allowlist categories (`--allowlist-category`)
+- confidence-aware family summary wording
 
 What still remains:
 
 - per-rule allowlist granularity
-- explicit confidence calibration guidance in docs for end users
+- clearer operator documentation on confidence interpretation and expected false positives
+- broader brand/suffix fixtures for calibration
+
+### 6. CI Security Checks Are Started (Not Yet Enforced)
+
+`ruff`, `mypy`, and `pytest` run in CI. `pip-audit` is wired as informational.
 
 Recommended follow-up:
 
-- allowlist support by hostname/domain pattern
-- confidence labels on findings
-- explicit "suspicious but could be legitimate" language path
+- tighten `pip-audit` from informational to enforced once dependency baseline is triaged
+- add a dependency refresh cadence and triage notes
 
-### 3. CI Security Checks Are Started (Not Yet Enforced)
+## Documentation Sync Risk (Reduced, Not Gone)
 
-`ruff`, `mypy`, and `pytest` are in place. `pip-audit` is now wired in local tooling and CI as informational.
+The duplicate root planning docs were removed in favor of canonical copies under `docs/`, which reduces drift.
 
-Recommended:
+Remaining risk:
 
-- tighten CI policy from informational to enforced once baseline is stable
-- add periodic dependency refresh cadence
+- implementation changes still need same-session doc updates
 
-### 4. Documentation Sync Risk
+Recommended practice:
 
-Root docs and `docs/` docs are both used. Without strict discipline, they can drift.
-
-Recommended:
-
-- always update root and docs mirror files in same change
-- treat stale docs as a release blocker
+- treat docs updates as part of the definition of done for behavior changes
+- use `docs/` as the single source of truth for architecture/roadmap/plan docs
 
 ## Immediate Corrections Applied in This Session
 
-- Orchestrator extraction completed
-- Family-mode CLI output added
-- Strict typing improvements in tests
-- Core model defaults switched to `Field(default_factory=...)`
-- Added offline URL-structure checks (`URL001`-`URL003`)
-- Added IP literal checks (`NET001`/`NET002`)
-- Added ASCII lookalike checks (`ASCII001`/`ASCII002`)
-- Prevented homoglyph confusable logic on IP literals and ASCII-only spoof cases
-- Added opt-in redirect-chain checks with hop/timeout guardrails (`RED*`)
-- Added local email-auth checks (`EML*`) for SPF/DKIM/DMARC header signals
-- Added `pip-audit` target and informational CI step
+- Refreshed README and canonical `docs/` pages to match current code state
+- Updated module docs for `net_ip` and `url_structure` to include newer finding codes
+- Consolidated planning docs to `docs/` only (removed duplicate root copies)
+- Removed stale one-off session plan doc (`claude-code-session-plan-2-17-26.md`)
+- Updated agent workflow docs (`CLAUDE.md`, `SKILL.md`) to reference canonical planning docs
 
-## Next Session Priority
+## Highest-Leverage Alpha Next Steps (Top 5)
 
-1. URL normalization & adversarial detection hardening (Session 5):
-   - Canonicalization pipeline (`normalizer.py`) for integer/octal/hex IPs, localhost, IPv6-mapped IPv4.
-   - 6 new detection rules for evasion techniques.
-   - Compound scoring with numeric confidence and computed severity.
-   - 15-case adversarial regression suite.
-2. QR decode module implementation and URL pipeline handoff (Session 6).
-3. Tighten `pip-audit` CI policy after baseline review.
-4. Continue false-positive controls with per-rule allowlist granularity.
+- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+  Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
+- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+  Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
+- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+  Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
+- [ ] Deployment baseline (Docker + one provider)
+  Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
+- [ ] Minimal Next.js UI calling the Python API
+  Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

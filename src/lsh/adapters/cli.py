@@ -1,13 +1,15 @@
 """CLI adapter for Link Safety Hub."""
 
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 import click
 
-from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding
+from lsh.core.models import AnalysisInput, AnalysisResult, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
+from lsh.formatters.family import render_family_lines
 from lsh.modules import (
     AsciiLookalikeDetector,
     EmailAuthDetector,
@@ -15,6 +17,12 @@ from lsh.modules import (
     NetIPDetector,
     RedirectChainDetector,
     URLStructureDetector,
+)
+from lsh.modules.qr_decode import (
+    QRDecodeError,
+    QRDecodeUnavailableError,
+    decode_qr_payloads_from_image,
+    extract_url_payloads,
 )
 
 _URL_ORCHESTRATOR = AnalysisOrchestrator(
@@ -82,26 +90,6 @@ def _collect_recommendations(findings: list[Finding], limit: int = 3) -> list[st
     return recommendations
 
 
-def _collect_family_explanations(findings: list[Finding], limit: int = 3) -> list[str]:
-    """Collect unique family-mode explanations from findings."""
-    explanations: list[str] = []
-    seen: set[str] = set()
-    for finding in findings:
-        explanation = finding.family_explanation.strip()
-        if not explanation or explanation in seen:
-            continue
-        seen.add(explanation)
-        explanations.append(explanation)
-        if len(explanations) >= limit:
-            return explanations
-    return explanations
-
-
-def _overall_confidence(findings: list[Finding]) -> Confidence:
-    ranking = {Confidence.LOW: 1, Confidence.MEDIUM: 2, Confidence.HIGH: 3}
-    return max(findings, key=lambda finding: ranking[finding.confidence]).confidence
-
-
 def _load_allowlist_domains(
     allowlist_domains: tuple[str, ...],
     allowlist_files: tuple[str, ...],
@@ -161,6 +149,49 @@ def _resolve_email_input(source: str, treat_as_file: bool) -> tuple[str, str, st
     return "email_file", _read_text_file(candidate_path), str(candidate_path)
 
 
+def _analyze_url_result(url: str, metadata: dict[str, object] | None = None) -> AnalysisResult:
+    """Run URL analysis and return the aggregate result."""
+    return _URL_ORCHESTRATOR.analyze(
+        AnalysisInput(input_type="url", content=url, metadata=metadata or {})
+    )
+
+
+def _print_qr_scan_header(image_path: str, decoded_count: int, url_count: int) -> None:
+    click.echo(f"QR image: {_safe_console_text(image_path)}")
+    click.echo(f"Decoded payloads: {decoded_count} (URL-like: {url_count})")
+
+
+def _qr_json_payload(
+    *,
+    image_path: str,
+    decoded_payloads: list[str],
+    url_results: list[tuple[str, AnalysisResult]],
+    analyzed_all: bool,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "image_path": image_path,
+        "decoded_payloads": decoded_payloads,
+        "decoded_payload_count": len(decoded_payloads),
+        "url_payload_count": len(url_results),
+        "analyzed_all": analyzed_all,
+    }
+    if analyzed_all:
+        payload["results"] = [
+            {"url": url, "result": result.model_dump(mode="json")} for url, result in url_results
+        ]
+        return payload
+
+    selected_url, selected_result = url_results[0]
+    payload["selected_url"] = selected_url
+    payload["result"] = selected_result.model_dump(mode="json")
+    return payload
+
+
+def _echo_json(data: object) -> None:
+    """Emit JSON safely on non-UTF consoles while preserving machine readability."""
+    click.echo(json.dumps(data, indent=2, ensure_ascii=True))
+
+
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
     """Render technical CLI output with finding codes."""
     click.echo(f"URL: {_safe_console_text(url)}")
@@ -187,27 +218,16 @@ def _print_technical_view(url: str, result: AnalysisResult) -> None:
 
 def _print_family_view(url: str, result: AnalysisResult) -> None:
     """Render plain-language output intended for non-technical users."""
-    click.echo(f"Link checked: {_safe_console_text(url)}")
-    click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
-    click.echo(f"What this means: {result.summary}")
-    if result.findings:
-        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
-
-    explanations = _collect_family_explanations(result.findings)
-    if explanations:
-        click.echo("Why this may be risky:")
-        for explanation in explanations:
-            click.echo(f"- {explanation}")
-
-    recommendations = _collect_recommendations(result.findings)
-    click.echo("Safer next steps:")
-    if recommendations:
-        for recommendation in recommendations:
-            click.echo(f"- {recommendation}")
-        return
-
-    click.echo("- Keep using trusted bookmarks for important accounts.")
-    click.echo("- If unsure, verify with the sender in a separate message or call.")
+    for line in render_family_lines(
+        label="Link checked",
+        subject=_safe_console_text(url),
+        result=result,
+        fallback_recommendations=[
+            "Keep using trusted bookmarks for important accounts.",
+            "If unsure, verify with the sender in a separate message or call.",
+        ],
+    ):
+        click.echo(line)
 
 
 def _print_technical_email_view(source_label: str, result: AnalysisResult) -> None:
@@ -236,26 +256,15 @@ def _print_technical_email_view(source_label: str, result: AnalysisResult) -> No
 
 def _print_family_email_view(source_label: str, result: AnalysisResult) -> None:
     """Render family-oriented output for email header analysis."""
-    click.echo(f"Email checked: {_safe_console_text(source_label)}")
-    click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
-    click.echo(f"What this means: {result.summary}")
-    if result.findings:
-        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
-
-    explanations = _collect_family_explanations(result.findings)
-    if explanations:
-        click.echo("Why this may be risky:")
-        for explanation in explanations:
-            click.echo(f"- {explanation}")
-
-    recommendations = _collect_recommendations(result.findings)
-    click.echo("Safer next steps:")
-    if recommendations:
-        for recommendation in recommendations:
-            click.echo(f"- {recommendation}")
-        return
-
-    click.echo("- Be careful with urgent requests until sender identity is confirmed.")
+    for line in render_family_lines(
+        label="Email checked",
+        subject=_safe_console_text(source_label),
+        result=result,
+        fallback_recommendations=[
+            "Be careful with urgent requests until sender identity is confirmed.",
+        ],
+    ):
+        click.echo(line)
 
 
 @click.group()
@@ -336,14 +345,9 @@ def check(
     metadata["network_max_hops"] = network_max_hops
     metadata["network_timeout"] = network_timeout
 
-    analysis_input = AnalysisInput(
-        input_type="url",
-        content=url,
-        metadata=metadata,
-    )
-    result = _URL_ORCHESTRATOR.analyze(analysis_input)
+    result = _analyze_url_result(url, metadata)
     if as_json:
-        click.echo(result.model_dump_json(indent=2))
+        _echo_json(result.model_dump(mode="json"))
         return
 
     if family_mode:
@@ -381,7 +385,7 @@ def email_check(
     )
 
     if as_json:
-        click.echo(result.model_dump_json(indent=2))
+        _echo_json(result.model_dump(mode="json"))
         return
 
     if family_mode:
@@ -389,6 +393,76 @@ def email_check(
         return
 
     _print_technical_email_view(source_label, result)
+
+
+@main.command("qr-scan")
+@click.argument(
+    "image_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=str),
+)
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+@click.option(
+    "--family",
+    "family_mode",
+    is_flag=True,
+    help="Use plain-language output with simplified findings.",
+)
+@click.option(
+    "--all",
+    "analyze_all",
+    is_flag=True,
+    help="Analyze all decoded URL payloads instead of only the first URL payload.",
+)
+def qr_scan(
+    image_path: str,
+    as_json: bool,
+    family_mode: bool,
+    analyze_all: bool,
+) -> None:
+    """Decode a QR image and analyze extracted URL payloads."""
+    try:
+        decoded_payloads = decode_qr_payloads_from_image(image_path)
+    except QRDecodeUnavailableError as exc:
+        raise click.ClickException(f"QR scanning unavailable: {exc}") from exc
+    except QRDecodeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    if not decoded_payloads:
+        raise click.ClickException("No QR payloads were decoded from the image.")
+
+    url_payloads = extract_url_payloads(decoded_payloads)
+    if not url_payloads:
+        raise click.ClickException("Decoded QR payloads did not contain URL-like values.")
+
+    selected_urls = url_payloads if analyze_all else [url_payloads[0]]
+    url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
+
+    if as_json:
+        _echo_json(
+            _qr_json_payload(
+                image_path=image_path,
+                decoded_payloads=decoded_payloads,
+                url_results=url_results,
+                analyzed_all=analyze_all,
+            )
+        )
+        return
+
+    _print_qr_scan_header(image_path, len(decoded_payloads), len(url_payloads))
+
+    if not analyze_all and len(url_payloads) > 1:
+        click.echo("Using first URL payload (use --all to analyze every decoded URL).")
+
+    for index, (url, result) in enumerate(url_results, start=1):
+        if analyze_all:
+            if index > 1:
+                click.echo()
+            click.echo(f"[{index}/{len(url_results)}]")
+
+        if family_mode:
+            _print_family_view(url, result)
+        else:
+            _print_technical_view(url, result)
 
 
 if __name__ == "__main__":

@@ -715,3 +715,202 @@ Development session history. Each entry documents what was done, why, and what's
 - `ruff check src tests` passed
 - `mypy src tests` passed
 - `pytest -v --tb=short` passed (142 tests, up from 60)
+
+---
+
+## 2026-02-22 - Session 5B: Documentation consolidation and repo deep dive
+
+**Agent:** Codex
+
+**Goal:** Reconcile repository documentation with the actual codebase, remove duplicate/stale docs, and capture the highest-leverage next steps for the alpha.
+
+**Module(s) Touched:** docs/process only (`README.md`, `docs/*`, module READMEs, `CLAUDE.md`, `SKILL.md`, `SESSION_LOG.md`)
+
+**Changes:**
+- Audited implementation vs docs across CLI, core, modules, tests, and CI wiring.
+- Verified current baseline with `pytest -q` (144 passing tests).
+- Updated `README.md` to reflect current functionality, adversarial hardening work, and canonical docs layout.
+- Updated canonical docs:
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+  - `docs/GITHUB_STRATEGY.md`
+- Updated drifted module docs:
+  - `src/lsh/modules/net_ip/README.md` (now includes `NET003`-`NET006`)
+  - `src/lsh/modules/url_structure/README.md` (now includes `URL004`/`URL005`)
+- Updated agent workflow docs (`CLAUDE.md`, `SKILL.md`) to use canonical planning docs under `docs/`.
+- Removed duplicate root planning docs (`ROADMAP.md`, `PLAN_REVIEW.md`).
+- Removed stale one-off session plan doc (`claude-code-session-plan-2-17-26.md`).
+- Captured current architecture/product gaps in docs (shared `normalize_url(...)` preprocessing not yet wired, QR module still pending, family formatter still in CLI, scoring helper semantics need cleanup).
+
+**Decisions:**
+- Treat `docs/` as the single source of truth for roadmap/plan/architecture docs; no mirrored root copies.
+- Document current code behavior (including gaps) rather than leaving aspirational roadmap language in the primary docs.
+- Keep process/agent docs in sync when file locations change to avoid future session drift.
+
+**Open Questions:**
+- Should shared URL preprocessing + input-aware routing land before QR (for cleaner integration) or immediately after QR (for faster feature parity)?
+- Should confidence-weighted aggregation replace the current risk-only aggregate path, or should unused confidence scoring helpers be removed to avoid ambiguity?
+
+**Next:**
+- Session 6: QR decode module and URL pipeline handoff.
+- Shared URL preprocessing + input-aware routing in orchestrator.
+- Family formatter extraction from `cli.py`.
+- False-positive controls phase 2 and confidence calibration/operator docs.
+
+**Tests:**
+- `pytest -q` passed (144 tests)
+- Note: docs-only changes after the baseline test; no code behavior changes were introduced.
+
+---
+
+## 2026-02-23 - Session 6: Alpha integration pass (orchestrator context, formatter extraction, scoring cleanup, QR handoff)
+
+**Agent:** Codex
+
+**Goal:** Ship the highest-alpha integration improvements that make the tool smoother for future web/API adapters without rewriting the detection engine.
+
+**Module(s) Touched:** core, adapters, formatters, modules:qr_decode, tests, docs, session log
+
+**Changes:**
+- Added shared per-analysis runtime context and URL preprocessing cache:
+  - `src/lsh/core/context.py`
+  - runtime context attached to `AnalysisInput` via private attr in `src/lsh/core/models.py`
+  - orchestrator now builds context once per analysis (`src/lsh/core/orchestrator.py`)
+- Migrated first URL detectors to shared context:
+  - `src/lsh/modules/net_ip/analyzer.py`
+  - `src/lsh/modules/url_structure/analyzer.py`
+- Added focused tests proving URL context caching / single build per analysis:
+  - `tests/core/test_context.py`
+- Extracted family rendering into reusable formatter layer:
+  - `src/lsh/formatters/family.py`
+  - `src/lsh/formatters/__init__.py`
+  - CLI family output paths now call formatter helpers (`src/lsh/adapters/cli.py`)
+  - formatter tests added (`tests/formatters/test_family.py`)
+- Resolved scoring ambiguity by clarifying risk-only aggregate policy:
+  - removed unused confidence-weighting helpers from `src/lsh/core/scorer.py`
+  - documented confidence as informational/user-facing (not aggregate math)
+  - added scorer invariant tests (`tests/core/test_scorer.py`)
+- Implemented QR decode module + CLI URL handoff:
+  - `src/lsh/modules/qr_decode/analyzer.py`
+  - `src/lsh/modules/qr_decode/__init__.py`
+  - `src/lsh/modules/qr_decode/README.md`
+  - new CLI command: `lsh qr-scan <image_path> [--json] [--family] [--all]`
+  - decoded HTTP(S) QR payloads are routed through the existing URL orchestrator
+  - optional dependency/runtime backend errors are surfaced as friendly CLI errors
+  - tests added: `tests/modules/test_qr_decode.py`, QR smoke tests in `tests/test_smoke.py`
+- Fixed Windows console JSON output bug discovered during required smoke checks:
+  - `check`, `email-check`, and `qr-scan` JSON paths now use `json.dumps(..., ensure_ascii=True)` via shared `_echo_json(...)`
+  - updated Unicode JSON smoke assertion in `tests/test_smoke.py`
+- Updated canonical docs to reflect the new reality and next steps:
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+  - plus module README docs and agent context docs (`CLAUDE.md`, `SKILL.md`)
+- Kept `docs/` as the canonical planning/docs location and retained removal of root duplicate roadmap/plan files.
+
+**Decisions:**
+- Introduced runtime context as non-serialized state on `AnalysisInput` to preserve the existing JSON contract while enabling adapter-ready preprocessing.
+- Migrated only `net_ip` and `url_structure` first to keep risk low and demonstrate the pattern before touching all URL detectors.
+- Chose risk-only aggregate scoring (confidence remains messaging metadata) to avoid behavior churn while eliminating scorer ambiguity.
+- Implemented QR support as a thin decode + URL handoff layer instead of a new analysis pipeline.
+- Fixed JSON console safety with ASCII-escaped JSON to preserve machine-readability across Windows console encodings.
+
+**Open Questions:**
+- Should `homoglyph` / `ascii_lookalike` consume canonical host context or continue to prefer raw hostname views for some checks?
+- What should the first API adapter response shape be for multi-result flows (`qr-scan --all`, future batch scans) to stay stable for a Next.js frontend?
+
+**Next:**
+- Add input-aware module routing in orchestrator and migrate remaining URL detectors to shared runtime context.
+- Add a minimal Python API adapter (FastAPI) reusing orchestrator + `lsh.formatters.family`.
+- Add structured multi-item response wrappers for QR/batch workflows.
+- Continue false-positive controls phase 2 (per-rule allowlists + operator docs).
+- Tighten `pip-audit` CI policy after dependency baseline review.
+
+**Tests / Verification:**
+- `python -m pytest -q` passed (155 tests)
+- `ruff check .` passed
+- `mypy .` passed
+- `python -m lsh.adapters.cli check --json "http://google.com:80@evil.com"` passed (JSON output, `URL001_USERINFO_PRESENT` present)
+- `python -m lsh.adapters.cli check --json "https://ｅxample.com"` passed after JSON console-safety fix (Unicode escaped as `\uff45`)
+- `python -m lsh.adapters.cli qr-scan .tmp-blank-qr-test.png` returned friendly error on blank image (`No QR payloads were decoded from the image.`), confirming command/runtime behavior with local QR dependencies available
+
+---
+
+## 2026-02-23 - Session 6B: Wrap-up docs, roadmap alignment, and repo hygiene
+
+**Agent:** Codex
+
+**Branch:** `feat/orchestrator-preprocess-and-qr`
+
+**Related Commits (feature stack):**
+- `9ee24ce` `feat(core): add shared URL runtime context`
+- `6a4edd6` `refactor(cli): extract reusable family formatter`
+- `5e34c95` `refactor(core): clarify aggregate scoring policy`
+- `02dd5e7` `feat(cli): add qr-scan URL handoff flow`
+- `6e0e460` `fix(cli): make json output console-safe`
+- `5557289` `docs: sync architecture roadmap and session log`
+- `88cbe65` `chore: ignore local claude settings`
+- `e51c549` `docs: add seamless quickstart and context roadmap notes`
+
+**Goal:** Finish the session with push-ready documentation and session records that clearly explain what shipped, what broke, why decisions were made, and what the next session should do.
+
+**What Shipped (Wrap-up Summary):**
+- Canonical docs refreshed to match the shipped alpha integration work:
+  - shared URL runtime context in orchestrator (`src/lsh/core/context.py`)
+  - initial module migrations (`net_ip`, `url_structure`)
+  - reusable family formatter extraction (`src/lsh/formatters/family.py`)
+  - risk-only aggregate scoring policy clarification (`src/lsh/core/scorer.py`)
+  - QR decode module + `lsh qr-scan` URL handoff
+- `README.md` now includes a clearer golden path quickstart:
+  - install commands for PowerShell + Git Bash/macOS/Linux
+  - URL/email/QR examples
+  - Windows-safe JSON note (ASCII-escaped Unicode)
+  - common issues section (Windows `make`, QR backend, `--network`, JSON escaping)
+- `docs/ARCHITECTURE.md` now documents runtime URL context creation, contents, migration status, and why context is non-serialized runtime state.
+- `docs/MODULES.md` now includes a shared URL context adoption status table (module -> Yes/No/N/A) plus future migration targets.
+- `docs/ROADMAP.md` and `docs/PLAN_REVIEW.md` now share the same top-5 alpha next steps checklist (with rationale) to reduce drift.
+- Repo hygiene improved:
+  - `.claude/settings.local.json` is no longer tracked
+  - `.gitignore` now explicitly ignores `.claude/settings.local.json`
+
+**Verification Commands + Outcomes:**
+- `python -m pytest -q` -> passed (`155 passed`)
+- `ruff check .` -> passed
+- `mypy .` -> passed
+- `python -m lsh.adapters.cli check --json "http://google.com:80@evil.com"` -> passed (`URL001_USERINFO_PRESENT` present in JSON)
+- `python -m lsh.adapters.cli check --json "https://ｅxample.com"` -> passed (Unicode safely escaped in JSON as `\uff45`)
+- `python -m lsh.adapters.cli qr-scan .tmp-blank-qr-test.png` -> friendly error (`No QR payloads were decoded from the image.`) after creating a temporary blank image for smoke verification
+
+**Issue Hit During Verification:**
+- Windows console (`cp1252`) raised `UnicodeEncodeError` when printing JSON output containing non-ASCII characters (`python -m lsh.adapters.cli check --json "https://ｅxample.com"`).
+
+**Fix + Rationale:**
+- Switched CLI JSON output paths (`check`, `email-check`, `qr-scan`) to a shared `_echo_json(...)` helper using `json.dumps(..., ensure_ascii=True)`.
+- Rationale: preserves valid machine-readable JSON while avoiding terminal encoding crashes on non-UTF Windows consoles.
+
+**Known Risks + Mitigations:**
+- Partial shared-context migration:
+  - Risk: some URL detectors still parse raw input directly.
+  - Mitigation: documented current migration status and added explicit next-step checklist to migrate remaining detectors.
+- Runtime context semantics:
+  - Risk: confusion about what is serialized vs runtime-only.
+  - Mitigation: docs now state that context is non-serialized internal state to preserve public JSON contracts.
+- QR dependencies (`Pillow` / `pyzbar` / `zbar`):
+  - Risk: QR scanning may be unavailable on some systems.
+  - Mitigation: `qr-scan` has a friendly error path; README common-issues section documents this without impacting URL/email usage.
+
+**Next Session Priorities (Top 5):**
+- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+  Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
+- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+  Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
+- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+  Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
+- [ ] Deployment baseline (Docker + one provider)
+  Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
+- [ ] Minimal Next.js UI calling the Python API
+  Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

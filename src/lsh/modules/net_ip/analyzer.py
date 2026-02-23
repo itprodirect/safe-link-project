@@ -8,6 +8,7 @@ NET005 IPv6-mapped IPv4, NET006 mixed notation).
 from __future__ import annotations
 
 from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.normalizer import (
     LOCALHOST_ALIASES,
@@ -15,7 +16,7 @@ from lsh.core.normalizer import (
     parse_host_to_ipv4,
     resolve_ipv6_mapped_v4,
 )
-from lsh.core.url_tools import IPAddress, extract_hostname, normalize_hostname, parse_ip_literal
+from lsh.core.url_tools import IPAddress, normalize_hostname, parse_ip_literal
 
 
 def _is_private_scope(address: IPAddress) -> bool:
@@ -48,9 +49,10 @@ class NetIPDetector(ModuleInterface):
         if input.input_type != "url":
             return []
 
-        hostname = extract_hostname(input.content)
-        if hostname is None:
+        url_context = url_context_for_input(input)
+        if url_context is None or url_context.hostname is None:
             return []
+        hostname = url_context.hostname
         if should_suppress_for_allowlist(input, hostname, category_prefix="NET"):
             return []
 
@@ -89,7 +91,9 @@ class NetIPDetector(ModuleInterface):
             return findings
 
         # --- Check for IPv6-mapped IPv4 (NET005) ---
-        mapped_v4, _v6_notes = resolve_ipv6_mapped_v4(normalized_host)
+        mapped_v4 = url_context.ipv6_mapped_ipv4
+        if mapped_v4 is None:
+            mapped_v4, _v6_notes = resolve_ipv6_mapped_v4(normalized_host)
         if mapped_v4 is not None:
             findings.append(
                 Finding(
@@ -147,7 +151,7 @@ class NetIPDetector(ModuleInterface):
             return findings
 
         # --- Check standard IP literal (existing NET001/NET002) ---
-        parsed_ip = parse_ip_literal(hostname)
+        parsed_ip = url_context.ip_literal or parse_ip_literal(hostname)
         if parsed_ip is not None:
             if _is_private_scope(parsed_ip):
                 findings.append(
@@ -208,7 +212,10 @@ class NetIPDetector(ModuleInterface):
             return findings
 
         # --- Check for obfuscated IP (NET003) via normalizer ---
-        ipv4, ip_notes = parse_host_to_ipv4(normalized_host)
+        ipv4 = url_context.obfuscated_ipv4
+        ip_notes = list(url_context.obfuscated_ipv4_notes)
+        if ipv4 is None:
+            ipv4, ip_notes = parse_host_to_ipv4(normalized_host)
         if ipv4 is not None:
             canonical = str(ipv4)
             # Detect mixed notation (NET006)

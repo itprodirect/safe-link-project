@@ -11,8 +11,8 @@ Use this workflow for any feature or refactor session in this repo.
 ## Step 1: Read Context
 
 - last 2-3 entries in `SESSION_LOG.md`
-- `ROADMAP.md`
-- `PLAN_REVIEW.md`
+- `docs/ROADMAP.md`
+- `docs/PLAN_REVIEW.md`
 
 ## Step 2: Define Session Scope
 
@@ -43,7 +43,7 @@ If behavior/architecture changed, update:
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/MODULES.md`
-- roadmap/plan-review docs as needed
+- `docs/ROADMAP.md` / `docs/PLAN_REVIEW.md` as needed
 
 ## Step 6: Log Session
 

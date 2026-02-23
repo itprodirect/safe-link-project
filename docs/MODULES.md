@@ -29,8 +29,8 @@ Finding codes:
 Known limitations:
 
 - allowlist support is first-pass (domain-level only, no per-rule granularity)
-- no brand impersonation scoring yet
-- URL extraction from free text not implemented
+- no brand impersonation scoring in this module (ASCII brand checks live in `ascii_lookalike`)
+- URL extraction from free text is not implemented
 
 ### Module #1B: ASCII Lookalike Detector
 
@@ -59,6 +59,8 @@ Detections:
 - userinfo before `@` (`user:pass@host`) with explicit true-host evidence
 - deceptive subdomain prefixes like `login.google.com.evil.com`
 - nested URL parameters such as `?url=https://...`
+- fragment deception (for example `#@brand.com` or full URL in fragment)
+- suspicious percent-encoding (multi-round decoding, encoded hostnames, encoded path traversal)
 - registrable-domain comparisons use offline heuristics for common suffix structures
 
 Finding codes:
@@ -66,6 +68,13 @@ Finding codes:
 - `URL001_USERINFO_PRESENT`
 - `URL002_DECEPTIVE_SUBDOMAIN`
 - `URL003_NESTED_URL_PARAMETER`
+- `URL004_FRAGMENT_DECEPTION`
+- `URL005_EXCESSIVE_ENCODING`
+
+Notes:
+
+- The module uses cumulative risk within the module (`risk_delta` -> `cumulative risk`) before orchestrator aggregation.
+- Encoding checks reuse iterative decode helpers from `src/lsh/core/normalizer.py`.
 
 ### Module #1D: Net IP Detector
 
@@ -77,11 +86,24 @@ Detections:
 
 - private/local IP literal hostnames
 - public IP literal hostnames
+- obfuscated IPv4 formats (integer, octal, hex, abbreviated)
+- localhost aliases (for example `localhost.localdomain`)
+- IPv6-mapped IPv4 addresses (`::ffff:x.x.x.x`)
+- mixed numeric notation in dotted quads (hex + octal + decimal)
 
 Finding codes:
 
 - `NET001_PRIVATE_IP_LITERAL`
 - `NET002_PUBLIC_IP_LITERAL`
+- `NET003_OBFUSCATED_IP`
+- `NET004_LOCALHOST_ALIAS`
+- `NET005_IPV6_MAPPED_V4`
+- `NET006_MIXED_NOTATION`
+
+Notes:
+
+- Obfuscated IP parsing is deterministic and cross-platform (does not rely on `socket.inet_aton` behavior).
+- Some findings can stack (for example obfuscated IP + private/local scope).
 
 ### Module #2: Redirect Chain Expander
 
@@ -135,27 +157,67 @@ Finding codes:
 - `EML301_DMARC_FAIL`
 - `EML302_DMARC_WEAK_OR_MISSING`
 
+### Module #7: QR Decoder (URL Handoff Helper)
+
+- Path: `src/lsh/modules/qr_decode/`
+- Primary input type: `qr_image` (local file path)
+- Network requirement: none (offline)
+
+Detections / helper behavior:
+
+- local QR payload decoding from image files (`Pillow` + `pyzbar`/zbar backend)
+- HTTP(S) URL payload extraction (`extract_url_payloads(...)`)
+- optional detector findings for decoder-unavailable / image-read-error / no-payload cases (`QRC*`)
+- CLI `lsh qr-scan` reuses decoded URL payloads with the existing URL analysis pipeline
+
+Notes:
+
+- Decoder dependencies are optional and handled gracefully at runtime.
+- `lsh qr-scan` defaults to analyzing the first decoded URL payload and supports `--all`.
+
 ## Planned Next
 
-### Module #7: QR Decoder
+### Family Formatter (Implemented as Formatter Layer, not Module)
 
-- Path: `src/lsh/modules/qr_decode/` (planned)
-- Input type: `qr_image`
+- Path: `src/lsh/formatters/family.py`
+- Input: `AnalysisResult`
+- Purpose: reusable family-facing structured output and CLI text rendering
 
-### Module #9: Family Explainer
+### Next Module-Adjacent Work
 
-- Path: `src/lsh/modules/family_mode/` (planned)
-- Input: findings and result summary
+- Migrate remaining URL detectors to shared orchestrator URL runtime context
+- Add structured formatter variants for API/web responses
+
+## Shared URL Context Adoption Status
+
+`src/lsh/core/context.py` provides shared runtime URL preprocessing. Migration is intentionally incremental.
+
+| Module | Input | Uses Shared URL Context? | Notes |
+|---|---|---:|---|
+| `net_ip` | `url` | Yes | Uses cached hostname/IP parsing helpers and mapped-IP data |
+| `url_structure` | `url` | Yes | Uses cached parsed URL + hostname/registrable-domain values |
+| `homoglyph` | `url` | No (planned) | Still parses raw hostname directly |
+| `ascii_lookalike` | `url` | No (planned) | Still parses raw hostname directly |
+| `redirect` | `url` | No (optional future) | May benefit from shared hostname/domain context but also performs network calls |
+| `email_auth` | `email_headers`/`email_file` | N/A | Non-URL input |
+| `qr_decode` | `qr_image` | N/A | Decodes local image payloads before URL handoff |
+
+Future migration targets:
+
+- `homoglyph`
+- `ascii_lookalike`
+- optional `redirect` enrichment (for cached host/domain context)
 
 ## Cross-Module Rules
 
 1. Use shared `Finding` schema.
 2. Keep behavior deterministic and testable.
-3. Emit evidence and recommendations for every non-info signal.
+3. Emit evidence and recommendations for every non-trivial signal.
 4. Avoid storing state in module instances.
 5. Set `confidence` intentionally (`LOW`, `MEDIUM`, `HIGH`) for user-calibrated trust.
+6. Keep finding code IDs stable once published in docs/tests.
 
-## P1 Controls (Started)
+## P1 Controls (Current)
 
 - Domain allowlist support via input metadata (`allowlist_domains`)
 - Category-scope support via input metadata (`allowlist_categories`)

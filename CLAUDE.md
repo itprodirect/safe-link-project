@@ -4,14 +4,17 @@
 
 Link Safety Hub (LSH) is a modular Python security toolbelt. Modules analyze one threat vector each (for example lookalike domains, redirect chains, or email authentication issues) and produce structured findings with risk scores plus plain-language guidance.
 
-## Current State (2026-02-16)
+## Current State (2026-02-23)
 
 Implemented:
 
 - Core contracts in `src/lsh/core/models.py`
-- Scoring normalization in `src/lsh/core/scorer.py`
+- Scoring normalization and compound aggregation in `src/lsh/core/scorer.py`
 - Dedicated orchestration layer in `src/lsh/core/orchestrator.py`
+- URL normalization/adversarial parsing helpers in `src/lsh/core/normalizer.py`
+- Shared URL runtime preprocessing context in `src/lsh/core/context.py` (initial detector migration)
 - CLI adapter in `src/lsh/adapters/cli.py`
+- Reusable family formatter in `src/lsh/formatters/family.py`
 - URL modules in `src/lsh/modules/`:
   - `homoglyph`
   - `ascii_lookalike`
@@ -19,12 +22,15 @@ Implemented:
   - `net_ip`
   - `redirect` (opt-in network mode)
 - `email_auth` module for local SPF/DKIM/DMARC header analysis
+- `qr_decode` module helpers and `lsh qr-scan` CLI URL handoff
 - Family output mode (`lsh check <url> --family`)
+- Adversarial URL regression coverage (obfuscated IPs, fragment deception, encoding evasion)
 
 Not implemented yet:
 
-- QR decode module (#7)
-- Standalone Family explainer module (#9)
+- Full migration of all URL detectors to shared runtime context (currently `net_ip` + `url_structure`)
+- Input-aware orchestrator routing by `input_type`
+- Python API adapter for future web UI integration
 
 ## Tech Stack
 
@@ -69,10 +75,11 @@ Not implemented yet:
 
 ## Current Build Priority
 
-1. QR decoder
-2. Standalone family explainer module
-3. Additional module orchestration routing by `input_type`
-4. Dependency audit policy hardening (`pip-audit` enforcement workflow)
+1. Shared URL runtime context migration for remaining detectors + input-aware orchestrator routing
+2. Python API adapter for future Next.js UI (reuse orchestrator + formatter)
+3. False-positive controls phase 2 (per-rule allowlist granularity + operator docs)
+4. Structured multi-item response wrappers (QR `--all`, batch flows)
+5. Dependency audit policy hardening (`pip-audit` enforcement workflow)
 
 ## What Not To Do
 
