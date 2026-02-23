@@ -187,6 +187,11 @@ def _qr_json_payload(
     return payload
 
 
+def _echo_json(data: object) -> None:
+    """Emit JSON safely on non-UTF consoles while preserving machine readability."""
+    click.echo(json.dumps(data, indent=2, ensure_ascii=True))
+
+
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
     """Render technical CLI output with finding codes."""
     click.echo(f"URL: {_safe_console_text(url)}")
@@ -342,7 +347,7 @@ def check(
 
     result = _analyze_url_result(url, metadata)
     if as_json:
-        click.echo(result.model_dump_json(indent=2))
+        _echo_json(result.model_dump(mode="json"))
         return
 
     if family_mode:
@@ -380,7 +385,7 @@ def email_check(
     )
 
     if as_json:
-        click.echo(result.model_dump_json(indent=2))
+        _echo_json(result.model_dump(mode="json"))
         return
 
     if family_mode:
@@ -433,15 +438,12 @@ def qr_scan(
     url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
 
     if as_json:
-        click.echo(
-            json.dumps(
-                _qr_json_payload(
-                    image_path=image_path,
-                    decoded_payloads=decoded_payloads,
-                    url_results=url_results,
-                    analyzed_all=analyze_all,
-                ),
-                indent=2,
+        _echo_json(
+            _qr_json_payload(
+                image_path=image_path,
+                decoded_payloads=decoded_payloads,
+                url_results=url_results,
+                analyzed_all=analyze_all,
             )
         )
         return
