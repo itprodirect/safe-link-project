@@ -1,5 +1,6 @@
 """CLI adapter for Link Safety Hub."""
 
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -16,6 +17,12 @@ from lsh.modules import (
     NetIPDetector,
     RedirectChainDetector,
     URLStructureDetector,
+)
+from lsh.modules.qr_decode import (
+    QRDecodeError,
+    QRDecodeUnavailableError,
+    decode_qr_payloads_from_image,
+    extract_url_payloads,
 )
 
 _URL_ORCHESTRATOR = AnalysisOrchestrator(
@@ -140,6 +147,44 @@ def _resolve_email_input(source: str, treat_as_file: bool) -> tuple[str, str, st
         raise click.ClickException(f"Email header file not found: {source}")
 
     return "email_file", _read_text_file(candidate_path), str(candidate_path)
+
+
+def _analyze_url_result(url: str, metadata: dict[str, object] | None = None) -> AnalysisResult:
+    """Run URL analysis and return the aggregate result."""
+    return _URL_ORCHESTRATOR.analyze(
+        AnalysisInput(input_type="url", content=url, metadata=metadata or {})
+    )
+
+
+def _print_qr_scan_header(image_path: str, decoded_count: int, url_count: int) -> None:
+    click.echo(f"QR image: {_safe_console_text(image_path)}")
+    click.echo(f"Decoded payloads: {decoded_count} (URL-like: {url_count})")
+
+
+def _qr_json_payload(
+    *,
+    image_path: str,
+    decoded_payloads: list[str],
+    url_results: list[tuple[str, AnalysisResult]],
+    analyzed_all: bool,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "image_path": image_path,
+        "decoded_payloads": decoded_payloads,
+        "decoded_payload_count": len(decoded_payloads),
+        "url_payload_count": len(url_results),
+        "analyzed_all": analyzed_all,
+    }
+    if analyzed_all:
+        payload["results"] = [
+            {"url": url, "result": result.model_dump(mode="json")} for url, result in url_results
+        ]
+        return payload
+
+    selected_url, selected_result = url_results[0]
+    payload["selected_url"] = selected_url
+    payload["result"] = selected_result.model_dump(mode="json")
+    return payload
 
 
 def _print_technical_view(url: str, result: AnalysisResult) -> None:
@@ -295,12 +340,7 @@ def check(
     metadata["network_max_hops"] = network_max_hops
     metadata["network_timeout"] = network_timeout
 
-    analysis_input = AnalysisInput(
-        input_type="url",
-        content=url,
-        metadata=metadata,
-    )
-    result = _URL_ORCHESTRATOR.analyze(analysis_input)
+    result = _analyze_url_result(url, metadata)
     if as_json:
         click.echo(result.model_dump_json(indent=2))
         return
@@ -348,6 +388,79 @@ def email_check(
         return
 
     _print_technical_email_view(source_label, result)
+
+
+@main.command("qr-scan")
+@click.argument(
+    "image_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=str),
+)
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+@click.option(
+    "--family",
+    "family_mode",
+    is_flag=True,
+    help="Use plain-language output with simplified findings.",
+)
+@click.option(
+    "--all",
+    "analyze_all",
+    is_flag=True,
+    help="Analyze all decoded URL payloads instead of only the first URL payload.",
+)
+def qr_scan(
+    image_path: str,
+    as_json: bool,
+    family_mode: bool,
+    analyze_all: bool,
+) -> None:
+    """Decode a QR image and analyze extracted URL payloads."""
+    try:
+        decoded_payloads = decode_qr_payloads_from_image(image_path)
+    except QRDecodeUnavailableError as exc:
+        raise click.ClickException(f"QR scanning unavailable: {exc}") from exc
+    except QRDecodeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    if not decoded_payloads:
+        raise click.ClickException("No QR payloads were decoded from the image.")
+
+    url_payloads = extract_url_payloads(decoded_payloads)
+    if not url_payloads:
+        raise click.ClickException("Decoded QR payloads did not contain URL-like values.")
+
+    selected_urls = url_payloads if analyze_all else [url_payloads[0]]
+    url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
+
+    if as_json:
+        click.echo(
+            json.dumps(
+                _qr_json_payload(
+                    image_path=image_path,
+                    decoded_payloads=decoded_payloads,
+                    url_results=url_results,
+                    analyzed_all=analyze_all,
+                ),
+                indent=2,
+            )
+        )
+        return
+
+    _print_qr_scan_header(image_path, len(decoded_payloads), len(url_payloads))
+
+    if not analyze_all and len(url_payloads) > 1:
+        click.echo("Using first URL payload (use --all to analyze every decoded URL).")
+
+    for index, (url, result) in enumerate(url_results, start=1):
+        if analyze_all:
+            if index > 1:
+                click.echo()
+            click.echo(f"[{index}/{len(url_results)}]")
+
+        if family_mode:
+            _print_family_view(url, result)
+        else:
+            _print_technical_view(url, result)
 
 
 if __name__ == "__main__":
