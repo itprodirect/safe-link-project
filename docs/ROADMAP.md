@@ -42,15 +42,18 @@ Prepare the tool for a future web UI by adding adapter-ready seams without rewri
 - `ruff`, `mypy`, and `pytest` pass.
 - Docs and session log reflect architecture changes and adapter boundaries.
 
-## Highest-Leverage Alpha Next Steps
+## Highest-Leverage Alpha Next Steps (Top 5)
 
-1. Migrate remaining URL detectors to the shared URL runtime context and document raw-vs-canonical semantics.
-2. Add input-aware module routing in orchestrator (by `input_type`).
-3. Stand up a minimal Python API adapter for future Next.js integration (reuse orchestrator + `lsh.formatters.family`).
-4. False-positive controls phase 2:
-   - Add per-rule allowlist granularity and better operator docs for confidence interpretation.
-5. CI hardening:
-   - Tighten `pip-audit` from informational to enforced after dependency baseline triage.
+- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+  Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
+- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+  Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
+- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+  Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
+- [ ] Deployment baseline (Docker + one provider)
+  Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
+- [ ] Minimal Next.js UI calling the Python API
+  Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.
 
 ## Phase Exit Criteria
 

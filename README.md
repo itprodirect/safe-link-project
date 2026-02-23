@@ -39,22 +39,45 @@ Not implemented yet:
 
 ## Quick Start
 
-### Windows PowerShell
+### Install (Windows PowerShell)
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-lsh check https://example.com
-lsh check https://xn--pple-43d.com --family
+python -m pip install -e ".[dev]"
 ```
 
-### macOS / Linux
+### Install (Git Bash on Windows / macOS / Linux)
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+source .venv/Scripts/activate  # Git Bash on Windows
+# source .venv/bin/activate    # macOS / Linux
+python -m pip install -e ".[dev]"
+```
+
+## Golden Path
+
+```bash
+# URL checks (technical)
+lsh check "http://google.com:80@evil.com"
+
+# JSON output (Windows-safe: Unicode is ASCII-escaped)
+lsh check --json "https://ｅxample.com"
+
+# Email header file analysis (CLI uses positional path + --file; no --headers-file flag)
+lsh email-check headers.txt --file --json
+
+# QR scan -> analyze first decoded URL payload
+lsh qr-scan suspicious-qr.png --json
+
+# Analyze all decoded URL payloads
+lsh qr-scan suspicious-qr.png --all --family
+```
+
+### Quick Smoke Examples
+
+```powershell
 lsh check https://example.com
 lsh check https://xn--pple-43d.com --family
 ```
@@ -122,6 +145,18 @@ Notes:
 - URL hardening helpers live in `src/lsh/core/normalizer.py`.
 - Orchestrator now builds one shared URL runtime context per analysis (including normalized/canonical URL data); `net_ip` and `url_structure` consume it, with additional detector migrations planned.
 - Overall risk aggregation uses finding `risk_score` values only; `confidence` is shown to users and used for messaging, not aggregate math.
+
+## Common Issues
+
+- `make: command not found` (common on Windows):
+  - Use direct commands instead: `python -m pytest -q`, `ruff check .`, `mypy .`
+- Redirect checks did not run:
+  - Network checks are off by default. Enable redirect analysis with `--network`.
+- `qr-scan` says the QR decoder/backend is unavailable:
+  - QR scanning depends on `Pillow` + `pyzbar`, and `pyzbar` also requires a system `zbar` backend.
+  - The CLI returns a friendly error; URL and email commands still work normally.
+- JSON output shows escaped Unicode (for example `\uff45`) on Windows:
+  - This is intentional for console safety on non-UTF terminals (such as `cp1252`) and still produces valid JSON.
 
 ## P1 False-Positive Controls
 

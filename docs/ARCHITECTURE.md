@@ -54,6 +54,27 @@ Modules detect. Core orchestrates and scores. Adapters render.
 - `homoglyph` and `ascii_lookalike` still parse from raw input directly (migration path remains).
 - The runtime context is internal and attached to `AnalysisInput` as non-serialized runtime state, so JSON output contracts stay stable.
 
+## Runtime URL Context (Current Shape)
+
+Created in:
+
+- `AnalysisOrchestrator.analyze(...)` via `src/lsh/core/context.py`
+
+Contains (URL inputs):
+
+- raw parsed URL (`raw_parsed`)
+- normalized URL model from `normalize_url(...)` (`normalized_url`)
+- canonical parsed URL (`canonical_parsed`)
+- raw + canonical hostname and registrable-domain values
+- IDNA ASCII/Unicode hostname forms (best effort)
+- parsed literal-IP / obfuscated-IP / IPv6-mapped-IPv4 helpers
+
+Why non-serialized runtime state:
+
+- keeps the public `AnalysisResult` / CLI JSON contract unchanged
+- avoids leaking internal preprocessing details into downstream consumers before the API schema is intentionally designed
+- allows gradual detector migration without a breaking model change
+
 ## Contract Requirements
 
 Every module must:

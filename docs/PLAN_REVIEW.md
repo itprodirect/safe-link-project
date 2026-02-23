@@ -113,10 +113,15 @@ Recommended practice:
 - Removed stale one-off session plan doc (`claude-code-session-plan-2-17-26.md`)
 - Updated agent workflow docs (`CLAUDE.md`, `SKILL.md`) to reference canonical planning docs
 
-## Next Priority Stack
+## Highest-Leverage Alpha Next Steps (Top 5)
 
-1. Input-aware module routing in orchestrator + migrate remaining URL detectors to shared context.
-2. Python API adapter for future Next.js UI (reuse orchestrator + formatter layers).
-3. False-positive controls phase 2 (per-rule allowlists + calibration docs).
-4. Structured multi-result response shapes (QR `--all`, future batch flows).
-5. Tighten `pip-audit` CI policy after baseline review.
+- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+  Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
+- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+  Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
+- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+  Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
+- [ ] Deployment baseline (Docker + one provider)
+  Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
+- [ ] Minimal Next.js UI calling the Python API
+  Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

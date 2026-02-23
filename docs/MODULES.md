@@ -188,6 +188,26 @@ Notes:
 - Migrate remaining URL detectors to shared orchestrator URL runtime context
 - Add structured formatter variants for API/web responses
 
+## Shared URL Context Adoption Status
+
+`src/lsh/core/context.py` provides shared runtime URL preprocessing. Migration is intentionally incremental.
+
+| Module | Input | Uses Shared URL Context? | Notes |
+|---|---|---:|---|
+| `net_ip` | `url` | Yes | Uses cached hostname/IP parsing helpers and mapped-IP data |
+| `url_structure` | `url` | Yes | Uses cached parsed URL + hostname/registrable-domain values |
+| `homoglyph` | `url` | No (planned) | Still parses raw hostname directly |
+| `ascii_lookalike` | `url` | No (planned) | Still parses raw hostname directly |
+| `redirect` | `url` | No (optional future) | May benefit from shared hostname/domain context but also performs network calls |
+| `email_auth` | `email_headers`/`email_file` | N/A | Non-URL input |
+| `qr_decode` | `qr_image` | N/A | Decodes local image payloads before URL handoff |
+
+Future migration targets:
+
+- `homoglyph`
+- `ascii_lookalike`
+- optional `redirect` enrichment (for cached host/domain context)
+
 ## Cross-Module Rules
 
 1. Use shared `Finding` schema.
