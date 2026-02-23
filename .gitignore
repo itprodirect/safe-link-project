@@ -17,6 +17,9 @@ build/
 *.swp
 *.swo
 
+# Local agent/editor settings (machine-specific)
+.claude/settings.local.json
+
 # Testing
 .pytest_cache/
 .coverage
