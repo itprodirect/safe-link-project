@@ -837,3 +837,80 @@ Development session history. Each entry documents what was done, why, and what's
 - `python -m lsh.adapters.cli check --json "http://google.com:80@evil.com"` passed (JSON output, `URL001_USERINFO_PRESENT` present)
 - `python -m lsh.adapters.cli check --json "https://ｅxample.com"` passed after JSON console-safety fix (Unicode escaped as `\uff45`)
 - `python -m lsh.adapters.cli qr-scan .tmp-blank-qr-test.png` returned friendly error on blank image (`No QR payloads were decoded from the image.`), confirming command/runtime behavior with local QR dependencies available
+
+---
+
+## 2026-02-23 - Session 6B: Wrap-up docs, roadmap alignment, and repo hygiene
+
+**Agent:** Codex
+
+**Branch:** `feat/orchestrator-preprocess-and-qr`
+
+**Related Commits (feature stack):**
+- `9ee24ce` `feat(core): add shared URL runtime context`
+- `6a4edd6` `refactor(cli): extract reusable family formatter`
+- `5e34c95` `refactor(core): clarify aggregate scoring policy`
+- `02dd5e7` `feat(cli): add qr-scan URL handoff flow`
+- `6e0e460` `fix(cli): make json output console-safe`
+- `5557289` `docs: sync architecture roadmap and session log`
+- `88cbe65` `chore: ignore local claude settings`
+- `e51c549` `docs: add seamless quickstart and context roadmap notes`
+
+**Goal:** Finish the session with push-ready documentation and session records that clearly explain what shipped, what broke, why decisions were made, and what the next session should do.
+
+**What Shipped (Wrap-up Summary):**
+- Canonical docs refreshed to match the shipped alpha integration work:
+  - shared URL runtime context in orchestrator (`src/lsh/core/context.py`)
+  - initial module migrations (`net_ip`, `url_structure`)
+  - reusable family formatter extraction (`src/lsh/formatters/family.py`)
+  - risk-only aggregate scoring policy clarification (`src/lsh/core/scorer.py`)
+  - QR decode module + `lsh qr-scan` URL handoff
+- `README.md` now includes a clearer golden path quickstart:
+  - install commands for PowerShell + Git Bash/macOS/Linux
+  - URL/email/QR examples
+  - Windows-safe JSON note (ASCII-escaped Unicode)
+  - common issues section (Windows `make`, QR backend, `--network`, JSON escaping)
+- `docs/ARCHITECTURE.md` now documents runtime URL context creation, contents, migration status, and why context is non-serialized runtime state.
+- `docs/MODULES.md` now includes a shared URL context adoption status table (module -> Yes/No/N/A) plus future migration targets.
+- `docs/ROADMAP.md` and `docs/PLAN_REVIEW.md` now share the same top-5 alpha next steps checklist (with rationale) to reduce drift.
+- Repo hygiene improved:
+  - `.claude/settings.local.json` is no longer tracked
+  - `.gitignore` now explicitly ignores `.claude/settings.local.json`
+
+**Verification Commands + Outcomes:**
+- `python -m pytest -q` -> passed (`155 passed`)
+- `ruff check .` -> passed
+- `mypy .` -> passed
+- `python -m lsh.adapters.cli check --json "http://google.com:80@evil.com"` -> passed (`URL001_USERINFO_PRESENT` present in JSON)
+- `python -m lsh.adapters.cli check --json "https://ｅxample.com"` -> passed (Unicode safely escaped in JSON as `\uff45`)
+- `python -m lsh.adapters.cli qr-scan .tmp-blank-qr-test.png` -> friendly error (`No QR payloads were decoded from the image.`) after creating a temporary blank image for smoke verification
+
+**Issue Hit During Verification:**
+- Windows console (`cp1252`) raised `UnicodeEncodeError` when printing JSON output containing non-ASCII characters (`python -m lsh.adapters.cli check --json "https://ｅxample.com"`).
+
+**Fix + Rationale:**
+- Switched CLI JSON output paths (`check`, `email-check`, `qr-scan`) to a shared `_echo_json(...)` helper using `json.dumps(..., ensure_ascii=True)`.
+- Rationale: preserves valid machine-readable JSON while avoiding terminal encoding crashes on non-UTF Windows consoles.
+
+**Known Risks + Mitigations:**
+- Partial shared-context migration:
+  - Risk: some URL detectors still parse raw input directly.
+  - Mitigation: documented current migration status and added explicit next-step checklist to migrate remaining detectors.
+- Runtime context semantics:
+  - Risk: confusion about what is serialized vs runtime-only.
+  - Mitigation: docs now state that context is non-serialized internal state to preserve public JSON contracts.
+- QR dependencies (`Pillow` / `pyzbar` / `zbar`):
+  - Risk: QR scanning may be unavailable on some systems.
+  - Mitigation: `qr-scan` has a friendly error path; README common-issues section documents this without impacting URL/email usage.
+
+**Next Session Priorities (Top 5):**
+- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+  Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
+- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+  Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
+- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+  Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
+- [ ] Deployment baseline (Docker + one provider)
+  Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
+- [ ] Minimal Next.js UI calling the Python API
+  Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.
