@@ -6,8 +6,9 @@ from pathlib import Path
 
 import click
 
-from lsh.core.models import AnalysisInput, AnalysisResult, Confidence, Finding
+from lsh.core.models import AnalysisInput, AnalysisResult, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
+from lsh.formatters.family import render_family_lines
 from lsh.modules import (
     AsciiLookalikeDetector,
     EmailAuthDetector,
@@ -80,26 +81,6 @@ def _collect_recommendations(findings: list[Finding], limit: int = 3) -> list[st
             if len(recommendations) >= limit:
                 return recommendations
     return recommendations
-
-
-def _collect_family_explanations(findings: list[Finding], limit: int = 3) -> list[str]:
-    """Collect unique family-mode explanations from findings."""
-    explanations: list[str] = []
-    seen: set[str] = set()
-    for finding in findings:
-        explanation = finding.family_explanation.strip()
-        if not explanation or explanation in seen:
-            continue
-        seen.add(explanation)
-        explanations.append(explanation)
-        if len(explanations) >= limit:
-            return explanations
-    return explanations
-
-
-def _overall_confidence(findings: list[Finding]) -> Confidence:
-    ranking = {Confidence.LOW: 1, Confidence.MEDIUM: 2, Confidence.HIGH: 3}
-    return max(findings, key=lambda finding: ranking[finding.confidence]).confidence
 
 
 def _load_allowlist_domains(
@@ -187,27 +168,16 @@ def _print_technical_view(url: str, result: AnalysisResult) -> None:
 
 def _print_family_view(url: str, result: AnalysisResult) -> None:
     """Render plain-language output intended for non-technical users."""
-    click.echo(f"Link checked: {_safe_console_text(url)}")
-    click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
-    click.echo(f"What this means: {result.summary}")
-    if result.findings:
-        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
-
-    explanations = _collect_family_explanations(result.findings)
-    if explanations:
-        click.echo("Why this may be risky:")
-        for explanation in explanations:
-            click.echo(f"- {explanation}")
-
-    recommendations = _collect_recommendations(result.findings)
-    click.echo("Safer next steps:")
-    if recommendations:
-        for recommendation in recommendations:
-            click.echo(f"- {recommendation}")
-        return
-
-    click.echo("- Keep using trusted bookmarks for important accounts.")
-    click.echo("- If unsure, verify with the sender in a separate message or call.")
+    for line in render_family_lines(
+        label="Link checked",
+        subject=_safe_console_text(url),
+        result=result,
+        fallback_recommendations=[
+            "Keep using trusted bookmarks for important accounts.",
+            "If unsure, verify with the sender in a separate message or call.",
+        ],
+    ):
+        click.echo(line)
 
 
 def _print_technical_email_view(source_label: str, result: AnalysisResult) -> None:
@@ -236,26 +206,15 @@ def _print_technical_email_view(source_label: str, result: AnalysisResult) -> No
 
 def _print_family_email_view(source_label: str, result: AnalysisResult) -> None:
     """Render family-oriented output for email header analysis."""
-    click.echo(f"Email checked: {_safe_console_text(source_label)}")
-    click.echo(f"Safety score: {result.overall_risk}/100 ({result.overall_severity.value})")
-    click.echo(f"What this means: {result.summary}")
-    if result.findings:
-        click.echo(f"Signal confidence: {_overall_confidence(result.findings).value}")
-
-    explanations = _collect_family_explanations(result.findings)
-    if explanations:
-        click.echo("Why this may be risky:")
-        for explanation in explanations:
-            click.echo(f"- {explanation}")
-
-    recommendations = _collect_recommendations(result.findings)
-    click.echo("Safer next steps:")
-    if recommendations:
-        for recommendation in recommendations:
-            click.echo(f"- {recommendation}")
-        return
-
-    click.echo("- Be careful with urgent requests until sender identity is confirmed.")
+    for line in render_family_lines(
+        label="Email checked",
+        subject=_safe_console_text(source_label),
+        result=result,
+        fallback_recommendations=[
+            "Be careful with urgent requests until sender identity is confirmed.",
+        ],
+    ):
+        click.echo(line)
 
 
 @click.group()
