@@ -172,7 +172,7 @@ def _include_qr_legacy_keys() -> bool:
     return raw_value.strip().lower() not in {"0", "false", "no", "off"}
 
 
-_QR_ERROR_RESPONSES: dict[int, dict[str, object]] = {
+_QR_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ApiErrorEnvelope, "description": "Structured QR request/parse error envelope."},
     503: {"model": ApiErrorEnvelope, "description": "Structured QR decoder-unavailable envelope."},
 }
