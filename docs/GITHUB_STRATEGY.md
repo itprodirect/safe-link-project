@@ -54,7 +54,12 @@ Current CI should run:
 - dependency audit (`pip-audit`, informational on Python 3.11)
 - tests (excluding optional network-marked tests)
 - coverage run on Python 3.11
-- container build smoke check (`docker build`)
+- UI build + type checks (`ui`: `npm run build`, `npm run typecheck`)
+- container runtime smoke check:
+  - build API image
+  - boot container
+  - verify `/health`
+  - run `ui` contract smoke against running container
 
 Next CI upgrades:
 

@@ -1301,3 +1301,62 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
 - `npm run build` in `ui/` passed
 - `npm run typecheck` in `ui/` passed (after `.next/types` generation by build)
+
+---
+
+## 2026-03-01 - Session 9B: CI hardening (UI + runtime smoke) and multipart dependency fix
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Move CI from static-only validation to runtime behavior validation, and resolve FastAPI multipart dependency gaps introduced by QR upload contract.
+
+**Module(s) Touched:** CI workflow, packaging metadata, roadmap/strategy docs, session log
+
+**Changes:**
+- CI workflow hardening in `.github/workflows/ci.yml`:
+  - added `ui-check` job:
+    - `npm ci`
+    - `npm run build`
+    - `npm run typecheck`
+  - upgraded container job from build-only to runtime smoke (`docker-smoke`):
+    - build image
+    - run API container
+    - wait for `/health`
+    - run `ui` contract smoke (`npm run smoke:api`) against live container
+    - print container logs on failure and always clean up container
+- Multipart dependency fix:
+  - added `python-multipart>=0.0.9` to `api` and `dev` extras in `pyproject.toml`.
+  - this resolves CI/test and container startup failures after introducing FastAPI `UploadFile`/`Form` inputs for `/api/v1/qr/scan`.
+- Documentation updates:
+  - `README.md` CI scope now reflects Python + UI + runtime container smoke gates
+  - `docs/GITHUB_STRATEGY.md` CI scope updated to include UI and runtime smoke steps
+  - `docs/DEPLOYMENT.md` CI recommendation updated from build-only to runtime smoke flow
+  - `docs/PLAN_REVIEW.md` CI status updated with current gate coverage
+  - `docs/ROADMAP.md` marks Session 9 work item #2 complete
+
+**Decisions:**
+- Kept `pip-audit` informational for now to avoid blocking merges before a vulnerability triage baseline is established.
+- Chose runtime smoke in CI (container boot + API contract probe) as the fastest reliability multiplier before hosted validation.
+
+**Open Questions:**
+- Should `pip-audit` be made required once a baseline suppression/triage policy file is defined?
+- Should we split smoke checks into separate fail-fast steps for health vs contract for clearer CI failure diagnostics?
+
+**Next:**
+- Session 9C: hosted validation pass (CORS + deployed endpoint checks + UI smoke against hosted API).
+- Session 9D: API response-model strictness and QR legacy key deprecation plan.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+- `npm run build` in `ui/` passed
+- `npm run typecheck` in `ui/` passed
+- Local runtime smoke:
+  - `docker build -t lsh-api:ci-local .` passed
+  - `docker run -d -p 8000:8000 --name lsh-api-ci-local lsh-api:ci-local` passed
+  - `/health` probe passed
+  - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api` in `ui/` passed
+  - container cleanup passed

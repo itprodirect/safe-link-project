@@ -73,10 +73,14 @@ docker compose down
 
 ## CI Recommendation
 
-Add a container build check on PRs to ensure deployment artifacts stay valid:
+Use a runtime smoke gate on PRs so CI validates deploy behavior, not just image build:
 
 ```bash
 docker build -t lsh-api:ci .
+docker run -d -p 8000:8000 --name lsh-api-ci lsh-api:ci
+curl http://127.0.0.1:8000/health
+cd ui
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api
 ```
 
 ## UI Contract Smoke Companion

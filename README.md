@@ -274,7 +274,7 @@ make audit
 Notes:
 
 - `make` targets are Unix-style; on Windows PowerShell, run the underlying `ruff` / `mypy` / `pytest` commands directly unless using WSL/Git Bash.
-- CI currently type-checks `src/` and runs tests with `-m "not network"`.
+- CI runs Python checks (`ruff`, `mypy src/`, `pytest -m "not network"`), UI checks (`npm run build`, `npm run typecheck`), and a Docker runtime smoke (`/health` + UI contract smoke against the running API container).
 
 ## Session Logging Process
 

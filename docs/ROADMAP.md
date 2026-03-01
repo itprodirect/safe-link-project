@@ -77,7 +77,7 @@ Close the remaining MVP gap between local validation and hosted-safe operation.
 ### Work Items
 
 1. [x] Replace QR API path input with upload contract (`multipart/form-data`) and align UI integration path.
-2. [ ] Harden CI beyond static checks (UI type/build in CI, runtime API smoke, container health + contract checks).
+2. [x] Harden CI beyond static checks (UI type/build in CI, runtime API smoke, container health + contract checks).
 3. [ ] Run hosted validation pass (CORS, endpoint reachability, UI contract smoke against deployed API).
 4. [ ] Tighten API contract enforcement strategy (response model strictness + legacy key deprecation plan).
 

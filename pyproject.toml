@@ -42,6 +42,7 @@ email-auth = [
 ]
 api = [
     "fastapi>=0.110",
+    "python-multipart>=0.0.9",
     "uvicorn>=0.27",
 ]
 # Development: all Phase 1 deps + dev tools, listed flat
@@ -52,6 +53,7 @@ dev = [
     "dnspython>=2.4",
     "fastapi>=0.110",
     "httpx>=0.27",
+    "python-multipart>=0.0.9",
     "uvicorn>=0.27",
     "pip-audit>=2.7",
     "pytest>=7.4",

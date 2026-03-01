@@ -99,7 +99,12 @@ What still remains:
 
 ### 7. CI Security Checks Are Started (Not Yet Enforced)
 
-`ruff`, `mypy`, and `pytest` run in CI. `pip-audit` is wired as informational.
+CI now runs:
+
+- Python quality gates (`ruff`, `mypy`, `pytest`, coverage on 3.11)
+- UI gates (`npm run build`, `npm run typecheck`)
+- container runtime smoke (build + boot + `/health` + API contract smoke via `ui/scripts/api-contract-smoke.mjs`)
+- `pip-audit` remains informational on Python 3.11
 
 Recommended follow-up:
 
