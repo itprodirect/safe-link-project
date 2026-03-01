@@ -2,7 +2,7 @@
 
 Modular, local-first security CLI for analyzing suspicious links and email headers and giving clear next steps.
 
-## Current Status (2026-02-23)
+## Current Status (2026-03-01)
 
 Implemented now:
 
@@ -10,6 +10,7 @@ Implemented now:
 - Dedicated orchestrator layer in `src/lsh/core/orchestrator.py`
 - URL normalization and adversarial parsing helpers in `src/lsh/core/normalizer.py`
 - Shared per-analysis URL runtime context/preprocessing cache in `src/lsh/core/context.py`
+- Input-aware module routing in orchestrator (`supported_input_types` + orchestrator-side filtering)
 - CLI adapter in `src/lsh/adapters/cli.py`
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - URL-focused offline modules:
@@ -33,8 +34,6 @@ Implemented now:
 
 Not implemented yet:
 
-- Full migration of all URL detectors to shared runtime context (`net_ip` and `url_structure` are migrated first)
-- Input-type module routing in orchestrator (instead of relying on detector early returns)
 - Python API adapter for a future web UI
 
 ## Quick Start
@@ -143,7 +142,7 @@ Notes:
 
 - Registrable-domain checks use offline heuristics for common country-code suffix patterns.
 - URL hardening helpers live in `src/lsh/core/normalizer.py`.
-- Orchestrator now builds one shared URL runtime context per analysis (including normalized/canonical URL data); `net_ip` and `url_structure` consume it, with additional detector migrations planned.
+- Orchestrator now builds one shared URL runtime context per analysis (including normalized/canonical URL data); all URL detectors use it (`net_ip`, `url_structure`, `ascii_lookalike`, `homoglyph`).
 - Overall risk aggregation uses finding `risk_score` values only; `confidence` is shown to users and used for messaging, not aggregate math.
 
 ## Common Issues

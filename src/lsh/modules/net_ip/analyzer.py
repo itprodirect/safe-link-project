@@ -45,6 +45,10 @@ class NetIPDetector(ModuleInterface):
     def version(self) -> str:
         return "0.2.0"
 
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        return frozenset({"url"})
+
     def analyze(self, input: AnalysisInput) -> list[Finding]:
         if input.input_type != "url":
             return []

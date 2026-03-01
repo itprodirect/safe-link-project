@@ -106,6 +106,10 @@ class EmailAuthDetector(ModuleInterface):
     def version(self) -> str:
         return "0.1.0"
 
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        return frozenset({"email_headers", "email_file"})
+
     def analyze(self, input: AnalysisInput) -> list[Finding]:
         if input.input_type not in {"email_headers", "email_file"}:
             return []

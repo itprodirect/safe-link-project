@@ -103,6 +103,10 @@ class QRDecodeDetector(ModuleInterface):
     def version(self) -> str:
         return "0.1.0"
 
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        return frozenset({"qr_image"})
+
     def analyze(self, input: AnalysisInput) -> list[Finding]:
         if input.input_type != "qr_image":
             return []

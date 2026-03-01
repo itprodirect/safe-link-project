@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr
 
+AnalysisInputType = Literal["url", "email_headers", "email_file", "qr_image", "text"]
+
 
 class Severity(StrEnum):
     """Risk severity levels mapped to score bands."""
@@ -39,7 +41,7 @@ class NormalizedURL(BaseModel):
 class AnalysisInput(BaseModel):
     """What goes into a module."""
 
-    input_type: Literal["url", "email_headers", "email_file", "qr_image", "text"]
+    input_type: AnalysisInputType
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
     _runtime_context: Any = PrivateAttr(default=None)
@@ -80,6 +82,11 @@ class AnalysisResult(BaseModel):
 
 class ModuleInterface(ABC):
     """Base class for all analysis modules."""
+
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        """Input types this module accepts. Used for orchestrator-side routing."""
+        return frozenset({"url", "email_headers", "email_file", "qr_image", "text"})
 
     @abstractmethod
     def analyze(self, input: AnalysisInput) -> list[Finding]:

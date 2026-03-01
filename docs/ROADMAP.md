@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-02-23)
+## Current Progress (2026-03-01)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -17,9 +17,11 @@
   - reusable family formatter extraction
   - scoring policy cleanup (risk-only aggregate, confidence for messaging)
   - QR decode module + `qr-scan` URL handoff
-- [ ] Session 7: API/web adapter groundwork (next product milestone)
+- [ ] Session 7: API/web adapter groundwork (in progress)
+  - [x] Input-aware orchestrator routing by module-declared input type support
+  - [x] Remaining URL detector migration to shared URL runtime context (`homoglyph`, `ascii_lookalike`)
 
-## Next Session: 7 API / Web UI Groundwork
+## Next Session: 7 API / Web UI Groundwork (Remaining)
 
 ### Goal
 
@@ -27,8 +29,8 @@ Prepare the tool for a future web UI by adding adapter-ready seams without rewri
 
 ### Work Items
 
-1. Add input-aware module routing in orchestrator (reduce detector early-return boilerplate).
-2. Migrate remaining URL detectors to shared URL runtime context.
+1. [x] Add input-aware module routing in orchestrator (reduce detector early-return boilerplate).
+2. [x] Migrate remaining URL detectors to shared URL runtime context.
 3. Define API-ready structured response wrappers for multi-item flows (QR `--all`, batch-ready shapes).
 4. Add a minimal Python API adapter (FastAPI) that reuses orchestrator + formatter layers.
 5. Draft frontend integration notes for a Next.js UI calling the Python API.
@@ -44,7 +46,7 @@ Prepare the tool for a future web UI by adding adapter-ready seams without rewri
 
 ## Highest-Leverage Alpha Next Steps (Top 5)
 
-- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+- [x] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
   Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
 - [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.

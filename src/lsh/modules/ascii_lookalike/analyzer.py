@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.context import url_context_for_input
 from lsh.core.models import (
     AnalysisInput,
     Confidence,
@@ -12,7 +13,7 @@ from lsh.core.models import (
     Severity,
 )
 from lsh.core.rules import ASCII_AMBIGUOUS_GROUPS, ASCII_LEET_SUBSTITUTIONS, KNOWN_BRAND_TOKENS
-from lsh.core.url_tools import extract_hostname, parse_ip_literal, registrable_domain
+from lsh.core.url_tools import registrable_domain
 
 
 def _primary_label(hostname: str) -> str:
@@ -63,17 +64,20 @@ class AsciiLookalikeDetector(ModuleInterface):
     def version(self) -> str:
         return "0.1.0"
 
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        return frozenset({"url"})
+
     def analyze(self, input: AnalysisInput) -> list[Finding]:
-        if input.input_type != "url":
+        url_context = url_context_for_input(input)
+        if url_context is None or url_context.hostname is None:
             return []
 
-        hostname = extract_hostname(input.content)
-        if hostname is None:
-            return []
+        hostname = url_context.hostname
         if should_suppress_for_allowlist(input, hostname, category_prefix="ASCII"):
             return []
 
-        if parse_ip_literal(hostname) is not None:
+        if url_context.ip_literal is not None:
             return []
         if not hostname.isascii():
             return []

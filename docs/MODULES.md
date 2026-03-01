@@ -185,37 +185,35 @@ Notes:
 
 ### Next Module-Adjacent Work
 
-- Migrate remaining URL detectors to shared orchestrator URL runtime context
 - Add structured formatter variants for API/web responses
 
 ## Shared URL Context Adoption Status
 
-`src/lsh/core/context.py` provides shared runtime URL preprocessing. Migration is intentionally incremental.
+`src/lsh/core/context.py` provides shared runtime URL preprocessing used by URL detectors.
 
 | Module | Input | Uses Shared URL Context? | Notes |
 |---|---|---:|---|
 | `net_ip` | `url` | Yes | Uses cached hostname/IP parsing helpers and mapped-IP data |
 | `url_structure` | `url` | Yes | Uses cached parsed URL + hostname/registrable-domain values |
-| `homoglyph` | `url` | No (planned) | Still parses raw hostname directly |
-| `ascii_lookalike` | `url` | No (planned) | Still parses raw hostname directly |
+| `homoglyph` | `url` | Yes | Uses cached URL context host and IDNA forms |
+| `ascii_lookalike` | `url` | Yes | Uses cached URL context host/IP-literal parsing |
 | `redirect` | `url` | No (optional future) | May benefit from shared hostname/domain context but also performs network calls |
 | `email_auth` | `email_headers`/`email_file` | N/A | Non-URL input |
 | `qr_decode` | `qr_image` | N/A | Decodes local image payloads before URL handoff |
 
 Future migration targets:
 
-- `homoglyph`
-- `ascii_lookalike`
 - optional `redirect` enrichment (for cached host/domain context)
 
 ## Cross-Module Rules
 
 1. Use shared `Finding` schema.
-2. Keep behavior deterministic and testable.
-3. Emit evidence and recommendations for every non-trivial signal.
-4. Avoid storing state in module instances.
-5. Set `confidence` intentionally (`LOW`, `MEDIUM`, `HIGH`) for user-calibrated trust.
-6. Keep finding code IDs stable once published in docs/tests.
+2. Declare `supported_input_types` so orchestrator-side routing is explicit.
+3. Keep behavior deterministic and testable.
+4. Emit evidence and recommendations for every non-trivial signal.
+5. Avoid storing state in module instances.
+6. Set `confidence` intentionally (`LOW`, `MEDIUM`, `HIGH`) for user-calibrated trust.
+7. Keep finding code IDs stable once published in docs/tests.
 
 ## P1 Controls (Current)
 

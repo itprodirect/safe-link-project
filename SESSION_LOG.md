@@ -963,3 +963,58 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m ruff check .` passed
 - `.venv\Scripts\python.exe -m mypy .` passed
 - `.venv\Scripts\python.exe -m pytest -q` passed (`156 passed`)
+
+---
+
+## 2026-03-01 - Session 7B: Phase 2 routing and full offline URL-context migration
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Execute Phase 2 work: add input-aware orchestrator routing, migrate remaining offline URL detectors to shared runtime context, and keep docs/tests in sync.
+
+**Module(s) Touched:** core models/orchestrator, modules (`homoglyph`, `ascii_lookalike`, module contracts), tests, docs
+
+**Changes:**
+- Added module input-type contract support:
+  - `src/lsh/core/models.py` now defines `AnalysisInputType` and a default `ModuleInterface.supported_input_types` property.
+- Added orchestrator-side input routing:
+  - `src/lsh/core/orchestrator.py` now filters module execution by `analysis_input.input_type in module.supported_input_types`.
+- Declared explicit supported input types per module:
+  - URL modules: `homoglyph`, `ascii_lookalike`, `url_structure`, `net_ip`, `redirect` -> `{"url"}`
+  - Email module: `email_auth` -> `{"email_headers", "email_file"}`
+  - QR module: `qr_decode` -> `{"qr_image"}`
+- Migrated remaining offline URL detectors to shared runtime context:
+  - `src/lsh/modules/homoglyph/analyzer.py`
+    - now uses `url_context_for_input(...)` for hostname and IDNA forms
+    - uses cached literal-IP signal from context
+  - `src/lsh/modules/ascii_lookalike/analyzer.py`
+    - now uses `url_context_for_input(...)` for hostname/IP-literal handling
+- Strengthened orchestrator tests:
+  - `tests/core/test_orchestrator.py`
+    - replaced stale max-score assumption with `aggregate_findings(...)` policy assertion
+    - added explicit routing test (`test_orchestrator_routes_modules_by_supported_input_type`)
+- Synced docs to new architecture status:
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MODULES.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+
+**Decisions:**
+- Kept module-level input guards where they already existed for defense in depth, but made orchestrator routing the primary execution control.
+- Limited Phase 2 migration scope to offline URL detectors (`homoglyph`, `ascii_lookalike`), leaving `redirect` context-enrichment optional as planned.
+
+**Open Questions:**
+- Should we remove remaining module-side input guards now that orchestrator routing is authoritative, or keep them permanently as fail-safe checks?
+- Should `redirect` consume shared hostname/domain context for evidence consistency, or remain network-trace-focused only?
+
+**Next:**
+- Phase 3: structured multi-result response wrappers (`qr-scan --all`, batch-ready API shape) and minimal FastAPI adapter.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m pytest tests/core/test_orchestrator.py tests/modules/test_homoglyph.py tests/modules/test_ascii_lookalike.py -q` passed (`18 passed`)
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`157 passed`)

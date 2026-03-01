@@ -1,6 +1,6 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-02-23 after the alpha integration pass (shared URL runtime context, formatter extraction, QR handoff, scoring cleanup).
+Status note: updated on 2026-03-01 after Phase 2 groundwork (input-aware routing + full offline URL-context migration).
 
 ## What Is Working Well
 
@@ -15,9 +15,9 @@ Status note: updated on 2026-02-23 after the alpha integration pass (shared URL 
 
 ## What Still Needs Work
 
-### 1. Shared URL Preprocessing Is Partially Implemented (Migration In Progress)
+### 1. Shared URL Preprocessing + Routing Baseline Is Implemented
 
-`src/lsh/core/context.py` now builds a shared URL runtime context once per analysis and attaches it to `AnalysisInput` as non-serialized runtime state.
+`src/lsh/core/context.py` now builds shared URL runtime context once per analysis, and orchestrator routes modules by declared `supported_input_types` before execution.
 
 Why this matters:
 
@@ -25,10 +25,15 @@ Why this matters:
 - creates a stable path for raw + canonical URL semantics across detectors
 - improves adapter readiness for future API/web entry points
 
+Current state:
+
+- all offline URL detectors now consume shared context (`net_ip`, `url_structure`, `homoglyph`, `ascii_lookalike`)
+- `redirect` remains optional for future context enrichment
+- module routing no longer relies on per-module early-return checks alone
+
 Recommended follow-up:
 
-- migrate remaining URL detectors (`homoglyph`, `ascii_lookalike`, optionally `redirect`) to the shared context
-- document which checks run on raw vs canonical forms
+- document raw-vs-canonical semantics per rule family in a dedicated detection reference
 
 ### 2. Scoring Ambiguity Was Resolved (Risk-Only Aggregate)
 
@@ -115,7 +120,7 @@ Recommended practice:
 
 ## Highest-Leverage Alpha Next Steps (Top 5)
 
-- [ ] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
+- [x] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
   Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
 - [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.

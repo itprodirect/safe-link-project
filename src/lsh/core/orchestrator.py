@@ -97,5 +97,7 @@ class AnalysisOrchestrator:
     def _run_modules(self, analysis_input: AnalysisInput) -> list[Finding]:
         findings: list[Finding] = []
         for module in self._modules:
+            if analysis_input.input_type not in module.supported_input_types:
+                continue
             findings.extend(module.analyze(analysis_input))
         return findings

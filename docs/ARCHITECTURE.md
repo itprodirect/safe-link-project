@@ -4,7 +4,7 @@
 
 Modules detect. Core orchestrates and scores. Adapters render.
 
-## Implemented Architecture (2026-02-23)
+## Implemented Architecture (2026-03-01)
 
 ### Core Layer (`src/lsh/core/`)
 
@@ -50,8 +50,8 @@ Modules detect. Core orchestrates and scores. Adapters render.
 ## Current URL Processing Reality (Important)
 
 - Orchestrator now builds one shared URL runtime context per analysis, including normalized/canonical URL data.
-- `net_ip` and `url_structure` use the shared context today.
-- `homoglyph` and `ascii_lookalike` still parse from raw input directly (migration path remains).
+- `net_ip`, `url_structure`, `homoglyph`, and `ascii_lookalike` use the shared context.
+- Orchestrator now routes modules by declared `supported_input_types` before execution.
 - The runtime context is internal and attached to `AnalysisInput` as non-serialized runtime state, so JSON output contracts stay stable.
 
 ## Runtime URL Context (Current Shape)
@@ -80,18 +80,17 @@ Why non-serialized runtime state:
 Every module must:
 
 1. Implement `ModuleInterface`.
-2. Accept `AnalysisInput`.
-3. Return `list[Finding]`.
-4. Remain stateless across calls.
-5. Avoid hidden side effects.
+2. Declare `supported_input_types` for orchestrator routing.
+3. Accept `AnalysisInput`.
+4. Return `list[Finding]`.
+5. Remain stateless across calls.
+6. Avoid hidden side effects.
 
 ## Near-Term Architecture Moves
 
-1. Migrate remaining URL detectors (`homoglyph`, `ascii_lookalike`, optionally `redirect`) to the shared URL context.
-2. Add input-aware module routing in orchestrator (by `input_type`) instead of relying on each module to early-return.
-3. Formalize structured formatter outputs for API/web adapters beyond CLI text rendering.
-4. Add a Python API adapter (FastAPI) on top of the existing orchestrator + formatter layers.
-5. Keep adapters focused on I/O only.
+1. Formalize structured formatter outputs for API/web adapters beyond CLI text rendering.
+2. Add a Python API adapter (FastAPI) on top of the existing orchestrator + formatter layers.
+3. Keep adapters focused on I/O only.
 
 ## Testing Requirements
 

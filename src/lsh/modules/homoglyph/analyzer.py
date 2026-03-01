@@ -6,8 +6,8 @@ import unicodedata
 from typing import Any
 
 from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
-from lsh.core.url_tools import extract_hostname, parse_ip_literal
 
 try:
     import confusables  # type: ignore[import-untyped]
@@ -170,12 +170,13 @@ class HomoglyphDetector(ModuleInterface):
     def version(self) -> str:
         return "0.1.0"
 
-    def analyze(self, input: AnalysisInput) -> list[Finding]:
-        if input.input_type != "url":
-            return []
+    @property
+    def supported_input_types(self) -> frozenset[str]:
+        return frozenset({"url"})
 
-        hostname = extract_hostname(input.content)
-        if hostname is None:
+    def analyze(self, input: AnalysisInput) -> list[Finding]:
+        url_context = url_context_for_input(input)
+        if url_context is None or url_context.hostname is None:
             return [
                 Finding(
                     module=self.name,
@@ -195,14 +196,19 @@ class HomoglyphDetector(ModuleInterface):
                     ],
                 )
             ]
-        if parse_ip_literal(hostname) is not None:
+        hostname = url_context.hostname
+        if url_context.ip_literal is not None:
             return []
         if should_suppress_for_allowlist(input, hostname, category_prefix="HMG"):
             return []
 
-        unicode_hostname = _idna_to_unicode(hostname) or hostname
+        unicode_hostname = (
+            url_context.idna_unicode_hostname or _idna_to_unicode(hostname) or hostname
+        )
         unicode_hostname = unicode_hostname.lower()
-        idna_ascii_hostname = _idna_to_ascii(unicode_hostname) or hostname
+        idna_ascii_hostname = (
+            url_context.idna_ascii_hostname or _idna_to_ascii(unicode_hostname) or hostname
+        )
 
         findings: list[Finding] = []
         cumulative_risk = 0
