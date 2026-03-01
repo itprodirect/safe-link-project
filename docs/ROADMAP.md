@@ -86,6 +86,8 @@ Close the remaining MVP gap between local validation and hosted-safe operation.
 
 - Risk: network-dependent logic increases flaky tests
   Mitigation: isolate network tests, mock requests by default, and keep network checks opt-in.
+- Risk: vulnerable third-party dependencies slip into main
+  Mitigation: enforce `pip-audit` in CI (Python 3.11) and follow `docs/DEPENDENCY_AUDIT.md` exception policy.
 - Risk: false positives from internationalized domains
   Mitigation: expand allowlist controls and confidence calibration guidance.
 - Risk: docs drift from implementation

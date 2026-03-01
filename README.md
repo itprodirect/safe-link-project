@@ -286,7 +286,7 @@ make audit
 Notes:
 
 - `make` targets are Unix-style; on Windows PowerShell, run the underlying `ruff` / `mypy` / `pytest` commands directly unless using WSL/Git Bash.
-- CI runs Python checks (`ruff`, `mypy src/`, `pytest -m "not network"`), UI checks (`npm run build`, `npm run typecheck`), and a Docker runtime smoke (`/health` + UI contract smoke against the running API container).
+- CI runs Python checks (`ruff`, `mypy src/`, `pytest -m "not network"`), enforced dependency audit (`pip-audit` on Python 3.11), UI checks (`npm run build`, `npm run typecheck`), and a Docker runtime smoke (`/health` + UI contract smoke against the running API container).
 
 ## Session Logging Process
 
@@ -309,6 +309,7 @@ Canonical project docs live under `docs/` (planning docs were de-duplicated from
 - Module specs: `docs/MODULES.md`
 - API integration contract: `docs/API_INTEGRATION.md`
 - Deployment baseline: `docs/DEPLOYMENT.md`
+- Dependency-audit policy: `docs/DEPENDENCY_AUDIT.md`
 - Next.js validation checklist: `docs/NEXTJS_UI_VALIDATION.md`
 - Roadmap: `docs/ROADMAP.md`
 - Plan review and risks: `docs/PLAN_REVIEW.md`

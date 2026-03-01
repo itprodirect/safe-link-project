@@ -99,19 +99,19 @@ What still remains:
 - clearer operator documentation on confidence interpretation and expected false positives
 - broader brand/suffix fixtures for calibration
 
-### 7. CI Security Checks Are Started (Not Yet Enforced)
+### 7. CI Security Checks Are Enforced
 
 CI now runs:
 
 - Python quality gates (`ruff`, `mypy`, `pytest`, coverage on 3.11)
 - UI gates (`npm run build`, `npm run typecheck`)
 - container runtime smoke (build + boot + `/health` + API contract smoke via `ui/scripts/api-contract-smoke.mjs`)
-- `pip-audit` remains informational on Python 3.11
+- `pip-audit` is enforced on Python 3.11
 
 Recommended follow-up:
 
-- tighten `pip-audit` from informational to enforced once dependency baseline is triaged
-- add a dependency refresh cadence and triage notes
+- keep dependency exceptions time-bound and issue-tracked per `docs/DEPENDENCY_AUDIT.md`
+- maintain monthly dependency refresh cadence and weekly review for active exceptions
 
 ## Documentation Sync Risk (Reduced, Not Gone)
 

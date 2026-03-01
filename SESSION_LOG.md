@@ -1481,3 +1481,57 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m ruff check .` passed
 - `.venv\Scripts\python.exe -m mypy .` passed
 - `.venv\Scripts\python.exe -m pytest -q` passed (`163 passed, 1 skipped`)
+
+---
+
+## 2026-03-01 - Session 10A: Enforce dependency audit gate + triage policy
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Promote dependency security from informational checks to an enforced CI gate and document an actionable triage/exception policy.
+
+**Module(s) Touched:** CI workflow, build tooling, security/process docs, roadmap, session log
+
+**Changes:**
+- CI enforcement:
+  - `.github/workflows/ci.yml`
+    - changed dependency step from informational to enforced:
+      - removed `continue-on-error: true`
+      - command now: `pip-audit --progress-spinner off --strict`
+      - still scoped to Python `3.11` matrix lane
+- Local tooling alignment:
+  - `Makefile` `audit` target now uses `--strict`
+- Added dependency security policy doc:
+  - `docs/DEPENDENCY_AUDIT.md`
+  - covers:
+    - CI enforcement behavior
+    - local run commands
+    - triage workflow
+    - temporary exception controls (issue-required, expiry-required)
+    - review cadence
+- Documentation sync:
+  - `docs/GITHUB_STRATEGY.md` updated CI scope to mark `pip-audit` enforced
+  - `docs/PLAN_REVIEW.md` section 7 updated from "not yet enforced" to enforced state + follow-up guidance
+  - `docs/ROADMAP.md` risk mitigation now includes enforced dependency-audit gate
+  - `README.md` development notes now call out enforced dependency audit and links `docs/DEPENDENCY_AUDIT.md`
+
+**Decisions:**
+- Kept enforcement on Python `3.11` only (existing matrix pattern) to avoid duplicate audit runtime while retaining consistent gate behavior.
+- Chose issue-tracked, time-bound temporary exceptions instead of silent ignores.
+
+**Open Questions:**
+- Do we want to enforce dependency audit on both Python versions in CI, or keep the single-lane approach for runtime/cost efficiency?
+- Should we add a dedicated exceptions registry file in-repo if temporary ignores are ever needed?
+
+**Next:**
+- Run hosted-domain validation when available to close the final open Session 9 roadmap item.
+- Optionally add per-rule allowlist granularity / calibration fixtures as the next product-improvement session.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`163 passed, 1 skipped`)
+- Verified recent GitHub Actions dependency-audit step baseline was successful before enforcement.
+- Local `pip-audit` execution in this environment is network-restricted; CI remains the source of truth for live advisory resolution.

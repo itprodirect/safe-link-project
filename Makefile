@@ -20,7 +20,7 @@ typecheck:
 	mypy src/
 
 audit:
-	pip-audit --progress-spinner off
+	pip-audit --progress-spinner off --strict
 
 # Run all checks (use before committing)
 check: lint typecheck test

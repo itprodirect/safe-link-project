@@ -51,7 +51,7 @@ Current CI should run:
 
 - lint
 - type checks (`mypy src/`)
-- dependency audit (`pip-audit`, informational on Python 3.11)
+- dependency audit (`pip-audit`, enforced on Python 3.11)
 - tests (excluding optional network-marked tests)
 - coverage run on Python 3.11
 - UI build + type checks (`ui`: `npm run build`, `npm run typecheck`)
@@ -63,8 +63,8 @@ Current CI should run:
 
 Next CI upgrades:
 
-- tighten `pip-audit` from informational to enforced after baseline review
 - consider expanding type-check coverage to tests
+- keep dependency-audit exception usage time-bound and issue-tracked (`docs/DEPENDENCY_AUDIT.md`)
 
 ## Push Workflow for This Repo
 
