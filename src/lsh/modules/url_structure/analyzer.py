@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qsl
 
-from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.allowlist import should_suppress_finding_for_allowlist
 from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.normalizer import iterative_percent_decode
@@ -56,8 +56,6 @@ class URLStructureDetector(ModuleInterface):
             return []
         parsed = url_context.raw_parsed
         hostname = url_context.hostname
-        if should_suppress_for_allowlist(input, hostname, category_prefix="URL"):
-            return []
 
         registrable = url_context.registrable_domain or registrable_domain(hostname)
         host_labels = [label for label in hostname.split(".") if label]
@@ -78,6 +76,13 @@ class URLStructureDetector(ModuleInterface):
             recommendations: list[str],
         ) -> None:
             nonlocal cumulative_risk
+            if should_suppress_finding_for_allowlist(
+                input,
+                hostname,
+                category_prefix="URL",
+                finding_code=code,
+            ):
+                return
             cumulative_risk = min(100, cumulative_risk + risk_delta)
             findings.append(
                 Finding(
@@ -210,7 +215,12 @@ class URLStructureDetector(ModuleInterface):
             fragment_finding = self._check_fragment_deception(
                 fragment, hostname, cumulative_risk
             )
-            if fragment_finding is not None:
+            if fragment_finding is not None and not should_suppress_finding_for_allowlist(
+                input,
+                hostname,
+                category_prefix="URL",
+                finding_code=fragment_finding.category,
+            ):
                 findings.append(fragment_finding)
                 cumulative_risk = fragment_finding.risk_score
 

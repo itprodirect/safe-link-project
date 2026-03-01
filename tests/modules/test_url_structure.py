@@ -39,6 +39,14 @@ def test_deceptive_subdomain_pattern_flags_multi_part_suffix() -> None:
     assert "URL002_DECEPTIVE_SUBDOMAIN" in _code_map(findings)
 
 
+def test_deceptive_subdomain_pattern_flags_known_multi_part_suffix() -> None:
+    detector = URLStructureDetector()
+    findings = detector.analyze(
+        AnalysisInput(input_type="url", content="https://login.google.evil.co.uk")
+    )
+    assert "URL002_DECEPTIVE_SUBDOMAIN" in _code_map(findings)
+
+
 def test_nested_url_parameter_pattern_is_detected() -> None:
     detector = URLStructureDetector()
     findings = detector.analyze(

@@ -290,8 +290,17 @@ def main() -> None:
     "--allowlist-category",
     "allowlist_categories",
     multiple=True,
-    type=click.Choice(["HMG", "ASCII", "URL", "NET", "ALL"], case_sensitive=False),
+    type=click.Choice(["HMG", "ASCII", "URL", "NET", "ALL", "NONE"], case_sensitive=False),
     help="Category prefixes suppressed for allowlisted domains (default: HMG,ASCII).",
+)
+@click.option(
+    "--allowlist-finding",
+    "allowlist_findings",
+    multiple=True,
+    help=(
+        "Suppress specific finding codes for allowlisted domains "
+        "(for example HMG002_PUNYCODE_VISIBILITY)."
+    ),
 )
 @click.option(
     "--network",
@@ -322,6 +331,7 @@ def check(
     allowlist_domains: tuple[str, ...],
     allowlist_files: tuple[str, ...],
     allowlist_categories: tuple[str, ...],
+    allowlist_findings: tuple[str, ...],
     network_enabled: bool,
     network_max_hops: int,
     network_timeout: float,
@@ -333,6 +343,10 @@ def check(
         metadata["allowlist_domains"] = resolved_allowlist
     if allowlist_categories:
         metadata["allowlist_categories"] = [category.upper() for category in allowlist_categories]
+    if allowlist_findings:
+        metadata["allowlist_findings"] = [
+            finding.strip().upper() for finding in allowlist_findings if finding.strip()
+        ]
     metadata["network_enabled"] = network_enabled
     metadata["network_max_hops"] = network_max_hops
     metadata["network_timeout"] = network_timeout

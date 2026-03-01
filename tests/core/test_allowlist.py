@@ -2,6 +2,7 @@
 
 from lsh.core.allowlist import (
     allowlist_category_prefixes_for_input,
+    should_suppress_finding_for_allowlist,
     should_suppress_for_allowlist,
 )
 from lsh.core.models import AnalysisInput
@@ -44,3 +45,43 @@ def test_allowlist_supports_unicode_and_punycode_forms() -> None:
         metadata={"allowlist_domains": ["\u0430pple.com"], "allowlist_categories": ["HMG"]},
     )
     assert should_suppress_for_allowlist(analysis_input, "xn--pple-43d.com", category_prefix="HMG")
+
+
+def test_allowlist_none_category_disables_default_scope() -> None:
+    analysis_input = AnalysisInput(
+        input_type="url",
+        content="https://paypaI.com",
+        metadata={"allowlist_domains": ["paypai.com"], "allowlist_categories": ["NONE"]},
+    )
+    assert allowlist_category_prefixes_for_input(analysis_input) == set()
+    assert not should_suppress_for_allowlist(analysis_input, "paypai.com", category_prefix="ASCII")
+
+
+def test_allowlist_finding_scope_suppresses_only_targeted_codes() -> None:
+    analysis_input = AnalysisInput(
+        input_type="url",
+        content="https://xn--pple-43d.com",
+        metadata={
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY", "HMG004*"],
+        },
+    )
+    assert should_suppress_finding_for_allowlist(
+        analysis_input,
+        "xn--pple-43d.com",
+        category_prefix="HMG",
+        finding_code="HMG002_PUNYCODE_VISIBILITY",
+    )
+    assert should_suppress_finding_for_allowlist(
+        analysis_input,
+        "xn--pple-43d.com",
+        category_prefix="HMG",
+        finding_code="HMG004_CONFUSABLE_CHARACTERS",
+    )
+    assert not should_suppress_finding_for_allowlist(
+        analysis_input,
+        "xn--pple-43d.com",
+        category_prefix="HMG",
+        finding_code="HMG003_MIXED_SCRIPT_HOSTNAME",
+    )

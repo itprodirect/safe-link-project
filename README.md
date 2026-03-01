@@ -145,7 +145,7 @@ lsh check https://xn--pple-43d.com --family
 ## CLI Usage
 
 ```bash
-lsh check <url> [--json] [--family] [--network] [--max-hops N] [--timeout SECONDS] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL} ...]
+lsh check <url> [--json] [--family] [--network] [--max-hops N] [--timeout SECONDS] [--allowlist-domain DOMAIN ...] [--allowlist-file FILE ...] [--allowlist-category {HMG,ASCII,URL,NET,ALL,NONE} ...] [--allowlist-finding FINDING_CODE ...]
 lsh email-check <headers_or_file> [--json] [--family] [--file]
 lsh qr-scan <image_path> [--json] [--family] [--all]
 ```
@@ -176,6 +176,9 @@ lsh check "https://paypaI.com" --allowlist-file allowlist.txt
 
 # Suppress only selected categories for allowlisted domains
 lsh check "https://paypaI.com" --allowlist-domain paypai.com --allowlist-category HMG
+
+# Suppress only one finding code for an allowlisted domain
+lsh check "https://xn--pple-43d.com" --allowlist-domain xn--pple-43d.com --allowlist-category NONE --allowlist-finding HMG002_PUNYCODE_VISIBILITY
 
 # Opt-in redirect-chain checks (HEAD only)
 lsh check "https://bit.ly/example" --network --max-hops 5 --timeout 3.0
@@ -223,9 +226,16 @@ Notes:
 - `confidence` label on each finding (`LOW`, `MEDIUM`, `HIGH`)
 - `--allowlist-domain` to suppress domain-lookalike findings for known-safe domains
 - `--allowlist-file` for shared/team allowlist inputs
-- `--allowlist-category` for scoped suppression (`HMG`, `ASCII`, `URL`, `NET`, `ALL`)
+- `--allowlist-category` for scoped suppression (`HMG`, `ASCII`, `URL`, `NET`, `ALL`, `NONE`)
+- `--allowlist-finding` for per-rule suppression on allowlisted domains (exact code, stem, or `*` prefix match)
 - Redirect findings (`RED*`) are intentionally not suppressed by allowlist in this phase
 - Family mode now prints `Signal confidence` and uses confidence-aware summary wording
+
+Confidence interpretation guide:
+
+- `HIGH`: strong phishing-style signal; escalate review if unexpected.
+- `MEDIUM`: suspicious pattern that needs source/context verification.
+- `LOW`: weak/heuristic signal; useful for triage but higher false-positive likelihood.
 
 ## Project Structure
 

@@ -108,6 +108,24 @@ def test_url_check_endpoint_can_include_family_payload() -> None:
     assert "family" in body["item"]
 
 
+def test_url_check_allowlist_finding_targets_single_code() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v1/url/check",
+        json={
+            "url": "https://xn--pple-43d.com",
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+        },
+    )
+    assert response.status_code == 200
+    findings = response.json()["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+
 def test_email_check_endpoint_returns_wrapped_shape() -> None:
     client = _client()
     response = client.post(

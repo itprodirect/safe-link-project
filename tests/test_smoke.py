@@ -1,5 +1,6 @@
 """Smoke tests for Link Safety Hub."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -33,6 +34,7 @@ def test_cli_check_help_includes_network_options() -> None:
     assert "--network" in result.output
     assert "--max-hops" in result.output
     assert "--timeout" in result.output
+    assert "--allowlist-finding" in result.output
 
 
 def test_cli_qr_scan_help() -> None:
@@ -172,6 +174,29 @@ def test_cli_allowlist_category_limits_suppression_scope() -> None:
     )
     assert result.exit_code == 0
     assert "ASCII001_AMBIGUOUS_GLYPHS" in result.output
+
+
+def test_cli_allowlist_finding_targets_single_code_only() -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "check",
+            "https://xn--pple-43d.com",
+            "--allowlist-domain",
+            "xn--pple-43d.com",
+            "--allowlist-category",
+            "NONE",
+            "--allowlist-finding",
+            "HMG002_PUNYCODE_VISIBILITY",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    categories = {finding["category"] for finding in payload["findings"]}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
 
 
 def test_cli_allowlist_category_all_can_suppress_url_findings() -> None:

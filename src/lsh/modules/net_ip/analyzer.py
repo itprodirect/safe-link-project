@@ -7,7 +7,7 @@ NET005 IPv6-mapped IPv4, NET006 mixed notation).
 
 from __future__ import annotations
 
-from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.allowlist import should_suppress_finding_for_allowlist
 from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 from lsh.core.normalizer import (
@@ -57,15 +57,23 @@ class NetIPDetector(ModuleInterface):
         if url_context is None or url_context.hostname is None:
             return []
         hostname = url_context.hostname
-        if should_suppress_for_allowlist(input, hostname, category_prefix="NET"):
-            return []
 
         findings: list[Finding] = []
+
+        def add_finding(candidate: Finding) -> None:
+            if should_suppress_finding_for_allowlist(
+                input,
+                hostname,
+                category_prefix="NET",
+                finding_code=candidate.category,
+            ):
+                return
+            findings.append(candidate)
 
         # --- Check for localhost aliases (NET004) ---
         normalized_host = normalize_hostname(hostname)
         if normalized_host in LOCALHOST_ALIASES:
-            findings.append(
+            add_finding(
                 Finding(
                     module=self.name,
                     category="NET004_LOCALHOST_ALIAS",
@@ -99,7 +107,7 @@ class NetIPDetector(ModuleInterface):
         if mapped_v4 is None:
             mapped_v4, _v6_notes = resolve_ipv6_mapped_v4(normalized_host)
         if mapped_v4 is not None:
-            findings.append(
+            add_finding(
                 Finding(
                     module=self.name,
                     category="NET005_IPV6_MAPPED_V4",
@@ -127,7 +135,7 @@ class NetIPDetector(ModuleInterface):
                 )
             )
             if is_private_or_loopback(mapped_v4):
-                findings.append(
+                add_finding(
                     Finding(
                         module=self.name,
                         category="NET001_PRIVATE_IP_LITERAL",
@@ -158,7 +166,7 @@ class NetIPDetector(ModuleInterface):
         parsed_ip = url_context.ip_literal or parse_ip_literal(hostname)
         if parsed_ip is not None:
             if _is_private_scope(parsed_ip):
-                findings.append(
+                add_finding(
                     Finding(
                         module=self.name,
                         category="NET001_PRIVATE_IP_LITERAL",
@@ -186,7 +194,7 @@ class NetIPDetector(ModuleInterface):
                     )
                 )
             else:
-                findings.append(
+                add_finding(
                     Finding(
                         module=self.name,
                         category="NET002_PUBLIC_IP_LITERAL",
@@ -225,7 +233,7 @@ class NetIPDetector(ModuleInterface):
             # Detect mixed notation (NET006)
             has_mixed = any("mixed_notation" in n for n in ip_notes)
             if has_mixed:
-                findings.append(
+                add_finding(
                     Finding(
                         module=self.name,
                         category="NET006_MIXED_NOTATION",
@@ -255,7 +263,7 @@ class NetIPDetector(ModuleInterface):
                 )
 
             # Main obfuscated IP finding (NET003)
-            findings.append(
+            add_finding(
                 Finding(
                     module=self.name,
                     category="NET003_OBFUSCATED_IP",
@@ -290,7 +298,7 @@ class NetIPDetector(ModuleInterface):
 
             # If the decoded IP is private, also flag NET001
             if is_private_or_loopback(ipv4):
-                findings.append(
+                add_finding(
                     Finding(
                         module=self.name,
                         category="NET001_PRIVATE_IP_LITERAL",

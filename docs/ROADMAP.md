@@ -23,6 +23,10 @@
   - [x] Stable structured wrappers for single/multi result payloads (including QR `--all`)
   - [x] Minimal FastAPI adapter over existing orchestrator + formatter layers
   - [x] API contract + Next.js integration notes
+- [x] Session 10: False-positive control completion
+  - [x] per-finding allowlist scope (`--allowlist-finding`, API `allowlist_findings`)
+  - [x] category `NONE` override for finding-only suppression on allowlisted domains
+  - [x] broadened brand/suffix calibration fixtures and operator confidence guidance
 
 ## Session 8: Deployment + UI Validation
 
@@ -89,6 +93,6 @@ Close the remaining MVP gap between local validation and hosted-safe operation.
 - Risk: vulnerable third-party dependencies slip into main
   Mitigation: enforce `pip-audit` in CI (Python 3.11) and follow `docs/DEPENDENCY_AUDIT.md` exception policy.
 - Risk: false positives from internationalized domains
-  Mitigation: expand allowlist controls and confidence calibration guidance.
+  Mitigation: maintain per-finding allowlist controls, calibration fixtures, and confidence guidance updates.
 - Risk: docs drift from implementation
   Mitigation: keep `docs/` as the canonical docs location and update docs in the same change as behavior updates.

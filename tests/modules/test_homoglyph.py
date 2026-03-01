@@ -115,3 +115,21 @@ def test_homoglyph_respects_allowlist_domains() -> None:
         )
     )
     assert findings == []
+
+
+def test_homoglyph_allowlist_finding_can_suppress_single_code() -> None:
+    detector = HomoglyphDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="url",
+            content="https://xn--pple-43d.com",
+            metadata={
+                "allowlist_domains": ["xn--pple-43d.com"],
+                "allowlist_categories": ["NONE"],
+                "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+            },
+        )
+    )
+    codes = _codes(findings)
+    assert "HMG002_PUNYCODE_VISIBILITY" not in codes
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in codes

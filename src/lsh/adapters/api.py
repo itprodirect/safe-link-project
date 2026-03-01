@@ -113,6 +113,7 @@ class URLCheckRequest(BaseModel):
     family: bool = False
     allowlist_domains: list[str] = Field(default_factory=list)
     allowlist_categories: list[str] = Field(default_factory=list)
+    allowlist_findings: list[str] = Field(default_factory=list)
     network_enabled: bool = False
     network_max_hops: int = Field(default=5, ge=1, le=15)
     network_timeout: float = Field(default=3.0, ge=0.1)
@@ -134,6 +135,8 @@ def _url_metadata(request: URLCheckRequest) -> dict[str, object]:
         metadata["allowlist_domains"] = request.allowlist_domains
     if request.allowlist_categories:
         metadata["allowlist_categories"] = [item.upper() for item in request.allowlist_categories]
+    if request.allowlist_findings:
+        metadata["allowlist_findings"] = [item.upper() for item in request.allowlist_findings]
     return metadata
 
 

@@ -90,11 +90,32 @@ def allowlist_category_prefixes_for_input(analysis_input: AnalysisInput) -> set[
         return set(DEFAULT_ALLOWLIST_CATEGORY_PREFIXES)
 
     normalized = {category.strip().upper() for category in raw_categories if category.strip()}
+    if "NONE" in normalized:
+        normalized.discard("NONE")
+        if not normalized:
+            return set()
     if "ALL" in normalized:
         return set(SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES)
     return {
         category for category in normalized if category in SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES
     }
+
+
+def allowlist_findings_for_input(analysis_input: AnalysisInput) -> set[str]:
+    """Return finding-code tokens to suppress for allowlisted hostnames."""
+    raw_value = analysis_input.metadata.get("allowlist_findings")
+    if raw_value is None:
+        return set()
+
+    raw_findings: Iterable[str]
+    if isinstance(raw_value, str):
+        raw_findings = [part.strip() for part in raw_value.split(",")]
+    elif isinstance(raw_value, list):
+        raw_findings = [item for item in raw_value if isinstance(item, str)]
+    else:
+        return set()
+
+    return {finding.strip().upper() for finding in raw_findings if finding.strip()}
 
 
 def is_hostname_allowlisted(hostname: str, allowlist_domains: set[str]) -> bool:
@@ -127,3 +148,46 @@ def should_suppress_for_allowlist(
 
     categories = allowlist_category_prefixes_for_input(analysis_input)
     return category in categories
+
+
+def _finding_token_matches(code: str, token: str) -> bool:
+    """Return True when a finding token matches one finding code.
+
+    Supported token forms:
+    - exact code: HMG002_PUNYCODE_VISIBILITY
+    - prefix stem: HMG002 (matches HMG002_*)
+    - wildcard prefix: HMG002* (matches HMG002*)
+    """
+    if token.endswith("*"):
+        return code.startswith(token.removesuffix("*"))
+    if code == token:
+        return True
+    return code.startswith(f"{token}_")
+
+
+def should_suppress_finding_for_allowlist(
+    analysis_input: AnalysisInput,
+    hostname: str,
+    *,
+    category_prefix: str,
+    finding_code: str,
+) -> bool:
+    """Return True when hostname is allowlisted for category or finding-code scope."""
+    category = category_prefix.strip().upper()
+    if category not in SUPPORTED_ALLOWLIST_CATEGORY_PREFIXES:
+        return False
+
+    allowlist_domains = allowlist_domains_for_input(analysis_input)
+    if not is_hostname_allowlisted(hostname, allowlist_domains):
+        return False
+
+    categories = allowlist_category_prefixes_for_input(analysis_input)
+    if category in categories:
+        return True
+
+    code = finding_code.strip().upper()
+    if not code:
+        return False
+
+    finding_tokens = allowlist_findings_for_input(analysis_input)
+    return any(_finding_token_matches(code, token) for token in finding_tokens)

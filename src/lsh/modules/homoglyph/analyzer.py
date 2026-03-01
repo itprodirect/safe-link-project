@@ -5,7 +5,7 @@ from __future__ import annotations
 import unicodedata
 from typing import Any
 
-from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.allowlist import should_suppress_finding_for_allowlist
 from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
 
@@ -199,8 +199,6 @@ class HomoglyphDetector(ModuleInterface):
         hostname = url_context.hostname
         if url_context.ip_literal is not None:
             return []
-        if should_suppress_for_allowlist(input, hostname, category_prefix="HMG"):
-            return []
 
         unicode_hostname = (
             url_context.idna_unicode_hostname or _idna_to_unicode(hostname) or hostname
@@ -225,6 +223,13 @@ class HomoglyphDetector(ModuleInterface):
             recommendations: list[str],
         ) -> None:
             nonlocal cumulative_risk
+            if should_suppress_finding_for_allowlist(
+                input,
+                hostname,
+                category_prefix="HMG",
+                finding_code=code,
+            ):
+                return
             cumulative_risk = min(100, cumulative_risk + risk_delta)
             findings.append(
                 Finding(

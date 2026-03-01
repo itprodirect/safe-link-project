@@ -1569,6 +1569,66 @@ Development session history. Each entry documents what was done, why, and what's
 
 **Tests / Verification:**
 - `python -m ruff check src tests` passed.
+
+---
+
+## 2026-03-01 - Session 10D: Complete false-positive control phase
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Complete the remaining false-positive control scope: per-rule allowlist granularity, calibration fixtures, and operator-facing guidance updates.
+
+**Module(s) Touched:** allowlist core, URL detector modules, CLI/API adapters, tests, docs, session log
+
+**Changes:**
+- Added per-finding allowlist suppression in `src/lsh/core/allowlist.py`:
+  - new metadata key: `allowlist_findings`
+  - new helper: `should_suppress_finding_for_allowlist(...)`
+  - token forms supported: exact code, stem (`HMG002`), wildcard prefix (`HMG002*`)
+  - category parser now supports `NONE` to disable default category suppression
+- Updated detector suppression flow from category-only early-return to per-finding checks:
+  - `src/lsh/modules/homoglyph/analyzer.py`
+  - `src/lsh/modules/ascii_lookalike/analyzer.py`
+  - `src/lsh/modules/url_structure/analyzer.py`
+  - `src/lsh/modules/net_ip/analyzer.py`
+- CLI/API wiring:
+  - `src/lsh/adapters/cli.py`
+    - added `--allowlist-finding`
+    - `--allowlist-category` now supports `NONE`
+  - `src/lsh/adapters/api.py`
+    - added `allowlist_findings` in URL request contract and metadata passthrough
+- Added targeted and calibration tests:
+  - `tests/core/test_allowlist.py`
+  - `tests/modules/test_homoglyph.py`
+  - `tests/modules/test_ascii_lookalike.py`
+  - `tests/modules/test_url_structure.py`
+  - `tests/modules/test_net_ip.py`
+  - `tests/test_smoke.py`
+  - `tests/adapters/test_api.py`
+- Updated docs:
+  - `README.md` (CLI usage + confidence interpretation guidance)
+  - `docs/API_INTEGRATION.md` (URL request contract now includes `allowlist_findings` + `NONE`)
+  - `docs/MODULES.md` (P1 control updates, per-rule semantics)
+  - `docs/PLAN_REVIEW.md` (false-positive strategy status updated)
+  - `docs/ROADMAP.md` (Session 10 false-positive completion added)
+
+**Decisions:**
+- Kept default allowlist behavior (`HMG`,`ASCII`) for backward compatibility; added explicit `NONE` for finding-only suppression use cases.
+- Implemented suppression at finding creation time (not post-filtering) to preserve correct cumulative-risk behavior after selective suppression.
+
+**Open Questions:**
+- Do we want to expose allowlist-finding controls in the Next.js UI now, or keep them API/CLI-only until operator UX for policy editing is ready?
+
+**Next:**
+- Execute Session 9 hosted-domain validation when deployment domains are available, then close final open roadmap item.
+
+**Tests / Verification:**
+- `python -m ruff check src tests` passed.
+- `python -m mypy src` passed.
+- `python -m pytest tests/core/test_allowlist.py tests/modules/test_homoglyph.py tests/modules/test_ascii_lookalike.py tests/modules/test_url_structure.py tests/modules/test_net_ip.py tests/test_smoke.py -q` passed (`57 passed`).
+- Local `tests/adapters/test_api.py` collection still requires installed `python-multipart` in this shell environment.
 - Local `pip-audit` binary is not installed in this shell environment, so direct local audit execution was not verified here.
 
 ---

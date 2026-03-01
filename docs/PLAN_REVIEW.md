@@ -84,20 +84,21 @@ Recommended follow-up:
 - keep QR legacy-key migration/deprecation timeline visible to integrators
 - keep `LSH_API_CORS_ALLOW_ORIGINS` settings explicit in deployment environments and validate preflight during hosted smoke checks
 
-### 6. False Positive Strategy Is In Progress
+### 6. False Positive Strategy Is Now Operational
 
 Current controls are a good start:
 
 - `confidence` labels
 - domain allowlist (`--allowlist-domain`, `--allowlist-file`)
-- scoped allowlist categories (`--allowlist-category`)
+- scoped allowlist categories (`--allowlist-category`, including `NONE`)
+- per-rule allowlist tokens (`--allowlist-finding`, API `allowlist_findings`)
 - confidence-aware family summary wording
+- broader brand/suffix calibration fixtures in module tests (`co.uk`, `com.au`, `co.jp`)
 
-What still remains:
+Operator guidance now in docs:
 
-- per-rule allowlist granularity
-- clearer operator documentation on confidence interpretation and expected false positives
-- broader brand/suffix fixtures for calibration
+- confidence interpretation bands in README (`HIGH`/`MEDIUM`/`LOW`)
+- API contract notes for allowlist category and per-finding behavior
 
 ### 7. CI Security Checks Are Enforced
 

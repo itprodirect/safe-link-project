@@ -28,7 +28,6 @@ Finding codes:
 
 Known limitations:
 
-- allowlist support is first-pass (domain-level only, no per-rule granularity)
 - no brand impersonation scoring in this module (ASCII brand checks live in `ascii_lookalike`)
 - URL extraction from free text is not implemented
 
@@ -223,6 +222,12 @@ Future migration targets:
   - `--allowlist-domain`
   - `--allowlist-file`
   - `--allowlist-category`
+  - `--allowlist-finding`
 - Default allowlist suppression scope is `HMG` + `ASCII`
+- `--allowlist-category NONE` disables default category suppression so only per-finding tokens apply
+- Per-finding allowlist tokens support:
+  - exact code (for example `HMG002_PUNYCODE_VISIBILITY`)
+  - code stem (for example `HMG002`)
+  - wildcard prefix (for example `HMG002*`)
 - `--allowlist-category ALL` enables suppression for all categories (`HMG`, `ASCII`, `URL`, `NET`)
 - Redirect findings (`RED*`) are intentionally not suppressible via allowlist in this phase

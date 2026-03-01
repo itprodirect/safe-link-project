@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lsh.core.allowlist import should_suppress_for_allowlist
+from lsh.core.allowlist import should_suppress_finding_for_allowlist
 from lsh.core.context import url_context_for_input
 from lsh.core.models import (
     AnalysisInput,
@@ -74,8 +74,6 @@ class AsciiLookalikeDetector(ModuleInterface):
             return []
 
         hostname = url_context.hostname
-        if should_suppress_for_allowlist(input, hostname, category_prefix="ASCII"):
-            return []
 
         if url_context.ip_literal is not None:
             return []
@@ -103,6 +101,13 @@ class AsciiLookalikeDetector(ModuleInterface):
             recommendations: list[str],
         ) -> None:
             nonlocal cumulative_risk
+            if should_suppress_finding_for_allowlist(
+                input,
+                hostname,
+                category_prefix="ASCII",
+                finding_code=code,
+            ):
+                return
             cumulative_risk = min(100, cumulative_risk + risk_delta)
             findings.append(
                 Finding(

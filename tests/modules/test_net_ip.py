@@ -14,3 +14,19 @@ def test_public_ip_literal_is_flagged() -> None:
     detector = NetIPDetector()
     findings = detector.analyze(AnalysisInput(input_type="url", content="http://8.8.8.8"))
     assert any(finding.category == "NET002_PUBLIC_IP_LITERAL" for finding in findings)
+
+
+def test_net_ip_allowlist_finding_can_suppress_single_code() -> None:
+    detector = NetIPDetector()
+    findings = detector.analyze(
+        AnalysisInput(
+            input_type="url",
+            content="http://8.8.8.8",
+            metadata={
+                "allowlist_domains": ["8.8.8.8"],
+                "allowlist_categories": ["NONE"],
+                "allowlist_findings": ["NET002_PUBLIC_IP_LITERAL"],
+            },
+        )
+    )
+    assert findings == []

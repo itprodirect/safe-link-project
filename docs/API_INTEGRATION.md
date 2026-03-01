@@ -46,6 +46,7 @@ LSH_API_CORS_ALLOW_ORIGINS=https://safe-link-ui.example.com
   "family": false,
   "allowlist_domains": ["trusted.example"],
   "allowlist_categories": ["HMG", "ASCII"],
+  "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
   "network_enabled": false,
   "network_max_hops": 5,
   "network_timeout": 3.0
@@ -55,7 +56,8 @@ LSH_API_CORS_ALLOW_ORIGINS=https://safe-link-ui.example.com
 Notes:
 
 - `url` is required.
-- `allowlist_categories` values are normalized to uppercase server-side.
+- `allowlist_categories` values are normalized to uppercase server-side (`NONE` disables default category suppression).
+- `allowlist_findings` enables per-rule suppression for allowlisted hostnames (exact code, stem, or `*` prefix).
 - `network_*` options control redirect module behavior only when `network_enabled=true`.
 
 ### POST `/api/v1/email/check`
