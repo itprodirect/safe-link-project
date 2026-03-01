@@ -1,5 +1,6 @@
 """Minimal FastAPI adapter for Link Safety Hub."""
 # mypy: disable-error-code=untyped-decorator
+# mypy: warn_unused_ignores=False
 
 from __future__ import annotations
 
