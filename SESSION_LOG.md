@@ -1535,3 +1535,38 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m pytest -q` passed (`163 passed, 1 skipped`)
 - Verified recent GitHub Actions dependency-audit step baseline was successful before enforcement.
 - Local `pip-audit` execution in this environment is network-restricted; CI remains the source of truth for live advisory resolution.
+
+---
+
+## 2026-03-01 - Session 10B: Fix strict dependency-audit false failure on local package
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Resolve GitHub Actions dependency-audit failures caused by strict audit of the local editable project package (`link-safety-hub`) while keeping third-party vulnerability gating enforced.
+
+**Module(s) Touched:** CI workflow, local build tooling, dependency-audit docs, README, session log
+
+**Changes:**
+- Updated dependency-audit command to skip editable/local package resolution:
+  - `.github/workflows/ci.yml`: `pip-audit --progress-spinner off --strict --skip-editable`
+  - `Makefile` `audit` target: `pip-audit --progress-spinner off --strict --skip-editable`
+- Updated policy and developer docs for command parity:
+  - `docs/DEPENDENCY_AUDIT.md`
+  - `README.md`
+- Expanded dependency-audit triage guidance to explicitly distinguish local package resolution errors from real third-party advisories.
+
+**Decisions:**
+- Kept `--strict` in place to preserve blocking behavior for real dependency risk.
+- Added `--skip-editable` rather than weakening the gate, so only unauditable local editable metadata is excluded.
+
+**Open Questions:**
+- Should the install step move from editable (`-e`) to non-editable in CI to simplify package-audit semantics further?
+
+**Next:**
+- Re-run GitHub Actions and confirm `check (3.11)` dependency-audit now progresses to vulnerability evaluation instead of failing on `link-safety-hub`.
+
+**Tests / Verification:**
+- `python -m ruff check src tests` passed.
+- Local `pip-audit` binary is not installed in this shell environment, so direct local audit execution was not verified here.

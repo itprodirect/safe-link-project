@@ -6,7 +6,7 @@ Keep third-party Python dependencies at an acceptable security baseline and bloc
 
 ## CI Enforcement
 
-- CI runs `pip-audit --progress-spinner off --strict` on Python `3.11`.
+- CI runs `pip-audit --progress-spinner off --strict --skip-editable` on Python `3.11`.
 - The dependency-audit step is **blocking** (non-zero exit fails the job).
 
 Workflow reference: `.github/workflows/ci.yml`
@@ -16,7 +16,7 @@ Workflow reference: `.github/workflows/ci.yml`
 From the repo root:
 
 ```bash
-python -m pip_audit --progress-spinner off --strict
+python -m pip_audit --progress-spinner off --strict --skip-editable
 ```
 
 or:
@@ -29,11 +29,12 @@ make audit
 
 When `pip-audit` fails in CI:
 
-1. Identify vulnerable package + advisory ID from CI logs.
-2. Attempt direct dependency update (preferred).
-3. If transitive, update or pin the top-level package that brings it in.
-4. Re-run `pip-audit` and full CI checks.
-5. Document remediation in PR notes and session log.
+1. Confirm the failure is a real third-party advisory (not a local editable package resolution issue).
+2. Identify vulnerable package + advisory ID from CI logs.
+3. Attempt direct dependency update (preferred).
+4. If transitive, update or pin the top-level package that brings it in.
+5. Re-run `pip-audit` and full CI checks.
+6. Document remediation in PR notes and session log.
 
 ## Temporary Exception Policy
 

@@ -37,7 +37,7 @@ jobs:
 
       - name: Dependency audit
         if: matrix.python-version == '3.11'
-        run: pip-audit --progress-spinner off --strict
+        run: pip-audit --progress-spinner off --strict --skip-editable
 
       - name: Test
         run: pytest -v --tb=short -m "not network"
