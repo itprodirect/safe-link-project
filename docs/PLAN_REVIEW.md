@@ -81,6 +81,7 @@ Recommended follow-up:
 
 - keep examples in lockstep with adapter behavior whenever payload fields evolve
 - add explicit API response models if contract strictness needs to increase
+- keep `LSH_API_CORS_ALLOW_ORIGINS` settings explicit in deployment environments and validate preflight during hosted smoke checks
 
 ### 6. False Positive Strategy Is In Progress
 

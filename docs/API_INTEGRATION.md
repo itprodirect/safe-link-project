@@ -22,6 +22,20 @@ Endpoints:
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan`
 
+## CORS Contract
+
+API CORS behavior is controlled by `LSH_API_CORS_ALLOW_ORIGINS`.
+
+- default (when env var is unset): `http://127.0.0.1:3000,http://localhost:3000`
+- value format: comma-separated list of allowed origins
+- set to an empty string to disable CORS headers entirely
+
+Hosted example:
+
+```text
+LSH_API_CORS_ALLOW_ORIGINS=https://safe-link-ui.example.com
+```
+
 ## Request Contracts
 
 ### POST `/api/v1/url/check`

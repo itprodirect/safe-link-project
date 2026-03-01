@@ -1,4 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+const UI_ORIGIN = process.env.NEXT_PUBLIC_UI_ORIGIN ?? "http://127.0.0.1:3000";
 
 async function check(condition, message) {
   if (!condition) {
@@ -10,6 +11,18 @@ async function getJson(path) {
   const response = await fetch(`${API_BASE_URL}${path}`);
   const payload = await response.json();
   return { response, payload };
+}
+
+async function preflight(path, origin) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: origin,
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "content-type"
+    }
+  });
+  return { response };
 }
 
 async function postJson(path, body) {
@@ -33,11 +46,21 @@ async function postForm(path, formData) {
 
 async function run() {
   console.log(`[smoke] API base: ${API_BASE_URL}`);
+  console.log(`[smoke] UI origin: ${UI_ORIGIN}`);
 
   const health = await getJson("/health");
   await check(health.response.ok, "health check failed");
   await check(health.payload.status === "ok", "health payload missing status=ok");
   console.log("[smoke] health ok");
+
+  const corsPreflight = await preflight("/api/v1/url/check", UI_ORIGIN);
+  await check(corsPreflight.response.ok, "cors preflight failed");
+  const allowOrigin = corsPreflight.response.headers.get("access-control-allow-origin");
+  await check(
+    allowOrigin === UI_ORIGIN || allowOrigin === "*",
+    `cors allow-origin mismatch (${allowOrigin ?? "missing"})`
+  );
+  console.log("[smoke] cors preflight ok");
 
   const urlResult = await postJson("/api/v1/url/check", { url: "https://example.com" });
   await check(urlResult.response.ok, "url check failed");

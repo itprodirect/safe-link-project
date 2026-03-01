@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from typing import Annotated, Any
 
@@ -38,12 +39,15 @@ try:
         HTTPException,
         UploadFile,
     )
+    from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found]
 except ImportError:
     FASTAPI_AVAILABLE = False
 else:
     FASTAPI_AVAILABLE = True
 
 _SCHEMA_VERSION = "1.0"
+_CORS_ORIGINS_ENV = "LSH_API_CORS_ALLOW_ORIGINS"
+_DEFAULT_CORS_ORIGINS = ("http://127.0.0.1:3000", "http://localhost:3000")
 
 _URL_ORCHESTRATOR = AnalysisOrchestrator(
     modules=[
@@ -143,6 +147,13 @@ def _api_error(
     )
 
 
+def _cors_allowed_origins() -> list[str]:
+    raw_value = os.getenv(_CORS_ORIGINS_ENV)
+    if raw_value is None:
+        return list(_DEFAULT_CORS_ORIGINS)
+    return [origin.strip() for origin in raw_value.split(",") if origin.strip()]
+
+
 def create_app() -> Any:
     if not FASTAPI_AVAILABLE:
         raise RuntimeError(
@@ -155,6 +166,15 @@ def create_app() -> Any:
         version="0.1.0",
         description="Minimal API adapter for URL, email, and QR analysis flows.",
     )
+    cors_origins = _cors_allowed_origins()
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=False,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+        )
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -1360,3 +1360,66 @@ Development session history. Each entry documents what was done, why, and what's
   - `/health` probe passed
   - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api` in `ui/` passed
   - container cleanup passed
+
+---
+
+## 2026-03-01 - Session 9C: Hosted-validation readiness (CORS config + preflight smoke)
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Execute Session 9C by making hosted UI/API integration explicit and testable: CORS configuration, preflight verification, and runbook-driven hosted smoke flow.
+
+**Module(s) Touched:** API adapter, CI smoke script, adapter tests, deployment/API docs, roadmap/plan docs
+
+**Changes:**
+- Added API CORS middleware wiring in `src/lsh/adapters/api.py`:
+  - env var: `LSH_API_CORS_ALLOW_ORIGINS`
+  - default allowlist when env is unset:
+    - `http://127.0.0.1:3000`
+    - `http://localhost:3000`
+  - supports comma-separated custom origins for hosted deployments.
+- Added CORS preflight tests in `tests/adapters/test_api.py`:
+  - default local origin allowed
+  - env override respected and unlisted origin denied
+- Expanded `ui/scripts/api-contract-smoke.mjs`:
+  - new `NEXT_PUBLIC_UI_ORIGIN` support
+  - OPTIONS preflight check for `/api/v1/url/check`
+  - verifies `access-control-allow-origin` before API contract checks
+- Updated CI smoke environment in `.github/workflows/ci.yml`:
+  - passes `NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000` in docker-smoke contract step
+- Updated docs/runbooks:
+  - `docs/API_INTEGRATION.md` adds CORS contract section and env policy
+  - `docs/DEPLOYMENT.md` adds hosted validation sequence (reachability + preflight + smoke)
+  - `docs/NEXTJS_UI_VALIDATION.md` adds CORS/reachability assertions
+  - `ui/README.md` smoke scope now includes CORS preflight
+  - `README.md` updated smoke command envs and optional API CORS override
+  - `docs/PLAN_REVIEW.md` follow-up notes CORS env + preflight validation
+  - `docs/ROADMAP.md` Session 9 item 3 annotated with current state
+
+**Decisions:**
+- Defaulted API CORS to localhost UI origins when unset to keep local UI workflow friction low while requiring explicit origin config in hosted environments.
+- Kept hosted-validation checklist explicit in docs so the same smoke script is reusable across local and deployed URLs.
+
+**Open Questions:**
+- Which exact hosted UI/API domains should be used for the first real external validation run to fully close Session 9 item 3?
+- Should we allow wildcard CORS (`*`) in non-production only, and enforce explicit origins in production profiles?
+
+**Next:**
+- Run final hosted validation commands against real deployed API/UI domains and capture outcomes in session log.
+- Then proceed to Session 9D (response-model strictness + legacy key deprecation plan).
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+  - note: FastAPI adapter test module remains skipped locally in this env
+- `npm run build` in `ui/` passed
+- `npm run typecheck` in `ui/` passed
+- runtime smoke against container:
+  - `docker build -t lsh-api:session9c .` passed
+  - `docker run -d -p 8000:8000 --name lsh-api-9c lsh-api:session9c` passed
+  - `/health` probe passed
+  - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:api` passed
+  - container cleanup passed

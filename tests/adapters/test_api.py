@@ -22,12 +22,48 @@ def _qr_upload(
     return {"file": (filename, content, "image/png")}
 
 
+def _preflight_headers(origin: str) -> dict[str, str]:
+    return {
+        "Origin": origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+    }
+
+
 def test_health_endpoint() -> None:
     client = _client()
 
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_cors_preflight_allows_default_local_ui_origin() -> None:
+    client = _client()
+    response = client.options(
+        "/api/v1/url/check",
+        headers=_preflight_headers("http://127.0.0.1:3000"),
+    )
+    assert response.status_code in {200, 204}
+    assert response.headers.get("access-control-allow-origin") == "http://127.0.0.1:3000"
+
+
+def test_cors_preflight_respects_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LSH_API_CORS_ALLOW_ORIGINS", "https://ui.example.com")
+    client = TestClient(api.create_app())
+
+    allowed = client.options(
+        "/api/v1/url/check",
+        headers=_preflight_headers("https://ui.example.com"),
+    )
+    assert allowed.status_code in {200, 204}
+    assert allowed.headers.get("access-control-allow-origin") == "https://ui.example.com"
+
+    denied = client.options(
+        "/api/v1/url/check",
+        headers=_preflight_headers("http://127.0.0.1:3000"),
+    )
+    assert denied.headers.get("access-control-allow-origin") is None
 
 
 def test_url_check_endpoint_returns_wrapped_shape() -> None:

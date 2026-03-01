@@ -87,6 +87,12 @@ python -m pip install -e ".[api]"
 uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
 ```
 
+Optional CORS override for hosted UI origins:
+
+```bash
+LSH_API_CORS_ALLOW_ORIGINS=https://<your-ui-domain> uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
+```
+
 Current endpoints:
 
 - `GET /health`
@@ -120,7 +126,7 @@ Contract smoke path:
 
 ```bash
 cd ui
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:api
 ```
 
 ### Quick Smoke Examples

@@ -17,6 +17,7 @@ Set API base URL in frontend runtime:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000
 ```
 
 ## Minimum Screens / Actions
@@ -26,6 +27,12 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 3. QR scan request form (file upload using `multipart/form-data`)
 
 ## Required Assertions
+
+### CORS / reachability
+
+- GET `/health` succeeds on target API URL.
+- OPTIONS preflight to `/api/v1/url/check` from the UI origin succeeds.
+- `access-control-allow-origin` matches configured UI origin (or `*` when explicitly configured).
 
 ### URL flow
 
