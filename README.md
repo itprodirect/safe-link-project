@@ -92,7 +92,7 @@ Current endpoints:
 - `GET /health`
 - `POST /api/v1/url/check`
 - `POST /api/v1/email/check`
-- `POST /api/v1/qr/scan`
+- `POST /api/v1/qr/scan` (`multipart/form-data` with uploaded file)
 
 Contract and integration notes: `docs/API_INTEGRATION.md`
 

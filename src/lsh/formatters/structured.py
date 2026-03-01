@@ -93,6 +93,8 @@ def build_qr_scan_payload(
         "flow": "qr_scan",
         "mode": "multi" if analyzed_all else "single",
         "input_type": "url",
+        "image_name": image_path,
+        # Legacy key kept for existing consumers that still read image_path.
         "image_path": image_path,
         "decoded_payloads": decoded_payloads,
         "decoded_payload_count": len(decoded_payloads),

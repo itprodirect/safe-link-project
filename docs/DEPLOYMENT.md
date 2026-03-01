@@ -89,3 +89,4 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api
 ```
 
 This validates wrapper/error contract behavior from the frontend runtime perspective.
+The QR portion uses `multipart/form-data` upload flow (no server-local `image_path` required).

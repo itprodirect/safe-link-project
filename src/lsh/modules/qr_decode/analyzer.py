@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -56,6 +57,39 @@ def decode_qr_payloads_from_image(image_path: str | Path) -> list[str]:
             decoded_objects = _pyzbar_decode(image)
     except OSError as exc:
         raise QRDecodeError(f"Could not open or decode image '{path}': {exc}") from exc
+
+    payloads: list[str] = []
+    seen: set[str] = set()
+    for obj in decoded_objects:
+        raw_data = getattr(obj, "data", b"")
+        if not isinstance(raw_data, (bytes, bytearray)):
+            continue
+        text = bytes(raw_data).decode("utf-8", errors="replace").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        payloads.append(text)
+    return payloads
+
+
+def decode_qr_payloads_from_bytes(
+    image_bytes: bytes,
+    *,
+    image_name: str = "<uploaded-image>",
+) -> list[str]:
+    """Decode QR payload strings from uploaded image bytes."""
+    _require_decoder()
+    assert Image is not None
+    assert _pyzbar_decode is not None
+
+    if not image_bytes:
+        raise QRDecodeError("Uploaded image file is empty.")
+
+    try:
+        with Image.open(BytesIO(image_bytes)) as image:
+            decoded_objects = _pyzbar_decode(image)
+    except OSError as exc:
+        raise QRDecodeError(f"Could not open or decode image '{image_name}': {exc}") from exc
 
     payloads: list[str] = []
     seen: set[str] = set()

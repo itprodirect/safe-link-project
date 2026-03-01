@@ -1,10 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ApiRequestError, ApiWrappedResponse, asPrettyJson, postApi } from "../../lib/api";
+import { ApiRequestError, ApiWrappedResponse, asPrettyJson, postApiForm } from "../../lib/api";
 
 export default function QrPage() {
-  const [imagePath, setImagePath] = useState("C:/tmp/code.png");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [analyzeAll, setAnalyzeAll] = useState(false);
   const [family, setFamily] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,15 +17,20 @@ export default function QrPage() {
     setError(null);
     setResponse(null);
     try {
-      const result = await postApi<ApiWrappedResponse>("/api/v1/qr/scan", {
-        image_path: imagePath,
-        analyze_all: analyzeAll,
-        family
-      });
+      if (!imageFile) {
+        throw new Error("Please choose a QR image file first.");
+      }
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      formData.append("analyze_all", String(analyzeAll));
+      formData.append("family", String(family));
+      const result = await postApiForm<ApiWrappedResponse>("/api/v1/qr/scan", formData);
       setResponse(result);
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setError(`${err.message}${err.code ? ` (${err.code})` : ""}`);
+      } else if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError("Unexpected error while calling API.");
       }
@@ -46,15 +51,15 @@ export default function QrPage() {
       <section className="card">
         <h1>QR Scan</h1>
         <p className="muted">
-          Current backend contract accepts a local filesystem path visible to the API runtime.
+          Upload a QR image and the API will decode payloads from the uploaded file bytes.
         </p>
         <form onSubmit={onSubmit}>
           <label>
-            Image path
+            QR image file
             <input
-              value={imagePath}
-              onChange={(e) => setImagePath(e.target.value)}
-              placeholder="C:/tmp/code.png"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
             />
           </label>
 

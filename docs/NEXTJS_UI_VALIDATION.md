@@ -23,7 +23,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 1. URL check form
 2. Email header check form
-3. QR scan request form (path-based input for current backend contract)
+3. QR scan request form (file upload using `multipart/form-data`)
 
 ## Required Assertions
 
@@ -43,10 +43,11 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 ### QR flow
 
-- POST `/api/v1/qr/scan` single mode renders `item`.
+- POST `/api/v1/qr/scan` with uploaded file succeeds and single mode renders `item`.
 - `analyze_all=true` renders `items[]` and handles `item_count > 1`.
 - error envelope from `detail.error` is shown in UI for:
   - decoder unavailable
+  - unreadable/invalid upload bytes
   - no payloads
   - no URL payloads
 
@@ -73,7 +74,7 @@ These remain for backward compatibility and may be removed in a later major vers
 2. Start Next.js app with `NEXT_PUBLIC_API_BASE_URL`.
    - from `ui/`: `npm run dev`
 3. Execute URL/email/QR happy paths.
-4. Execute QR error path (invalid path or no payload case).
+4. Execute QR error path (invalid upload bytes or no payload case).
 5. Run contract smoke script:
    - from `ui/`: `npm run smoke:api`
 6. Capture screenshots of each flow and record contract notes in session log.

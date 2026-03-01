@@ -22,6 +22,15 @@ async function postJson(path, body) {
   return { response, payload };
 }
 
+async function postForm(path, formData) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    body: formData
+  });
+  const payload = await response.json();
+  return { response, payload };
+}
+
 async function run() {
   console.log(`[smoke] API base: ${API_BASE_URL}`);
 
@@ -46,15 +55,21 @@ async function run() {
   await check(emailResult.payload.mode === "single", "email mode should be single");
   console.log("[smoke] email check ok");
 
-  const qrError = await postJson("/api/v1/qr/scan", {
-    image_path: "C:/tmp/non-existent-smoke-qr.png",
-    analyze_all: false
-  });
-  await check(qrError.response.status === 400, "qr expected 400 for missing image");
+  const formData = new FormData();
+  formData.append("file", new Blob(["not-a-valid-image"]), "smoke-invalid.png");
+  formData.append("analyze_all", "false");
+  const qrError = await postForm("/api/v1/qr/scan", formData);
+  await check(
+    qrError.response.status === 400 || qrError.response.status === 503,
+    "qr expected 400/503 for invalid upload or decoder-unavailable"
+  );
   const detail = qrError.payload?.detail ?? {};
   const error = detail?.error ?? {};
   await check(detail.schema_version === "1.0", "qr error schema_version mismatch");
-  await check(error.code === "QRC_IMAGE_READ_ERROR", "qr error code mismatch");
+  await check(
+    error.code === "QRC_IMAGE_READ_ERROR" || error.code === "QRC_DECODER_UNAVAILABLE",
+    "qr error code mismatch"
+  );
   console.log("[smoke] qr error envelope ok");
 
   console.log("[smoke] all checks passed");

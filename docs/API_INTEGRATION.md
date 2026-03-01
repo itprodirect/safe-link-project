@@ -61,17 +61,24 @@ Notes:
 
 ### POST `/api/v1/qr/scan`
 
-```json
-{
-  "image_path": "C:/tmp/code.png",
-  "analyze_all": false,
-  "family": false
-}
+`multipart/form-data` fields:
+
+- `file` (required): uploaded QR image bytes
+- `analyze_all` (optional, default `false`)
+- `family` (optional, default `false`)
+
+Example:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/qr/scan" \
+  -F "file=@./code.png" \
+  -F "analyze_all=false" \
+  -F "family=false"
 ```
 
 Notes:
 
-- `image_path` must point to a local image visible to the API process.
+- `file` is required and must be an image payload readable by the QR decoder.
 - `analyze_all=false` returns one selected URL result.
 - `analyze_all=true` returns wrapped multi-item results.
 
@@ -122,7 +129,7 @@ All successful analysis responses include:
 
 `/api/v1/qr/scan` additionally includes workflow metadata:
 
-- `image_path`
+- `image_name` (uploaded filename when available)
 - `decoded_payloads`
 - `decoded_payload_count`
 - `url_payload_count`
@@ -130,6 +137,7 @@ All successful analysis responses include:
 
 For compatibility with existing CLI JSON consumers, QR responses currently also include legacy keys:
 
+- `image_path` (legacy alias of `image_name`)
 - single mode: `selected_url`, `result`
 - multi mode: `results`
 
@@ -177,6 +185,7 @@ Validation errors (`422`) use FastAPI's default validation format and should be 
    - `detail.error` envelope (contracted API errors)
    - fallback to `detail` string/object for framework errors
 4. Pass `family=true` when rendering plain-language UI screens.
+5. Use `FormData` for `/api/v1/qr/scan`; do not set `Content-Type` manually.
 
 ### TypeScript starter types
 
@@ -230,5 +239,5 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
 
 ## Operational Notes
 
-- API currently trusts local filesystem paths for QR scans. In hosted environments, this should be replaced by upload/tokenized storage flow.
+- QR API now accepts uploaded image bytes and does not require server-local file paths.
 - Use timeout/retry policy in frontend for network-enabled URL checks.

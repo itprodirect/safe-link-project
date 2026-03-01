@@ -88,6 +88,8 @@ def test_qr_payload_includes_wrapped_and_legacy_keys_for_single_mode() -> None:
 
     assert payload["schema_version"] == "1.0"
     assert payload["mode"] == "single"
+    assert payload["image_name"] == "code.png"
+    assert payload["image_path"] == "code.png"
     assert payload["selected_url"] == "https://example.com"
     assert "result" in payload
     assert "item" in payload

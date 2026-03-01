@@ -68,6 +68,19 @@ Phase 1 is complete when:
 - Email and QR commands exist with parity for `--json` and family output
 - CI is green on PRs and local check workflow is stable
 
+## Session 9: Deployment Hardening + Hosted Validation
+
+### Goal
+
+Close the remaining MVP gap between local validation and hosted-safe operation.
+
+### Work Items
+
+1. [x] Replace QR API path input with upload contract (`multipart/form-data`) and align UI integration path.
+2. [ ] Harden CI beyond static checks (UI type/build in CI, runtime API smoke, container health + contract checks).
+3. [ ] Run hosted validation pass (CORS, endpoint reachability, UI contract smoke against deployed API).
+4. [ ] Tighten API contract enforcement strategy (response model strictness + legacy key deprecation plan).
+
 ## Risks and Mitigations
 
 - Risk: network-dependent logic increases flaky tests

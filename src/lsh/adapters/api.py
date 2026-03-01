@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -26,12 +26,18 @@ from lsh.modules import (
 from lsh.modules.qr_decode import (
     QRDecodeError,
     QRDecodeUnavailableError,
-    decode_qr_payloads_from_image,
+    decode_qr_payloads_from_bytes,
     extract_url_payloads,
 )
 
 try:
-    from fastapi import FastAPI, HTTPException  # type: ignore[import-not-found]
+    from fastapi import (  # type: ignore[import-not-found]
+        FastAPI,
+        File,
+        Form,
+        HTTPException,
+        UploadFile,
+    )
 except ImportError:
     FASTAPI_AVAILABLE = False
 else:
@@ -100,12 +106,6 @@ class URLCheckRequest(BaseModel):
 class EmailCheckRequest(BaseModel):
     headers: str = ""
     source_label: str = "inline headers"
-    family: bool = False
-
-
-class QRScanRequest(BaseModel):
-    image_path: str = Field(min_length=1)
-    analyze_all: bool = False
     family: bool = False
 
 
@@ -185,9 +185,28 @@ def create_app() -> Any:
         )
 
     @app.post("/api/v1/qr/scan")
-    def qr_scan(request: QRScanRequest) -> dict[str, object]:
+    async def qr_scan(
+        file: Annotated[UploadFile, File(...)],
+        analyze_all: Annotated[bool, Form()] = False,
+        family: Annotated[bool, Form()] = False,
+    ) -> dict[str, object]:
+        image_name = (file.filename or "uploaded-image").strip() or "uploaded-image"
         try:
-            decoded_payloads = decode_qr_payloads_from_image(request.image_path)
+            image_bytes = await file.read()
+        except Exception as exc:
+            raise _api_error(
+                status_code=400,
+                code="QRC_IMAGE_READ_ERROR",
+                message=f"Could not read uploaded image '{image_name}': {exc}",
+            ) from exc
+        finally:
+            await file.close()
+
+        try:
+            decoded_payloads = decode_qr_payloads_from_bytes(
+                image_bytes,
+                image_name=image_name,
+            )
         except QRDecodeUnavailableError as exc:
             raise _api_error(
                 status_code=503,
@@ -216,15 +235,15 @@ def create_app() -> Any:
                 message="Decoded QR payloads did not contain URL-like values.",
             )
 
-        selected_urls = url_payloads if request.analyze_all else [url_payloads[0]]
+        selected_urls = url_payloads if analyze_all else [url_payloads[0]]
         url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
 
         return build_qr_scan_payload(
-            image_path=request.image_path,
+            image_path=image_name,
             decoded_payloads=decoded_payloads,
             url_results=url_results,
-            analyzed_all=request.analyze_all,
-            include_family=request.family,
+            analyzed_all=analyze_all,
+            include_family=family,
         )
 
     return app

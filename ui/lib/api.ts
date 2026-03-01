@@ -47,14 +47,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-export async function postApi<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store"
-  });
-
+async function parseApiResponse<T>(response: Response): Promise<T> {
   let payload: unknown = null;
   try {
     payload = await response.json();
@@ -72,6 +65,25 @@ export async function postApi<T>(path: string, body: unknown): Promise<T> {
   }
 
   return payload as T;
+}
+
+export async function postApi<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store"
+  });
+  return parseApiResponse<T>(response);
+}
+
+export async function postApiForm<T>(path: string, body: FormData): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    body,
+    cache: "no-store"
+  });
+  return parseApiResponse<T>(response);
 }
 
 export function asPrettyJson(value: unknown): string {

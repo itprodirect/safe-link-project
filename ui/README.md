@@ -35,4 +35,4 @@ The smoke script validates:
 - `/health`
 - `/api/v1/url/check` wrapped single response
 - `/api/v1/email/check` wrapped single response
-- `/api/v1/qr/scan` structured error envelope for missing image
+- `/api/v1/qr/scan` structured error envelope for invalid upload/decoder-unavailable paths

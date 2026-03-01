@@ -1246,3 +1246,58 @@ Development session history. Each entry documents what was done, why, and what's
 - `docker run -d -p 8000:8000 --name lsh-api-test lsh-api:local` passed
 - `npm run smoke:api` in `ui/` passed (`health`, `url`, `email`, `qr error envelope`)
 - `docker rm -f lsh-api-test` passed
+
+---
+
+## 2026-03-01 - Session 9A: QR API upload contract (multipart) + UI integration
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Replace QR API path-based input with hosted-safe upload flow, update integration/UI contracts, and keep wrappers/error envelopes stable.
+
+**Module(s) Touched:** API adapter, QR decode helpers, structured formatter metadata, API tests, Next.js UI client/page, smoke script, docs
+
+**Changes:**
+- API upload contract:
+  - `POST /api/v1/qr/scan` now accepts `multipart/form-data`.
+  - required field: `file` (`UploadFile`)
+  - optional form fields: `analyze_all`, `family`
+  - endpoint now decodes uploaded bytes using a new helper (`decode_qr_payloads_from_bytes`).
+- QR decode helper:
+  - added `decode_qr_payloads_from_bytes(image_bytes, image_name=...)` in `src/lsh/modules/qr_decode/analyzer.py`.
+  - exported via `src/lsh/modules/qr_decode/__init__.py`.
+- Structured response metadata:
+  - QR payloads now include `image_name` (uploaded filename when available).
+  - legacy `image_path` key retained for compatibility.
+- API tests:
+  - `tests/adapters/test_api.py` switched QR endpoint calls to multipart uploads (`files=...`, `data=...`).
+  - added coverage for missing upload file (`422`).
+- UI integration:
+  - `ui/app/qr/page.tsx` now uses file input upload instead of path input.
+  - `ui/lib/api.ts` now includes `postApiForm(...)` for FormData requests.
+  - `ui/scripts/api-contract-smoke.mjs` now submits a multipart file and validates structured QR error envelope.
+- Docs updates:
+  - `docs/API_INTEGRATION.md` QR request contract updated to multipart form fields + curl example.
+  - `docs/NEXTJS_UI_VALIDATION.md` updated to upload-based QR validation.
+  - `docs/DEPLOYMENT.md` notes QR smoke now uses multipart upload (no server-local path).
+  - `ui/README.md` and `README.md` updated for QR API contract wording.
+
+**Decisions:**
+- Kept response wrapper schema version at `1.0` and preserved QR legacy keys (`image_path`, `selected_url`, `result`, `results`) to avoid breaking existing consumers while migrating request input semantics.
+- Kept CLI `lsh qr-scan <image_path>` unchanged; upload migration is API-specific to support hosted environments.
+
+**Open Questions:**
+- Should we set a formal deprecation window for QR legacy response keys now that `image_name` + wrapper keys are established?
+- Do we want to add explicit FastAPI response models in Session 9B to enforce OpenAPI-level contract strictness?
+
+**Next:**
+- Session 9B: CI hardening (UI checks in CI, Docker runtime contract smoke, and dependency audit enforcement policy).
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+- `npm run build` in `ui/` passed
+- `npm run typecheck` in `ui/` passed (after `.next/types` generation by build)
