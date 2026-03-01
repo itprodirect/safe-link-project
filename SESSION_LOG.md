@@ -1673,6 +1673,46 @@ Development session history. Each entry documents what was done, why, and what's
 **Tests / Verification:**
 - `npm run build` (in `ui/`) passed.
 - `npm run typecheck` (in `ui/`) passed after build-generated Next.js type stubs were present.
+
+---
+
+## 2026-03-01 - Session 10F: Add fixture-based QR decode regression tests
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Add deterministic QR decode regression tests based on pinned image fixtures so QR decode behavior can be validated without relying only on monkeypatched decoder paths.
+
+**Module(s) Touched:** QR fixtures, QR module tests, plan review docs, session log
+
+**Changes:**
+- Added pinned QR fixtures under `tests/fixtures/qr/`:
+  - `qrcode_text.png`
+  - `qrcode_text_rotated.png`
+  - `empty.png`
+- Expanded `tests/modules/test_qr_decode.py` with fixture-backed decode tests:
+  - decode from image path (`qrcode_text.png`)
+  - decode from rotated QR image (`qrcode_text_rotated.png`)
+  - decode from raw bytes (`decode_qr_payloads_from_bytes`)
+  - empty image regression (`empty.png` -> no payloads)
+- Added module-level decoder-availability fixture that skips these tests cleanly when QR backend dependencies are missing.
+- Updated `docs/PLAN_REVIEW.md` to mark fixture-based QR regression coverage as implemented.
+
+**Decisions:**
+- Used pinned fixture files in-repo (instead of runtime-generated QR codes) to keep tests deterministic and avoid adding a QR generation dependency to dev/test toolchain.
+- Kept decoder-unavailable behavior as a skip for these regression tests to preserve portability across environments without zbar.
+
+**Open Questions:**
+- Should we add one additional fixture containing an HTTP URL payload to validate decode + URL handoff behavior in a single integration-style test?
+
+**Next:**
+- Continue with hosted-domain validation work (remaining open roadmap item) when deployed domain endpoints are available.
+
+**Tests / Verification:**
+- `python -m ruff check src tests` passed.
+- `python -m mypy src` passed.
+- `python -m pytest tests/modules/test_qr_decode.py -q` passed (`6 passed`).
 - Local `pip-audit` binary is not installed in this shell environment, so direct local audit execution was not verified here.
 
 ---

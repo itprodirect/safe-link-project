@@ -62,7 +62,7 @@ Current behavior:
 Follow-up:
 
 - structured multi-result shapes are now implemented for QR single/all flows
-- add fixture-based decode tests when a stable cross-platform fixture path is chosen
+- fixture-based decode regression tests now run against pinned QR fixtures in `tests/fixtures/qr/`
 
 ### 4. Family Rendering Extraction Is Complete (Next: API/Web Variants)
 
