@@ -94,6 +94,8 @@ Current endpoints:
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan`
 
+Contract and integration notes: `docs/API_INTEGRATION.md`
+
 ### Quick Smoke Examples
 
 ```powershell
@@ -262,6 +264,7 @@ Canonical project docs live under `docs/` (planning docs were de-duplicated from
 
 - Architecture: `docs/ARCHITECTURE.md`
 - Module specs: `docs/MODULES.md`
+- API integration contract: `docs/API_INTEGRATION.md`
 - Roadmap: `docs/ROADMAP.md`
 - Plan review and risks: `docs/PLAN_REVIEW.md`
 - Security and responsible use: `docs/SECURITY.md`

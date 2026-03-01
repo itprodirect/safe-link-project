@@ -17,32 +17,32 @@
   - reusable family formatter extraction
   - scoring policy cleanup (risk-only aggregate, confidence for messaging)
   - QR decode module + `qr-scan` URL handoff
-- [ ] Session 7: API/web adapter groundwork (in progress)
+- [x] Session 7: API/web adapter groundwork
   - [x] Input-aware orchestrator routing by module-declared input type support
   - [x] Remaining URL detector migration to shared URL runtime context (`homoglyph`, `ascii_lookalike`)
   - [x] Stable structured wrappers for single/multi result payloads (including QR `--all`)
   - [x] Minimal FastAPI adapter over existing orchestrator + formatter layers
+  - [x] API contract + Next.js integration notes
 
-## Next Session: 7 API / Web UI Groundwork (Remaining)
+## Next Session: 8 Deployment + UI Validation
 
 ### Goal
 
-Prepare the tool for a future web UI by adding adapter-ready seams without rewriting the engine.
+Ship a reproducible deploy target and validate end-to-end UI integration against the stabilized API contract.
 
 ### Work Items
 
-1. [x] Add input-aware module routing in orchestrator (reduce detector early-return boilerplate).
-2. [x] Migrate remaining URL detectors to shared URL runtime context.
-3. [x] Define API-ready structured response wrappers for multi-item flows (QR `--all`, batch-ready shapes).
-4. [x] Add a minimal Python API adapter (FastAPI) that reuses orchestrator + formatter layers.
-5. Draft frontend integration notes for a Next.js UI calling the Python API.
-6. Update docs and session log.
+1. Add Docker baseline for API runtime (`Dockerfile`, `.dockerignore`, run docs).
+2. Add one deployment profile (for example Render/Fly/Railway) with environment/runbook notes.
+3. Scaffold minimal Next.js UI against `/api/v1/*` contract.
+4. Add contract-focused smoke tests across deployed API + UI path.
+5. Update docs and session log.
 
 ### Definition of Done
 
-- API adapter proof-of-concept works without changing detector logic.
-- Shared URL runtime context is used by more URL detectors.
-- Response shapes for CLI and API remain deterministic and documented.
+- API deploys reproducibly from source.
+- Frontend can call and render URL/email/QR flows against production-like API.
+- Response shapes stay deterministic and versioned.
 - `ruff`, `mypy`, and `pytest` pass.
 - Docs and session log reflect architecture changes and adapter boundaries.
 

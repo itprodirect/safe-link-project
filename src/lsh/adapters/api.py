@@ -36,6 +36,8 @@ except ImportError:
 else:
     FASTAPI_AVAILABLE = True
 
+_SCHEMA_VERSION = "1.0"
+
 _URL_ORCHESTRATOR = AnalysisOrchestrator(
     modules=[
         NetIPDetector(),
@@ -119,6 +121,27 @@ def _url_metadata(request: URLCheckRequest) -> dict[str, object]:
     return metadata
 
 
+def _api_error(
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+) -> Any:
+    if not FASTAPI_AVAILABLE:
+        raise RuntimeError("FastAPI is required for API error generation.")
+    return HTTPException(
+        status_code=status_code,
+        detail={
+            "schema_version": _SCHEMA_VERSION,
+            "error": {
+                "code": code,
+                "message": message,
+                "status": status_code,
+            },
+        },
+    )
+
+
 def create_app() -> Any:
     if not FASTAPI_AVAILABLE:
         raise RuntimeError(
@@ -165,21 +188,31 @@ def create_app() -> Any:
         try:
             decoded_payloads = decode_qr_payloads_from_image(request.image_path)
         except QRDecodeUnavailableError as exc:
-            raise HTTPException(status_code=503, detail=f"QR scanning unavailable: {exc}") from exc
+            raise _api_error(
+                status_code=503,
+                code="QRC_DECODER_UNAVAILABLE",
+                message=f"QR scanning unavailable: {exc}",
+            ) from exc
         except QRDecodeError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise _api_error(
+                status_code=400,
+                code="QRC_IMAGE_READ_ERROR",
+                message=str(exc),
+            ) from exc
 
         if not decoded_payloads:
-            raise HTTPException(
+            raise _api_error(
                 status_code=400,
-                detail="No QR payloads were decoded from the image.",
+                code="QRC_NO_PAYLOADS",
+                message="No QR payloads were decoded from the image.",
             )
 
         url_payloads = extract_url_payloads(decoded_payloads)
         if not url_payloads:
-            raise HTTPException(
+            raise _api_error(
                 status_code=400,
-                detail="Decoded QR payloads did not contain URL-like values.",
+                code="QRC_NO_URL_PAYLOADS",
+                message="Decoded QR payloads did not contain URL-like values.",
             )
 
         selected_urls = url_payloads if request.analyze_all else [url_payloads[0]]

@@ -1077,3 +1077,57 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m ruff check .` passed
 - `.venv\Scripts\python.exe -m mypy .` passed
 - `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+
+---
+
+## 2026-03-01 - Session 7D: API contract documentation and frontend integration notes
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Complete Session 1 API-consumer work by documenting a stable API contract, tightening endpoint error shape consistency, and adding contract-level tests for integration safety.
+
+**Module(s) Touched:** API adapter, API adapter tests, docs (`API_INTEGRATION`, roadmap/plan/README), session log
+
+**Changes:**
+- Added `docs/API_INTEGRATION.md` as API integration source of truth:
+  - endpoint inventory
+  - request payload contracts
+  - success wrapper contracts (`single`/`multi`)
+  - QR compatibility keys and wrapper-first guidance
+  - explicit API error envelope and known error codes
+  - versioning policy (`schema_version`)
+  - Next.js integration notes with TypeScript starter types and fetch helper sketch
+- Tightened API error consistency in `src/lsh/adapters/api.py`:
+  - added `_api_error(...)` helper for endpoint-generated errors
+  - QR error paths now return structured `detail` envelope with code/message/status
+  - added schema version in error envelope
+- Expanded API contract tests in `tests/adapters/test_api.py`:
+  - URL family payload presence
+  - email endpoint wrapped response shape
+  - QR single and multi wrapped response shapes
+  - QR structured error envelope checks for:
+    - decoder unavailable
+    - no URL payloads
+    - no payloads
+- Updated docs to reflect contract/integration completion:
+  - `README.md` now links `docs/API_INTEGRATION.md`
+  - `docs/ROADMAP.md` marks Session 7 complete and transitions next milestone to deployment/UI validation
+  - `docs/PLAN_REVIEW.md` includes API contract docs status and follow-up guidance
+
+**Decisions:**
+- Kept FastAPI validation (`422`) responses as framework-default format and documented that separately from contracted endpoint error envelope.
+- Preserved wrapper contract as primary integration surface while retaining QR legacy keys for compatibility.
+
+**Open Questions:**
+- Should we add explicit FastAPI response models for full OpenAPI contract strictness, or keep schema enforcement test-driven for now?
+- Should URL/email CLI `--json` outputs also move to wrapped contract shapes under an opt-in flag before any default change?
+
+**Next:**
+- Session 8: deployment baseline (Docker + hosting runbook) and minimal Next.js UI validation loop.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)

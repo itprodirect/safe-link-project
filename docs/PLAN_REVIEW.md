@@ -1,6 +1,6 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-03-01 after Phase 3 groundwork additions (structured wrappers + minimal FastAPI adapter).
+Status note: updated on 2026-03-01 after Session 7 contract docs and API integration guidance.
 
 ## What Is Working Well
 
@@ -73,7 +73,16 @@ Recommended follow-up:
 - extend API/web-oriented structured formatter outputs as UI needs stabilize
 - keep CLI focused on parsing and transport only
 
-### 5. False Positive Strategy Is In Progress
+### 5. API Contract Documentation Is Now In Place
+
+`docs/API_INTEGRATION.md` now defines endpoint payloads, wrapper semantics, error handling, and Next.js integration patterns.
+
+Recommended follow-up:
+
+- keep examples in lockstep with adapter behavior whenever payload fields evolve
+- add explicit API response models if contract strictness needs to increase
+
+### 6. False Positive Strategy Is In Progress
 
 Current controls are a good start:
 
@@ -88,7 +97,7 @@ What still remains:
 - clearer operator documentation on confidence interpretation and expected false positives
 - broader brand/suffix fixtures for calibration
 
-### 6. CI Security Checks Are Started (Not Yet Enforced)
+### 7. CI Security Checks Are Started (Not Yet Enforced)
 
 `ruff`, `mypy`, and `pytest` run in CI. `pip-audit` is wired as informational.
 
