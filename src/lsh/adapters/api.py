@@ -228,7 +228,12 @@ def create_app() -> Any:
             include_family=request.family,
         )
 
-    @app.post("/api/v1/qr/scan", response_model=QRScanResponse, responses=_QR_ERROR_RESPONSES)
+    @app.post(
+        "/api/v1/qr/scan",
+        response_model=QRScanResponse,
+        response_model_exclude_none=True,
+        responses=_QR_ERROR_RESPONSES,
+    )
     async def qr_scan(
         response: Response,
         file: Annotated[UploadFile, File(...)],
