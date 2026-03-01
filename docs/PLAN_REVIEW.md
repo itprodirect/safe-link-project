@@ -135,7 +135,7 @@ Recommended practice:
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
 - [x] Minimal FastAPI adapter reusing orchestrator + formatter layers
   Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
-- [ ] Deployment baseline (Docker + one provider)
+- [x] Deployment baseline (Docker + one provider)
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
 - [ ] Minimal Next.js UI calling the Python API
   Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

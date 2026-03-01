@@ -1,0 +1,9 @@
+services:
+  lsh-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lsh-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

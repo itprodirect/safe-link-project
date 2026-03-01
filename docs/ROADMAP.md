@@ -24,7 +24,7 @@
   - [x] Minimal FastAPI adapter over existing orchestrator + formatter layers
   - [x] API contract + Next.js integration notes
 
-## Next Session: 8 Deployment + UI Validation
+## Session 8: Deployment + UI Validation (In Progress)
 
 ### Goal
 
@@ -32,11 +32,11 @@ Ship a reproducible deploy target and validate end-to-end UI integration against
 
 ### Work Items
 
-1. Add Docker baseline for API runtime (`Dockerfile`, `.dockerignore`, run docs).
-2. Add one deployment profile (for example Render/Fly/Railway) with environment/runbook notes.
-3. Scaffold minimal Next.js UI against `/api/v1/*` contract.
-4. Add contract-focused smoke tests across deployed API + UI path.
-5. Update docs and session log.
+1. [x] Add Docker baseline for API runtime (`Dockerfile`, `.dockerignore`, run docs).
+2. [x] Add one deployment profile (for example Render/Fly/Railway) with environment/runbook notes.
+3. [ ] Scaffold minimal Next.js UI against `/api/v1/*` contract.
+4. [ ] Add contract-focused smoke tests across deployed API + UI path.
+5. [x] Update docs and session log.
 
 ### Definition of Done
 
@@ -54,7 +54,7 @@ Ship a reproducible deploy target and validate end-to-end UI integration against
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
 - [x] Minimal FastAPI adapter reusing orchestrator + formatter layers
   Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
-- [ ] Deployment baseline (Docker + one provider)
+- [x] Deployment baseline (Docker + one provider)
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
 - [ ] Minimal Next.js UI calling the Python API
   Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

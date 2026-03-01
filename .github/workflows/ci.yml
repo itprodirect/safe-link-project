@@ -46,3 +46,11 @@ jobs:
       - name: Test with coverage
         if: matrix.python-version == '3.11'
         run: pytest -v --cov=lsh --cov-report=term-missing -m "not network"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API container image
+        run: docker build -t lsh-api:ci .

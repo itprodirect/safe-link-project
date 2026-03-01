@@ -1131,3 +1131,55 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m ruff check .` passed
 - `.venv\Scripts\python.exe -m mypy .` passed
 - `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+
+---
+
+## 2026-03-01 - Session 8A: Deployment baseline and UI validation runbook kickoff
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Start Session 8 by shipping a reproducible deployment baseline (container artifacts + runbook), align CI/docs, and add a concrete Next.js UI validation checklist tied to the API contract.
+
+**Module(s) Touched:** deployment artifacts, CI workflow/docs, roadmap/plan docs, session log
+
+**Changes:**
+- Added container deployment artifacts:
+  - `Dockerfile` (FastAPI runtime with `.[api,qr]` install and `/health` healthcheck)
+  - `.dockerignore` (keeps image context small and deterministic)
+  - `docker-compose.yml` (local baseline service run)
+- Added deployment runbook:
+  - `docs/DEPLOYMENT.md`
+  - includes local Docker/Compose commands and one hosted profile example (Render)
+- Added frontend integration execution checklist:
+  - `docs/NEXTJS_UI_VALIDATION.md`
+  - defines required URL/email/QR UI assertions against `schema_version=1.0` contract
+- Updated CI for deployment artifact safety:
+  - `.github/workflows/ci.yml` now includes a `docker-build` job (`docker build -t lsh-api:ci .`)
+- Updated strategy/docs alignment:
+  - `docs/GITHUB_STRATEGY.md` CI scope now includes container build smoke check
+  - `README.md` includes container baseline commands and links to deployment/validation docs
+  - `docs/ROADMAP.md` marks Session 8 as in progress with deployment baseline + provider profile done
+  - `docs/PLAN_REVIEW.md` marks deployment baseline as complete in top-5 progression
+
+**Decisions:**
+- Installed `.[api,qr]` in container to keep QR endpoint behavior consistent with API contract and avoid surprise `503` due missing optional deps.
+- Kept Session 8 frontend scope as validation-first (checklist + contract assertions) before adding a full Next.js scaffold in a follow-on step.
+
+**Open Questions:**
+- Should we commit a minimal Next.js scaffold in-repo (`ui/`) or keep frontend in a separate repo once UI work starts?
+- Should we add an integration smoke workflow that runs container + `/health` HTTP probe in CI, beyond build-only verification?
+
+**Next:**
+- Session 8B: minimal Next.js UI scaffold and contract-focused end-to-end smoke path against local API.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+- `docker --version` passed
+- `docker build -t lsh-api:local .` passed
+- `docker run -d -p 8000:8000 --name lsh-api-test lsh-api:local` passed
+- `Invoke-RestMethod http://127.0.0.1:8000/health` returned `{"status":"ok"}`
+- `docker rm -f lsh-api-test` passed

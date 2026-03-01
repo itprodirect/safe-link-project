@@ -36,8 +36,8 @@ Implemented now:
 
 Not implemented yet:
 
-- Deployment baseline (container + hosting target)
-- Frontend UI integration
+- Production deployment validation on a hosted environment
+- Frontend UI implementation
 
 ## Quick Start
 
@@ -95,6 +95,18 @@ Current endpoints:
 - `POST /api/v1/qr/scan`
 
 Contract and integration notes: `docs/API_INTEGRATION.md`
+
+### Container Baseline
+
+```bash
+# Build API image
+docker build -t link-safety-hub-api:local .
+
+# Run API container
+docker run --rm -p 8000:8000 link-safety-hub-api:local
+```
+
+Deployment runbook: `docs/DEPLOYMENT.md`
 
 ### Quick Smoke Examples
 
@@ -265,6 +277,8 @@ Canonical project docs live under `docs/` (planning docs were de-duplicated from
 - Architecture: `docs/ARCHITECTURE.md`
 - Module specs: `docs/MODULES.md`
 - API integration contract: `docs/API_INTEGRATION.md`
+- Deployment baseline: `docs/DEPLOYMENT.md`
+- Next.js validation checklist: `docs/NEXTJS_UI_VALIDATION.md`
 - Roadmap: `docs/ROADMAP.md`
 - Plan review and risks: `docs/PLAN_REVIEW.md`
 - Security and responsible use: `docs/SECURITY.md`

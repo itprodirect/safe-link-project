@@ -54,6 +54,7 @@ Current CI should run:
 - dependency audit (`pip-audit`, informational on Python 3.11)
 - tests (excluding optional network-marked tests)
 - coverage run on Python 3.11
+- container build smoke check (`docker build`)
 
 Next CI upgrades:
 
