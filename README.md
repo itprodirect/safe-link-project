@@ -93,6 +93,12 @@ Optional CORS override for hosted UI origins:
 LSH_API_CORS_ALLOW_ORIGINS=https://<your-ui-domain> uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
 ```
 
+Optional QR legacy-key control for API integrations:
+
+```bash
+LSH_API_INCLUDE_QR_LEGACY_KEYS=false uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
+```
+
 Current endpoints:
 
 - `GET /health`

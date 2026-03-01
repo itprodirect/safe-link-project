@@ -76,11 +76,12 @@ Recommended follow-up:
 ### 5. API Contract Documentation Is Now In Place
 
 `docs/API_INTEGRATION.md` now defines endpoint payloads, wrapper semantics, error handling, and Next.js integration patterns.
+FastAPI endpoints now also use explicit response models for success payloads and QR structured error envelopes.
 
 Recommended follow-up:
 
 - keep examples in lockstep with adapter behavior whenever payload fields evolve
-- add explicit API response models if contract strictness needs to increase
+- keep QR legacy-key migration/deprecation timeline visible to integrators
 - keep `LSH_API_CORS_ALLOW_ORIGINS` settings explicit in deployment environments and validate preflight during hosted smoke checks
 
 ### 6. False Positive Strategy Is In Progress

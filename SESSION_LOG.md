@@ -1423,3 +1423,61 @@ Development session history. Each entry documents what was done, why, and what's
   - `/health` probe passed
   - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:api` passed
   - container cleanup passed
+
+---
+
+## 2026-03-01 - Session 9D: API contract enforcement + QR legacy-key deprecation controls
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Tighten API contract enforcement with explicit response models and establish an executable migration path for QR legacy response keys.
+
+**Module(s) Touched:** API adapter, API response model definitions, structured formatter controls, adapter/formatter tests, roadmap/plan/docs, session log
+
+**Changes:**
+- Added typed API contract models in `src/lsh/adapters/api_models.py`:
+  - strict success wrappers for URL/email/QR flows
+  - strict QR single/multi union response model (`mode`-discriminated)
+  - strict structured error envelope model for QR endpoint error docs
+- Enforced response models in FastAPI adapter (`src/lsh/adapters/api.py`):
+  - `response_model` now declared on URL/email/QR endpoints
+  - explicit QR endpoint error response docs (`400`/`503`) now reference typed error envelope model
+- Added QR legacy-key deprecation control path:
+  - new env var: `LSH_API_INCLUDE_QR_LEGACY_KEYS` (default: enabled)
+  - when enabled, QR responses keep legacy keys and emit header:
+    - `X-LSH-QR-Legacy-Keys: included; sunset=2026-06-01; use=item/items`
+  - when disabled, QR legacy keys are omitted and header becomes `disabled`
+- Extended structured formatter (`src/lsh/formatters/structured.py`):
+  - `build_qr_scan_payload(..., include_legacy_keys=True)`
+  - legacy keys can now be omitted while preserving wrapper contract
+- Tests expanded:
+  - `tests/adapters/test_api.py`:
+    - OpenAPI schema test ensures typed response model wiring is active
+    - QR legacy header assertions
+    - env-driven legacy-key disable behavior (keys absent when disabled)
+  - `tests/formatters/test_structured.py`:
+    - added single/multi tests for `include_legacy_keys=False`
+- Docs synced:
+  - `docs/API_INTEGRATION.md`: response-model enforcement and QR legacy-key control/deprecation policy
+  - `docs/ROADMAP.md`: Session 9 item #4 marked complete
+  - `docs/PLAN_REVIEW.md`: API strictness follow-up adjusted to reflect response-model completion
+  - `docs/DEPLOYMENT.md` and `README.md`: new `LSH_API_INCLUDE_QR_LEGACY_KEYS` env option
+
+**Decisions:**
+- Kept `schema_version` at `1.0`; enforcement and migration controls were added without a breaking contract bump.
+- Used env-gated legacy keys rather than immediate removal to allow staged client migration.
+
+**Open Questions:**
+- Do we want to set a hard release date for defaulting `LSH_API_INCLUDE_QR_LEGACY_KEYS=false` prior to `2.0`?
+- Should URL/email legacy-key strategy be explicitly declared as “none planned” to avoid ambiguity for integrators?
+
+**Next:**
+- Complete hosted validation against real deployed API/UI domains (Session 9 item #3).
+- After hosted validation, decide on default legacy-key behavior timeline and publish migration notice.
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`163 passed, 1 skipped`)

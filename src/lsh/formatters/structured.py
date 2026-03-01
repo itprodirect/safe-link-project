@@ -86,6 +86,7 @@ def build_qr_scan_payload(
     url_results: list[tuple[str, AnalysisResult]],
     analyzed_all: bool,
     include_family: bool = False,
+    include_legacy_keys: bool = True,
 ) -> dict[str, object]:
     """Build QR scan payload with stable wrappers and legacy compatibility keys."""
     base: dict[str, object] = {
@@ -94,13 +95,14 @@ def build_qr_scan_payload(
         "mode": "multi" if analyzed_all else "single",
         "input_type": "url",
         "image_name": image_path,
-        # Legacy key kept for existing consumers that still read image_path.
-        "image_path": image_path,
         "decoded_payloads": decoded_payloads,
         "decoded_payload_count": len(decoded_payloads),
         "url_payload_count": len(url_results),
         "analyzed_all": analyzed_all,
     }
+    if include_legacy_keys:
+        # Legacy key kept for existing consumers that still read image_path.
+        base["image_path"] = image_path
 
     if analyzed_all:
         wrapped = build_multi_result_payload(
@@ -111,11 +113,12 @@ def build_qr_scan_payload(
         )
         base["item_count"] = wrapped["item_count"]
         base["items"] = wrapped["items"]
-        # Legacy key kept for CLI JSON compatibility.
-        base["results"] = [
-            {"url": subject, "result": _analysis_result_payload(result)}
-            for subject, result in url_results
-        ]
+        if include_legacy_keys:
+            # Legacy key kept for CLI JSON compatibility.
+            base["results"] = [
+                {"url": subject, "result": _analysis_result_payload(result)}
+                for subject, result in url_results
+            ]
         return base
 
     selected_url, selected_result = url_results[0]
@@ -128,7 +131,8 @@ def build_qr_scan_payload(
     )
     base["item_count"] = wrapped["item_count"]
     base["item"] = wrapped["item"]
-    # Legacy keys kept for CLI JSON compatibility.
-    base["selected_url"] = selected_url
-    base["result"] = _analysis_result_payload(selected_result)
+    if include_legacy_keys:
+        # Legacy keys kept for CLI JSON compatibility.
+        base["selected_url"] = selected_url
+        base["result"] = _analysis_result_payload(selected_result)
     return base

@@ -64,6 +64,7 @@ docker compose down
 
 - `PYTHONUNBUFFERED=1`
 - `LSH_API_CORS_ALLOW_ORIGINS=https://<your-ui-domain>`
+- `LSH_API_INCLUDE_QR_LEGACY_KEYS=false` (optional once integrations are wrapper-first)
 
 ## Operational Notes
 

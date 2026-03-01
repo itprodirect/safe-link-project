@@ -81,6 +81,21 @@ def test_url_check_endpoint_returns_wrapped_shape() -> None:
     assert body["item_count"] == 1
 
 
+def test_openapi_uses_typed_response_models() -> None:
+    client = _client()
+    schema = client.get("/openapi.json").json()
+
+    url_success = schema["paths"]["/api/v1/url/check"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+    assert "$ref" in url_success or "allOf" in url_success
+
+    qr_error = schema["paths"]["/api/v1/qr/scan"]["post"]["responses"]["400"]["content"][
+        "application/json"
+    ]["schema"]
+    assert "$ref" in qr_error
+
+
 def test_url_check_endpoint_can_include_family_payload() -> None:
     client = _client()
 
@@ -130,6 +145,7 @@ def test_qr_scan_endpoint_returns_single_wrapped_shape(
     assert body["image_name"] == "code.png"
     assert body["selected_url"] == "https://example.com"
     assert "item" in body
+    assert response.headers["x-lsh-qr-legacy-keys"].startswith("included;")
 
 
 def test_qr_scan_endpoint_returns_multi_wrapped_shape(
@@ -157,6 +173,32 @@ def test_qr_scan_endpoint_returns_multi_wrapped_shape(
     assert body["item_count"] == 2
     assert len(body["items"]) == 2
     assert len(body["results"]) == 2
+    assert response.headers["x-lsh-qr-legacy-keys"].startswith("included;")
+
+
+def test_qr_scan_endpoint_can_disable_legacy_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LSH_API_INCLUDE_QR_LEGACY_KEYS", "false")
+    client = TestClient(api.create_app())
+
+    def _decode_single(_image_bytes: bytes, image_name: str = "<uploaded-image>") -> list[str]:
+        return ["https://example.com"]
+
+    monkeypatch.setattr(
+        "lsh.adapters.api.decode_qr_payloads_from_bytes",
+        _decode_single,
+    )
+
+    response = client.post("/api/v1/qr/scan", files=_qr_upload())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "single"
+    assert body["image_name"] == "code.png"
+    assert "image_path" not in body
+    assert "selected_url" not in body
+    assert "result" not in body
+    assert response.headers["x-lsh-qr-legacy-keys"] == "disabled"
 
 
 def test_qr_scan_decoder_unavailable_uses_error_envelope(

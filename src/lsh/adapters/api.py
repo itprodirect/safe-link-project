@@ -10,6 +10,12 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
+from lsh.adapters.api_models import (
+    ApiErrorEnvelope,
+    EmailCheckResponse,
+    QRScanResponse,
+    UrlCheckResponse,
+)
 from lsh.core.models import AnalysisInput, AnalysisResult, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
 from lsh.formatters.structured import (
@@ -37,6 +43,7 @@ try:
         File,
         Form,
         HTTPException,
+        Response,
         UploadFile,
     )
     from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found]
@@ -48,6 +55,10 @@ else:
 _SCHEMA_VERSION = "1.0"
 _CORS_ORIGINS_ENV = "LSH_API_CORS_ALLOW_ORIGINS"
 _DEFAULT_CORS_ORIGINS = ("http://127.0.0.1:3000", "http://localhost:3000")
+_QR_LEGACY_KEYS_ENV = "LSH_API_INCLUDE_QR_LEGACY_KEYS"
+_QR_LEGACY_KEYS_HEADER = "X-LSH-QR-Legacy-Keys"
+_QR_LEGACY_KEYS_HEADER_VALUE = "included; sunset=2026-06-01; use=item/items"
+_QR_LEGACY_KEYS_DISABLED_HEADER_VALUE = "disabled"
 
 _URL_ORCHESTRATOR = AnalysisOrchestrator(
     modules=[
@@ -154,6 +165,19 @@ def _cors_allowed_origins() -> list[str]:
     return [origin.strip() for origin in raw_value.split(",") if origin.strip()]
 
 
+def _include_qr_legacy_keys() -> bool:
+    raw_value = os.getenv(_QR_LEGACY_KEYS_ENV)
+    if raw_value is None:
+        return True
+    return raw_value.strip().lower() not in {"0", "false", "no", "off"}
+
+
+_QR_ERROR_RESPONSES: dict[int, dict[str, object]] = {
+    400: {"model": ApiErrorEnvelope, "description": "Structured QR request/parse error envelope."},
+    503: {"model": ApiErrorEnvelope, "description": "Structured QR decoder-unavailable envelope."},
+}
+
+
 def create_app() -> Any:
     if not FASTAPI_AVAILABLE:
         raise RuntimeError(
@@ -180,7 +204,7 @@ def create_app() -> Any:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.post("/api/v1/url/check")
+    @app.post("/api/v1/url/check", response_model=UrlCheckResponse)
     def url_check(request: URLCheckRequest) -> dict[str, object]:
         result = _analyze_url_result(request.url, _url_metadata(request))
         return build_single_result_payload(
@@ -191,7 +215,7 @@ def create_app() -> Any:
             include_family=request.family,
         )
 
-    @app.post("/api/v1/email/check")
+    @app.post("/api/v1/email/check", response_model=EmailCheckResponse)
     def email_check(request: EmailCheckRequest) -> dict[str, object]:
         result = _EMAIL_ORCHESTRATOR.analyze(
             AnalysisInput(input_type="email_headers", content=request.headers)
@@ -204,8 +228,9 @@ def create_app() -> Any:
             include_family=request.family,
         )
 
-    @app.post("/api/v1/qr/scan")
+    @app.post("/api/v1/qr/scan", response_model=QRScanResponse, responses=_QR_ERROR_RESPONSES)
     async def qr_scan(
+        response: Response,
         file: Annotated[UploadFile, File(...)],
         analyze_all: Annotated[bool, Form()] = False,
         family: Annotated[bool, Form()] = False,
@@ -257,6 +282,13 @@ def create_app() -> Any:
 
         selected_urls = url_payloads if analyze_all else [url_payloads[0]]
         url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
+        include_legacy_keys = _include_qr_legacy_keys()
+
+        response.headers[_QR_LEGACY_KEYS_HEADER] = (
+            _QR_LEGACY_KEYS_HEADER_VALUE
+            if include_legacy_keys
+            else _QR_LEGACY_KEYS_DISABLED_HEADER_VALUE
+        )
 
         return build_qr_scan_payload(
             image_path=image_name,
@@ -264,6 +296,7 @@ def create_app() -> Any:
             url_results=url_results,
             analyzed_all=analyze_all,
             include_family=family,
+            include_legacy_keys=include_legacy_keys,
         )
 
     return app

@@ -112,3 +112,40 @@ def test_qr_payload_includes_wrapped_and_legacy_keys_for_multi_mode() -> None:
     assert payload["item_count"] == 2
     assert "items" in payload
     assert "results" in payload
+
+
+def test_qr_payload_can_disable_legacy_keys_for_single_mode() -> None:
+    payload = build_qr_scan_payload(
+        image_path="code.png",
+        decoded_payloads=["https://example.com"],
+        url_results=[("https://example.com", _result("https://example.com", risk=10))],
+        analyzed_all=False,
+        include_legacy_keys=False,
+    )
+
+    assert payload["schema_version"] == "1.0"
+    assert payload["mode"] == "single"
+    assert payload["image_name"] == "code.png"
+    assert "item" in payload
+    assert "image_path" not in payload
+    assert "selected_url" not in payload
+    assert "result" not in payload
+
+
+def test_qr_payload_can_disable_legacy_keys_for_multi_mode() -> None:
+    payload = build_qr_scan_payload(
+        image_path="code.png",
+        decoded_payloads=["https://a.example", "https://b.example"],
+        url_results=[
+            ("https://a.example", _result("https://a.example", risk=10)),
+            ("https://b.example", _result("https://b.example", risk=20)),
+        ],
+        analyzed_all=True,
+        include_legacy_keys=False,
+    )
+
+    assert payload["schema_version"] == "1.0"
+    assert payload["mode"] == "multi"
+    assert "items" in payload
+    assert "image_path" not in payload
+    assert "results" not in payload
