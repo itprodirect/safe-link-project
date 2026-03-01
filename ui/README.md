@@ -35,5 +35,6 @@ The smoke script validates:
 - `/health`
 - CORS preflight for `/api/v1/url/check` from `NEXT_PUBLIC_UI_ORIGIN`
 - `/api/v1/url/check` wrapped single response
+- `/api/v1/url/check` allowlist per-finding suppression behavior (`allowlist_findings` + `NONE`)
 - `/api/v1/email/check` wrapped single response
 - `/api/v1/qr/scan` structured error envelope for invalid upload/decoder-unavailable paths

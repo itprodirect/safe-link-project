@@ -41,6 +41,13 @@ NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000
 - `mode === "single"`.
 - `item.result.overall_risk` is rendered.
 - family toggle (`family=true`) renders `item.family.summary` when present.
+- allowlist controls are exposed in UI:
+  - `allowlist_domains`
+  - `allowlist_categories` (including `NONE`)
+  - `allowlist_findings`
+- per-finding suppression check works:
+  - with `allowlist_categories=["NONE"]` and `allowlist_findings=["HMG002_PUNYCODE_VISIBILITY"]`,
+    HMG002 is suppressed while non-targeted findings (for example HMG003) remain.
 
 ### Email flow
 

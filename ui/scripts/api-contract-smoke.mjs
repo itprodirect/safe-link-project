@@ -69,6 +69,25 @@ async function run() {
   await check(urlResult.payload.item_count === 1, "url item_count should be 1");
   console.log("[smoke] url check ok");
 
+  const allowlistScopedResult = await postJson("/api/v1/url/check", {
+    url: "https://xn--pple-43d.com",
+    allowlist_domains: ["xn--pple-43d.com"],
+    allowlist_categories: ["NONE"],
+    allowlist_findings: ["HMG002_PUNYCODE_VISIBILITY"]
+  });
+  await check(allowlistScopedResult.response.ok, "url allowlist-finding check failed");
+  const scopedFindings = allowlistScopedResult.payload?.item?.result?.findings ?? [];
+  const scopedCategories = new Set(scopedFindings.map((finding) => finding.category));
+  await check(
+    !scopedCategories.has("HMG002_PUNYCODE_VISIBILITY"),
+    "allowlist-finding did not suppress HMG002_PUNYCODE_VISIBILITY"
+  );
+  await check(
+    scopedCategories.has("HMG003_MIXED_SCRIPT_HOSTNAME"),
+    "allowlist-finding check should retain non-targeted HMG003"
+  );
+  console.log("[smoke] allowlist finding scope ok");
+
   const emailResult = await postJson("/api/v1/email/check", {
     headers: "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass",
     source_label: "smoke"

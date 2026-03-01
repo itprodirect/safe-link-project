@@ -78,6 +78,13 @@ textarea {
   min-height: 170px;
 }
 
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
 button {
   border: 0;
   border-radius: 10px;

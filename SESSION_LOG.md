@@ -1629,6 +1629,50 @@ Development session history. Each entry documents what was done, why, and what's
 - `python -m mypy src` passed.
 - `python -m pytest tests/core/test_allowlist.py tests/modules/test_homoglyph.py tests/modules/test_ascii_lookalike.py tests/modules/test_url_structure.py tests/modules/test_net_ip.py tests/test_smoke.py -q` passed (`57 passed`).
 - Local `tests/adapters/test_api.py` collection still requires installed `python-multipart` in this shell environment.
+
+---
+
+## 2026-03-01 - Session 10E: Expose false-positive allowlist controls in UI
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Expose per-finding false-positive controls in the Next.js URL screen so operators can use allowlist tuning without CLI/API-only workflows.
+
+**Module(s) Touched:** UI URL page, UI smoke script, UI/docs validation notes, session log
+
+**Changes:**
+- Updated `ui/app/url/page.tsx`:
+  - added `allowlist_domains` text input (comma/whitespace token parsing)
+  - added `allowlist_categories` checkbox controls including `NONE`
+  - added `allowlist_findings` text input (exact/stem/wildcard tokens)
+  - payload now includes these fields when set
+  - category toggle logic enforces `NONE` as mutually exclusive with other categories
+- Updated `ui/app/globals.css`:
+  - added `optionGrid` style for category checkbox layout
+- Updated smoke script `ui/scripts/api-contract-smoke.mjs`:
+  - added URL-flow assertion for per-finding suppression behavior:
+    - `allowlist_categories=["NONE"]`
+    - `allowlist_findings=["HMG002_PUNYCODE_VISIBILITY"]`
+    - verifies HMG002 is suppressed while HMG003 remains
+- Updated docs:
+  - `ui/README.md` smoke scope now includes allowlist-finding behavior
+  - `docs/NEXTJS_UI_VALIDATION.md` URL-flow assertions now include UI allowlist controls and selective suppression behavior
+
+**Decisions:**
+- Kept controls on the URL page only (not global app state) because allowlist tuning currently applies to URL check requests.
+- Used free-form token inputs for domains/findings to match API flexibility and operator copy/paste workflows.
+
+**Open Questions:**
+- Should we persist allowlist defaults in local storage for repeat operator sessions?
+
+**Next:**
+- Optional: add UI affordances (chips/help text) for known finding-code examples to reduce input errors.
+
+**Tests / Verification:**
+- `npm run build` (in `ui/`) passed.
+- `npm run typecheck` (in `ui/`) passed after build-generated Next.js type stubs were present.
 - Local `pip-audit` binary is not installed in this shell environment, so direct local audit execution was not verified here.
 
 ---
