@@ -7,10 +7,9 @@ Use a single monorepo. The shared core contracts and orchestrator make split rep
 ## Branch Model
 
 - `main`: protected, always releasable
-- `dev`: integration branch
-- `feat/*`: one feature per branch
-- `fix/*`: bug fixes
-- `docs/*`: documentation-only changes
+- `feat/*`: one feature per branch (short-lived)
+- `fix/*`: bug fixes (short-lived)
+- `docs/*`: documentation-only changes (short-lived)
 
 ## PR Checklist
 
@@ -46,10 +45,6 @@ For `main`:
 - require linear history
 - block force push
 
-For `dev`:
-
-- require status checks
-
 ## CI Scope
 
 Current CI should run:
@@ -69,8 +64,8 @@ Next CI upgrades:
 
 1. Create or switch to feature branch.
 2. Commit focused changes.
-3. Push branch and open PR to `dev`.
-4. Merge `dev` to `main` only when stable.
+3. Push branch and open PR to `main`.
+4. Merge to `main` only after required checks pass.
 
 ## Notes for Agent-Assisted Work
 

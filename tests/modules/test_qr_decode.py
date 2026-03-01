@@ -15,3 +15,16 @@ def test_extract_url_payloads_filters_to_http_like_urls() -> None:
         "https://example.com",
         "http://google.com:80@evil.com",
     ]
+
+
+def test_extract_url_payloads_accepts_whitespace_wrapped_urls() -> None:
+    payloads = [
+        "  https://example.com/login  ",
+        "\nhttp://google.com:80@evil.com\t",
+        "   ",
+    ]
+
+    assert extract_url_payloads(payloads) == [
+        "https://example.com/login",
+        "http://google.com:80@evil.com",
+    ]

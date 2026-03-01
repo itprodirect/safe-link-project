@@ -914,3 +914,52 @@ Development session history. Each entry documents what was done, why, and what's
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
 - [ ] Minimal Next.js UI calling the Python API
   Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.
+
+---
+
+## 2026-03-01 - Session 7A: Phase 1 branch/CI cleanup and QR payload parsing hardening
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Execute Phase 1 stabilization work in one pass: clean branch state, align CI/workflow branch policy, fix QR payload parsing edge case, and run targeted regression checks.
+
+**Module(s) Touched:** workflow/docs, qr_decode module, tests, session log
+
+**Changes:**
+- Branch cleanup:
+  - fast-forwarded local `main` to `origin/main`.
+  - removed stale local branch `feat/orchestrator-preprocess-and-qr` after merge.
+  - current branch state is now clean (`main` tracking `origin/main`).
+- CI/workflow alignment:
+  - updated `.github/workflows/ci.yml` triggers from `[main, dev]` to `[main]` for both `push` and `pull_request`.
+  - updated `docs/GITHUB_STRATEGY.md` to reflect the actual trunk workflow:
+    - removed `dev` integration-branch assumptions
+    - clarified short-lived feature/fix/docs branches
+    - changed push workflow to PRs targeting `main`.
+- QR parsing fix:
+  - in `src/lsh/modules/qr_decode/analyzer.py`, `extract_url_payloads(...)` now parses the trimmed candidate (`candidate`) rather than raw payload text.
+  - this fixes false negatives for payloads containing leading/trailing whitespace.
+- Targeted regression tests:
+  - added `test_extract_url_payloads_accepts_whitespace_wrapped_urls` in `tests/modules/test_qr_decode.py`.
+
+**Decisions:**
+- Chose to align docs and CI with current repo reality (PRs to `main`) instead of preserving a `dev` branch workflow that is not currently in use.
+- Kept QR fix minimal and deterministic: only changed parsing to use already-trimmed candidate values.
+
+**Open Questions:**
+- Should we keep the local backup branch (`backup/pre-rebase-20260215-2303`) for history or prune it in a later cleanup pass?
+- Should CI run on pushes to `feat/*` in addition to PRs, or stay restricted to `main` push + PR to `main`?
+
+**Next:**
+- Start Session 7 API/web groundwork:
+  1. input-aware orchestrator routing
+  2. remaining URL detector migration to shared context
+  3. stable batch response wrappers
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m pytest tests/modules/test_qr_decode.py tests/test_smoke.py -q` passed (`26 passed`)
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`156 passed`)

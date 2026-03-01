@@ -85,7 +85,7 @@ def extract_url_payloads(payloads: list[str]) -> list[str]:
         if not direct.scheme and not candidate.startswith("//"):
             continue
 
-        parsed = parse_url_like(payload)
+        parsed = parse_url_like(candidate)
         if parsed.hostname is None:
             continue
         urls.append(candidate)
