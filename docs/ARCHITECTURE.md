@@ -33,10 +33,12 @@ Modules detect. Core orchestrates and scores. Adapters render.
   - `lsh check <url>`
   - `lsh email-check <headers_or_file>`
   - `lsh qr-scan <image_path>`
+- `api.py`: minimal FastAPI adapter with endpoint parity for URL, email, and QR flows
 
 ### Formatter Layer (`src/lsh/formatters/`)
 
 - `family.py`: reusable family-facing formatter used by the CLI and ready for future web/API adapters
+- `structured.py`: stable single/multi-item response wrappers shared by CLI JSON and API responses
 
 ## Runtime Flow
 
@@ -45,7 +47,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
 3. CLI routes to a URL orchestrator or email orchestrator (and `qr-scan` decodes payloads before URL routing).
 4. Orchestrator builds runtime context once (for URL inputs), runs modules, then normalizes and aggregates findings.
 5. Orchestrator returns `AnalysisResult` with summary wording influenced by overall risk and confidence.
-6. CLI renders technical, family, or JSON output (family rendering now calls the shared formatter layer).
+6. CLI/API adapters render technical/family/structured outputs using shared formatter helpers.
 
 ## Current URL Processing Reality (Important)
 
@@ -88,8 +90,8 @@ Every module must:
 
 ## Near-Term Architecture Moves
 
-1. Formalize structured formatter outputs for API/web adapters beyond CLI text rendering.
-2. Add a Python API adapter (FastAPI) on top of the existing orchestrator + formatter layers.
+1. Keep structured response wrappers versioned and backward compatible for API consumers.
+2. Expand API surface carefully (batch endpoints, auth/rate limits as needed).
 3. Keep adapters focused on I/O only.
 
 ## Testing Requirements

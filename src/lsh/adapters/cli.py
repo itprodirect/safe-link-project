@@ -10,6 +10,7 @@ import click
 from lsh.core.models import AnalysisInput, AnalysisResult, Finding
 from lsh.core.orchestrator import AnalysisOrchestrator
 from lsh.formatters.family import render_family_lines
+from lsh.formatters.structured import build_qr_scan_payload
 from lsh.modules import (
     AsciiLookalikeDetector,
     EmailAuthDetector,
@@ -167,24 +168,15 @@ def _qr_json_payload(
     decoded_payloads: list[str],
     url_results: list[tuple[str, AnalysisResult]],
     analyzed_all: bool,
+    include_family: bool,
 ) -> dict[str, object]:
-    payload: dict[str, object] = {
-        "image_path": image_path,
-        "decoded_payloads": decoded_payloads,
-        "decoded_payload_count": len(decoded_payloads),
-        "url_payload_count": len(url_results),
-        "analyzed_all": analyzed_all,
-    }
-    if analyzed_all:
-        payload["results"] = [
-            {"url": url, "result": result.model_dump(mode="json")} for url, result in url_results
-        ]
-        return payload
-
-    selected_url, selected_result = url_results[0]
-    payload["selected_url"] = selected_url
-    payload["result"] = selected_result.model_dump(mode="json")
-    return payload
+    return build_qr_scan_payload(
+        image_path=image_path,
+        decoded_payloads=decoded_payloads,
+        url_results=url_results,
+        analyzed_all=analyzed_all,
+        include_family=include_family,
+    )
 
 
 def _echo_json(data: object) -> None:
@@ -444,6 +436,7 @@ def qr_scan(
                 decoded_payloads=decoded_payloads,
                 url_results=url_results,
                 analyzed_all=analyze_all,
+                include_family=family_mode,
             )
         )
         return

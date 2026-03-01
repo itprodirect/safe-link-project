@@ -1018,3 +1018,62 @@ Development session history. Each entry documents what was done, why, and what's
 - `.venv\Scripts\python.exe -m ruff check .` passed
 - `.venv\Scripts\python.exe -m mypy .` passed
 - `.venv\Scripts\python.exe -m pytest -q` passed (`157 passed`)
+
+---
+
+## 2026-03-01 - Session 7C: Phase 3 structured wrappers and minimal FastAPI adapter
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Deliver Phase 3 backend groundwork by adding stable single/multi response wrappers and a minimal API adapter that reuses the existing orchestrator/formatter stack.
+
+**Module(s) Touched:** adapters (CLI + API), formatters, tests, docs, packaging metadata
+
+**Changes:**
+- Added reusable structured payload builders in `src/lsh/formatters/structured.py`:
+  - `build_single_result_payload(...)`
+  - `build_multi_result_payload(...)`
+  - `build_qr_scan_payload(...)`
+- Updated formatter exports in `src/lsh/formatters/__init__.py`.
+- Wired CLI QR JSON output to shared structured wrapper logic:
+  - `src/lsh/adapters/cli.py` now routes `_qr_json_payload(...)` through `build_qr_scan_payload(...)`.
+  - kept legacy keys (`selected_url`, `result`, `results`) for backward compatibility while adding stable wrapper keys (`schema_version`, `mode`, `item_count`, `item/items`).
+- Added minimal optional FastAPI adapter in `src/lsh/adapters/api.py`:
+  - `GET /health`
+  - `POST /api/v1/url/check`
+  - `POST /api/v1/email/check`
+  - `POST /api/v1/qr/scan`
+  - uses shared orchestrator + structured formatter payloads
+  - handles QR dependency/runtime errors with HTTP status mapping.
+- Added optional API dependencies in `pyproject.toml` (`api` extra and dev inclusion):
+  - `fastapi`
+  - `uvicorn`
+- Added/updated tests:
+  - `tests/formatters/test_structured.py` (wrapper payload shape stability)
+  - `tests/adapters/test_api.py` (FastAPI smoke; auto-skips when FastAPI unavailable)
+  - updated QR JSON smoke assertion in `tests/test_smoke.py` for wrapper metadata.
+- Updated docs for API/wrapper reality:
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/ROADMAP.md`
+  - `docs/PLAN_REVIEW.md`
+
+**Decisions:**
+- Introduced `schema_version: "1.0"` wrapper metadata now to reduce future API/CLI JSON contract churn.
+- Preserved existing CLI QR JSON keys to avoid breaking current consumers while layering the new stable wrapper structure.
+- Kept API adapter optional at runtime so core CLI usage remains lightweight when API deps are not installed.
+
+**Open Questions:**
+- Should next API iteration add explicit OpenAPI response models per endpoint for stricter contract enforcement?
+- Should we promote wrapper usage to URL/email CLI JSON output as a versioned opt-in (`--json-v2`) before changing defaults?
+
+**Next:**
+- Draft frontend integration notes for Next.js against `/api/v1/*` response shapes.
+- Add deployment baseline (Dockerfile + simple ASGI run profile).
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)

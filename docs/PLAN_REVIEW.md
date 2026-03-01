@@ -1,6 +1,6 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-03-01 after Phase 2 groundwork (input-aware routing + full offline URL-context migration).
+Status note: updated on 2026-03-01 after Phase 3 groundwork additions (structured wrappers + minimal FastAPI adapter).
 
 ## What Is Working Well
 
@@ -61,7 +61,7 @@ Current behavior:
 
 Follow-up:
 
-- consider structured multi-result API shapes for batch/web use
+- structured multi-result shapes are now implemented for QR single/all flows
 - add fixture-based decode tests when a stable cross-platform fixture path is chosen
 
 ### 4. Family Rendering Extraction Is Complete (Next: API/Web Variants)
@@ -70,7 +70,7 @@ Family rendering now uses `src/lsh/formatters/family.py`.
 
 Recommended follow-up:
 
-- add API/web-oriented structured formatter outputs and response wrappers
+- extend API/web-oriented structured formatter outputs as UI needs stabilize
 - keep CLI focused on parsing and transport only
 
 ### 5. False Positive Strategy Is In Progress
@@ -122,9 +122,9 @@ Recommended practice:
 
 - [x] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
   Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
-- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+- [x] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
-- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+- [x] Minimal FastAPI adapter reusing orchestrator + formatter layers
   Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
 - [ ] Deployment baseline (Docker + one provider)
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.

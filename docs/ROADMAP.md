@@ -20,6 +20,8 @@
 - [ ] Session 7: API/web adapter groundwork (in progress)
   - [x] Input-aware orchestrator routing by module-declared input type support
   - [x] Remaining URL detector migration to shared URL runtime context (`homoglyph`, `ascii_lookalike`)
+  - [x] Stable structured wrappers for single/multi result payloads (including QR `--all`)
+  - [x] Minimal FastAPI adapter over existing orchestrator + formatter layers
 
 ## Next Session: 7 API / Web UI Groundwork (Remaining)
 
@@ -31,8 +33,8 @@ Prepare the tool for a future web UI by adding adapter-ready seams without rewri
 
 1. [x] Add input-aware module routing in orchestrator (reduce detector early-return boilerplate).
 2. [x] Migrate remaining URL detectors to shared URL runtime context.
-3. Define API-ready structured response wrappers for multi-item flows (QR `--all`, batch-ready shapes).
-4. Add a minimal Python API adapter (FastAPI) that reuses orchestrator + formatter layers.
+3. [x] Define API-ready structured response wrappers for multi-item flows (QR `--all`, batch-ready shapes).
+4. [x] Add a minimal Python API adapter (FastAPI) that reuses orchestrator + formatter layers.
 5. Draft frontend integration notes for a Next.js UI calling the Python API.
 6. Update docs and session log.
 
@@ -48,9 +50,9 @@ Prepare the tool for a future web UI by adding adapter-ready seams without rewri
 
 - [x] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
   Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.
-- [ ] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
+- [x] Stable batch/multi-result response wrappers (`qr-scan --all`, future batch scans)
   Rationale: prevents frontend/API contract churn before a web UI starts depending on result shapes.
-- [ ] Minimal FastAPI adapter reusing orchestrator + formatter layers
+- [x] Minimal FastAPI adapter reusing orchestrator + formatter layers
   Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
 - [ ] Deployment baseline (Docker + one provider)
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.

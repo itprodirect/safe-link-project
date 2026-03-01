@@ -40,12 +40,18 @@ qr = [
 email-auth = [
     "dnspython>=2.4",
 ]
+api = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
 # Development: all Phase 1 deps + dev tools, listed flat
 dev = [
     "confusables>=1.2",
     "pyzbar>=0.1.9",
     "Pillow>=10.0",
     "dnspython>=2.4",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
     "pip-audit>=2.7",
     "pytest>=7.4",
     "pytest-cov>=4.1",

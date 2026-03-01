@@ -78,6 +78,8 @@ def test_cli_qr_scan_json_routes_decoded_url_into_url_pipeline(
     runner = CliRunner()
     result = runner.invoke(main, ["qr-scan", str(image_path), "--json"])
     assert result.exit_code == 0
+    assert '"schema_version": "1.0"' in result.output
+    assert '"mode": "single"' in result.output
     assert '"selected_url": "http://google.com:80@evil.com"' in result.output
     assert "URL001_USERINFO_PRESENT" in result.output
 

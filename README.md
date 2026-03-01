@@ -12,7 +12,9 @@ Implemented now:
 - Shared per-analysis URL runtime context/preprocessing cache in `src/lsh/core/context.py`
 - Input-aware module routing in orchestrator (`supported_input_types` + orchestrator-side filtering)
 - CLI adapter in `src/lsh/adapters/cli.py`
+- Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
+- Reusable structured response wrappers in `src/lsh/formatters/structured.py`
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
@@ -34,7 +36,8 @@ Implemented now:
 
 Not implemented yet:
 
-- Python API adapter for a future web UI
+- Deployment baseline (container + hosting target)
+- Frontend UI integration
 
 ## Quick Start
 
@@ -73,6 +76,23 @@ lsh qr-scan suspicious-qr.png --json
 # Analyze all decoded URL payloads
 lsh qr-scan suspicious-qr.png --all --family
 ```
+
+### Optional API Adapter
+
+```bash
+# Install API extras
+python -m pip install -e ".[api]"
+
+# Run local API
+uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
+```
+
+Current endpoints:
+
+- `GET /health`
+- `POST /api/v1/url/check`
+- `POST /api/v1/email/check`
+- `POST /api/v1/qr/scan`
 
 ### Quick Smoke Examples
 
