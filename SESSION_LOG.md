@@ -1570,3 +1570,39 @@ Development session history. Each entry documents what was done, why, and what's
 **Tests / Verification:**
 - `python -m ruff check src tests` passed.
 - Local `pip-audit` binary is not installed in this shell environment, so direct local audit execution was not verified here.
+
+---
+
+## 2026-03-01 - Session 10C: Make dependency-audit gate version-robust in CI
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Fix remaining CI dependency-audit failures after Session 10B by removing reliance on a potentially unsupported `pip-audit` CLI flag and keeping strict vulnerability enforcement.
+
+**Module(s) Touched:** CI workflow, Makefile audit target, dependency-audit docs, README, session log
+
+**Changes:**
+- Replaced direct `pip-audit --skip-editable` usage with a two-step audit flow:
+  - `python -m pip freeze --exclude-editable > .pip-audit-requirements.txt`
+  - `python -m pip_audit --progress-spinner off --strict -r .pip-audit-requirements.txt`
+- Applied this flow in:
+  - `.github/workflows/ci.yml` (`check` job, Python 3.11 dependency audit step)
+  - `Makefile` (`audit` target)
+- Updated docs to reflect new enforced behavior:
+  - `docs/DEPENDENCY_AUDIT.md`
+  - `README.md`
+
+**Decisions:**
+- Kept strict audit semantics and blocking CI behavior unchanged.
+- Used snapshot-based auditing to avoid editable/local package resolution edge cases and CLI version flag drift.
+
+**Open Questions:**
+- Should we add a cleanup step for `.pip-audit-requirements.txt` in local `make audit`, or keep it for troubleshooting reproducibility?
+
+**Next:**
+- Confirm GitHub Actions `check (3.11)` dependency-audit step is green on the new run, then resume planned roadmap work.
+
+**Tests / Verification:**
+- `python -m ruff check src tests` passed.

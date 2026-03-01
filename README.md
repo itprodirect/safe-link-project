@@ -286,7 +286,7 @@ make audit
 Notes:
 
 - `make` targets are Unix-style; on Windows PowerShell, run the underlying `ruff` / `mypy` / `pytest` commands directly unless using WSL/Git Bash.
-- CI runs Python checks (`ruff`, `mypy src/`, `pytest -m "not network"`), enforced dependency audit (`pip-audit --strict --skip-editable` on Python 3.11), UI checks (`npm run build`, `npm run typecheck`), and a Docker runtime smoke (`/health` + UI contract smoke against the running API container).
+- CI runs Python checks (`ruff`, `mypy src/`, `pytest -m "not network"`), enforced dependency audit (`pip freeze --exclude-editable` + strict `pip-audit` on Python 3.11), UI checks (`npm run build`, `npm run typecheck`), and a Docker runtime smoke (`/health` + UI contract smoke against the running API container).
 
 ## Session Logging Process
 

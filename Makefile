@@ -20,7 +20,8 @@ typecheck:
 	mypy src/
 
 audit:
-	pip-audit --progress-spinner off --strict --skip-editable
+	python -m pip freeze --exclude-editable > .pip-audit-requirements.txt
+	python -m pip_audit --progress-spinner off --strict -r .pip-audit-requirements.txt
 
 # Run all checks (use before committing)
 check: lint typecheck test
