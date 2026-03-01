@@ -1183,3 +1183,66 @@ Development session history. Each entry documents what was done, why, and what's
 - `docker run -d -p 8000:8000 --name lsh-api-test lsh-api:local` passed
 - `Invoke-RestMethod http://127.0.0.1:8000/health` returned `{"status":"ok"}`
 - `docker rm -f lsh-api-test` passed
+
+---
+
+## 2026-03-01 - Session 8B: Minimal Next.js scaffold and contract smoke path
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Complete Session 8 UI validation work by adding a minimal Next.js scaffold that exercises URL/email/QR contract flows and a repeatable contract-focused smoke path.
+
+**Module(s) Touched:** `ui/` scaffold, docs (`README`, deployment/UI validation, roadmap/plan), gitignore, session log
+
+**Changes:**
+- Added minimal Next.js TypeScript scaffold under `ui/`:
+  - `ui/package.json`, `ui/package-lock.json`, `ui/tsconfig.json`, `ui/next.config.mjs`, `ui/next-env.d.ts`
+  - app routes:
+    - `ui/app/page.tsx` (overview)
+    - `ui/app/url/page.tsx`
+    - `ui/app/email/page.tsx`
+    - `ui/app/qr/page.tsx`
+  - shared client helper:
+    - `ui/lib/api.ts` (typed wrapper parsing + structured API error handling)
+  - UI styling and local instructions:
+    - `ui/app/globals.css`
+    - `ui/README.md`
+- Added contract-focused smoke script from frontend runtime perspective:
+  - `ui/scripts/api-contract-smoke.mjs`
+  - validates:
+    - `/health`
+    - URL wrapped single response
+    - email wrapped single response
+    - QR structured error envelope (`QRC_IMAGE_READ_ERROR`)
+- Updated repository/docs alignment:
+  - `README.md` now includes UI scaffold run commands and smoke command
+  - `docs/NEXTJS_UI_VALIDATION.md` now reflects implemented scaffold + script
+  - `docs/DEPLOYMENT.md` includes UI smoke companion step
+  - `docs/ROADMAP.md` marks Session 8 UI scaffold and contract smoke items complete
+  - `docs/PLAN_REVIEW.md` marks minimal Next.js UI milestone complete
+- Repo hygiene:
+  - `.gitignore` now ignores `*.tsbuildinfo`
+  - removed generated `ui/tsconfig.tsbuildinfo`
+
+**Decisions:**
+- Kept UI intentionally minimal and contract-first (wrapper fields + structured errors) rather than spending effort on production styling now.
+- Used Node-native smoke script under `ui/scripts/` instead of introducing a heavier E2E framework at this stage.
+
+**Open Questions:**
+- Should we add Playwright-based browser E2E in a follow-up session, or keep contract smoke script + unit/integration checks as the short-term gate?
+- Should QR UI path move from server-local image paths to upload flow in Session 9 to align with hosted use cases?
+
+**Next:**
+- Session 9: deployment hardening + hosted validation pass (provider config, operational checks, and CI policy tightening).
+
+**Tests / Verification:**
+- `.venv\Scripts\python.exe -m ruff check .` passed
+- `.venv\Scripts\python.exe -m mypy .` passed
+- `.venv\Scripts\python.exe -m pytest -q` passed (`161 passed, 1 skipped`)
+- `npm run typecheck` in `ui/` passed
+- `npm run build` in `ui/` passed (Next.js static build succeeded)
+- `docker run -d -p 8000:8000 --name lsh-api-test lsh-api:local` passed
+- `npm run smoke:api` in `ui/` passed (`health`, `url`, `email`, `qr error envelope`)
+- `docker rm -f lsh-api-test` passed

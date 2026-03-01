@@ -78,3 +78,14 @@ Add a container build check on PRs to ensure deployment artifacts stay valid:
 ```bash
 docker build -t lsh-api:ci .
 ```
+
+## UI Contract Smoke Companion
+
+After API container starts, run:
+
+```bash
+cd ui
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api
+```
+
+This validates wrapper/error contract behavior from the frontend runtime perspective.

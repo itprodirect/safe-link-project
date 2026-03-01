@@ -46,3 +46,10 @@ tests/fixtures/private/
 # archives
 *.zip
 *.tar.gz
+
+# Node / Next.js
+node_modules/
+.next/
+ui/node_modules/
+ui/.next/
+*.tsbuildinfo

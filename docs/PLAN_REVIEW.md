@@ -137,5 +137,5 @@ Recommended practice:
   Rationale: creates the Python backend seam for a future Next.js UI without rewriting detectors.
 - [x] Deployment baseline (Docker + one provider)
   Rationale: makes hosting reproducible early and surfaces environment issues before UI work accelerates.
-- [ ] Minimal Next.js UI calling the Python API
+- [x] Minimal Next.js UI calling the Python API
   Rationale: validates the end-to-end product loop and UX needs while preserving the Python engine.

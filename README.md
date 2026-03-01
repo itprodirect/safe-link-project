@@ -36,8 +36,8 @@ Implemented now:
 
 Not implemented yet:
 
-- Production deployment validation on a hosted environment
-- Frontend UI implementation
+- Hosted deployment hardening/operations pass
+- Expanded frontend UX beyond the minimal validation scaffold
 
 ## Quick Start
 
@@ -107,6 +107,21 @@ docker run --rm -p 8000:8000 link-safety-hub-api:local
 ```
 
 Deployment runbook: `docs/DEPLOYMENT.md`
+
+### Minimal Next.js UI Scaffold
+
+```bash
+cd ui
+npm install
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev
+```
+
+Contract smoke path:
+
+```bash
+cd ui
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run smoke:api
+```
 
 ### Quick Smoke Examples
 
@@ -204,6 +219,10 @@ Notes:
 
 ```text
 safe-link-project/
+  ui/
+    app/
+    lib/
+    scripts/
   src/lsh/
     adapters/
       cli.py
