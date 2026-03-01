@@ -1,5 +1,9 @@
 # Deployment Baseline
 
+For deployment platform tradeoffs and recommendation paths, see:
+
+- `docs/DEPLOYMENT_OPTIONS.md`
+
 ## Scope
 
 This runbook covers the current baseline deployment path for the FastAPI adapter:

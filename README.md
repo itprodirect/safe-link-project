@@ -319,6 +319,7 @@ Canonical project docs live under `docs/` (planning docs were de-duplicated from
 - Module specs: `docs/MODULES.md`
 - API integration contract: `docs/API_INTEGRATION.md`
 - Deployment baseline: `docs/DEPLOYMENT.md`
+- Deployment options research: `docs/DEPLOYMENT_OPTIONS.md`
 - Dependency-audit policy: `docs/DEPENDENCY_AUDIT.md`
 - Next.js validation checklist: `docs/NEXTJS_UI_VALIDATION.md`
 - Roadmap: `docs/ROADMAP.md`

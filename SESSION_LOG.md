@@ -1717,6 +1717,41 @@ Development session history. Each entry documents what was done, why, and what's
 
 ---
 
+## 2026-03-01 - Session 10G: Deployment options research memo and next-session handoff
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Close out the session by documenting deployment platform options and a concrete execution plan for the remaining hosted-validation work.
+
+**Module(s) Touched:** deployment docs, roadmap note, README index, session log
+
+**Changes:**
+- Added `docs/DEPLOYMENT_OPTIONS.md`:
+  - option matrix across Vercel/AWS deployment patterns
+  - recommendation path (`Vercel UI + AWS App Runner API`) plus all-AWS alternatives
+  - next-session execution checklist for hosted validation
+  - source links to current vendor docs
+- Updated `docs/DEPLOYMENT.md` to reference the new options memo.
+- Updated `README.md` docs index with `docs/DEPLOYMENT_OPTIONS.md`.
+- Updated `docs/ROADMAP.md` Session 9 item #3 note to reference the deployment-options memo.
+
+**Decisions:**
+- Kept baseline deployment runbook (`docs/DEPLOYMENT.md`) separate from strategy/decision content (`docs/DEPLOYMENT_OPTIONS.md`) to reduce operational doc clutter.
+- Recommended split deployment for fastest hosted MVP while retaining a clean migration path to all-AWS if desired.
+
+**Open Questions:**
+- Which exact public domains should be used for first hosted validation run (`api.<domain>`, `<ui-domain>`)?
+
+**Next:**
+- Execute hosted validation pass (remaining roadmap checkbox) using the step-by-step checklist in `docs/DEPLOYMENT_OPTIONS.md`.
+
+**Tests / Verification:**
+- Docs-only updates; no code-path behavior changed.
+
+---
+
 ## 2026-03-01 - Session 10C: Make dependency-audit gate version-robust in CI
 
 **Agent:** Codex
