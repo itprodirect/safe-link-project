@@ -1837,6 +1837,84 @@ Development session history. Each entry documents what was done, why, and what's
 
 ---
 
+## 2026-03-04 - Session 11F: Markdown status/roadmap polish pass
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Ensure markdown docs reflect current implementation status and future roadmap with polished, practical tone.
+
+**Module(s) Touched:** README/docs/UI docs/agent context docs/session log
+
+**Changes:**
+- Updated root status and roadmap wording in:
+  - `README.md` (status date, v2 execution state, "in progress and next" section, UI roadmap note)
+- Updated API contract status/version notes in:
+  - `docs/API_INTEGRATION.md` (v1 stable + v2 draft clarity, updated date)
+- Updated roadmap progress references in:
+  - `docs/ROADMAP.md` (current date, E1 completion signal granularity, child-issue links)
+- Updated planning review context in:
+  - `docs/PLAN_REVIEW.md` (new reality-check section for v2 kickoff state)
+- Updated deployment options memo metadata:
+  - `docs/DEPLOYMENT_OPTIONS.md` (updated date/status framing)
+- Updated UI doc positioning:
+  - `ui/README.md` (validation-surface framing and v2 roadmap references)
+- Updated GitHub process docs:
+  - `docs/GITHUB_STRATEGY.md` (milestone/epic model + small focused commit guidance)
+- Updated v2 planning docs:
+  - `docs/V2_BLUEPRINT.md` status line (`Active execution blueprint`)
+  - `docs/V2_ROADMAP_ISSUES.md` E1 checkbox state and child issue links
+  - `docs/V2_EPIC_ISSUE.md` note about live issue authority
+- Replaced stale historical `CLAUDE.md` with current project context and priorities.
+
+**Decisions:**
+- Treated markdown status fields as living operational docs (not historical snapshots) unless explicitly archival.
+- Kept tone direct and professional with light humanity, avoiding overhyped language while still readable.
+
+**Open Questions:**
+- Should we formalize a docs freshness cadence (for example weekly status/date review) to prevent future drift?
+
+**Next:**
+- If desired, apply the same polish/style standard to module-level README files under `src/lsh/modules/`.
+- Continue E1 closeout items `#11` and `#12`.
+
+**Tests / Verification:**
+- Docs-only behavior change; no runtime code paths modified.
+
+---
+
+## 2026-03-04 - Session 11G: CI type-check hotfix for `analyze_email` input type
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Fix GitHub Actions `mypy src/` failure caused by stricter `analyze_email(...)` input type signature.
+
+**Module(s) Touched:** CLI adapter typing + session log
+
+**Changes:**
+- Updated `_resolve_email_input(...)` return type in `src/lsh/adapters/cli.py` to:
+  - `tuple[Literal["email_headers", "email_file"], str, str]`
+- Added `Literal` import in CLI adapter.
+
+**Decisions:**
+- Kept strict literal typing in `analysis_service.analyze_email(...)` and narrowed CLI return typing instead of loosening the service signature.
+
+**Open Questions:**
+- None.
+
+**Next:**
+- Push hotfix commit and re-run failing CI workflow.
+
+**Tests / Verification:**
+- `python -m ruff check src/lsh/adapters/cli.py` passed.
+- `python -m mypy src/lsh/adapters/cli.py src/lsh/application/analysis_service.py` passed.
+- `python -m pytest tests/test_smoke.py -q` passed (`25 passed`).
+
+---
+
 ## 2026-03-01 - Session 10D: Complete false-positive control phase
 
 **Agent:** Codex

@@ -3,6 +3,7 @@
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 import click
 
@@ -85,7 +86,10 @@ def _read_text_file(path: Path) -> str:
     raise click.ClickException(f"Could not decode file '{path}' as text.")
 
 
-def _resolve_email_input(source: str, treat_as_file: bool) -> tuple[str, str, str]:
+def _resolve_email_input(
+    source: str,
+    treat_as_file: bool,
+) -> tuple[Literal["email_headers", "email_file"], str, str]:
     """Resolve email headers input from inline text or file path."""
     candidate_path = Path(source)
     use_file = treat_as_file or candidate_path.is_file()
