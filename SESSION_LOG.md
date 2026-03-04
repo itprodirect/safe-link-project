@@ -1915,6 +1915,41 @@ Development session history. Each entry documents what was done, why, and what's
 
 ---
 
+## 2026-03-04 - Session 11H: CI flaky parity assertion fix (`analyzed_at` normalization)
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Fix failing Python 3.12 CI tests in API parity checks caused by timestamp drift between separate endpoint calls.
+
+**Module(s) Touched:** API adapter tests, session log
+
+**Changes:**
+- Updated `tests/adapters/test_api.py`:
+  - added helper `_scrub_result_runtime_fields(...)` to normalize runtime-variant fields
+  - parity tests now compare scrubbed `item.result` objects for v1/v2 overlap paths:
+    - `test_v1_v2_url_result_parity_for_overlapping_fields`
+    - `test_v1_v2_email_result_parity_for_overlapping_fields`
+- This preserves strict parity semantics while removing non-determinism from `analyzed_at`.
+
+**Decisions:**
+- Kept parity strict on structural/business fields and explicitly normalized only runtime timestamp field.
+
+**Open Questions:**
+- None.
+
+**Next:**
+- Re-run failing CI workflow and verify `check (3.12)` test stage passes.
+
+**Tests / Verification:**
+- `python -m ruff check tests/adapters/test_api.py` passed.
+- `python -m mypy tests/adapters/test_api.py` passed.
+- `python -m pytest tests/contracts/test_v1_v2_snapshot_parity.py tests/test_smoke.py -q` passed (`28 passed`).
+- `python -m pytest tests/adapters/test_api.py -q` skipped in this shell due optional FastAPI dependency gating.
+
+---
+
 ## 2026-03-01 - Session 10D: Complete false-positive control phase
 
 **Agent:** Codex

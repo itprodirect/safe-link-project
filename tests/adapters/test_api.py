@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 
 pytest.importorskip("fastapi")
@@ -28,6 +30,14 @@ def _preflight_headers(origin: str) -> dict[str, str]:
         "Access-Control-Request-Method": "POST",
         "Access-Control-Request-Headers": "content-type",
     }
+
+
+def _scrub_result_runtime_fields(result: dict[str, object]) -> dict[str, object]:
+    """Normalize runtime-variant fields before structural parity assertions."""
+    scrubbed = deepcopy(result)
+    if "analyzed_at" in scrubbed:
+        scrubbed["analyzed_at"] = "<TIMESTAMP>"
+    return scrubbed
 
 
 def test_health_endpoint() -> None:
@@ -265,7 +275,9 @@ def test_v1_v2_url_result_parity_for_overlapping_fields() -> None:
     assert v2_response.status_code == 200
     v2_body = v2_response.json()
 
-    assert v1_body["item"]["result"] == v2_body["item"]["result"]
+    assert _scrub_result_runtime_fields(v1_body["item"]["result"]) == _scrub_result_runtime_fields(
+        v2_body["item"]["result"]
+    )
     assert v1_body["item"]["family"] == v2_body["item"]["family"]
     assert v1_body["item"]["subject"] == v2_body["item"]["subject"]
     assert v1_body["mode"] == v2_body["mode"] == "single"
@@ -295,7 +307,9 @@ def test_v1_v2_email_result_parity_for_overlapping_fields() -> None:
     assert v2_response.status_code == 200
     v2_body = v2_response.json()
 
-    assert v1_body["item"]["result"] == v2_body["item"]["result"]
+    assert _scrub_result_runtime_fields(v1_body["item"]["result"]) == _scrub_result_runtime_fields(
+        v2_body["item"]["result"]
+    )
     assert v1_body["item"]["family"] == v2_body["item"]["family"]
     assert v1_body["item"]["subject"] == v2_body["item"]["subject"]
     assert v1_body["mode"] == v2_body["mode"] == "single"
