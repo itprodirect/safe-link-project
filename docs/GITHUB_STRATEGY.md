@@ -4,6 +4,17 @@
 
 Use a single monorepo. The shared core contracts and orchestrator make split repos expensive early.
 
+## Roadmap Tracking Model
+
+V2 execution now uses GitHub milestones and epics:
+
+- umbrella epic: `#2`
+- phase epics: `#3`-`#10`
+- child issues: created under each phase as work is pulled
+- milestones: `V2-Phase-1` through `V2-Phase-8`
+
+Keep `docs/V2_ROADMAP_ISSUES.md` and issue status in sync at phase boundaries.
+
 ## Branch Model
 
 - `main`: protected, always releasable
@@ -35,6 +46,11 @@ Use conventional commits:
 - `docs(roadmap): ...`
 - `test(core): ...`
 - `log(session): ...`
+
+Practical rule:
+
+- prefer small, focused commits that each explain one coherent change
+- include test/doc updates in the same commit when they are part of the behavior change
 
 ## Recommended Branch Protections
 

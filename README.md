@@ -1,8 +1,9 @@
 # Link Safety Hub
 
 Modular, local-first security CLI for analyzing suspicious links and email headers and giving clear next steps.
+Security-first, practical, and intentionally plain-spoken.
 
-## Current Status (2026-03-01)
+## Current Status (2026-03-04)
 
 Implemented now:
 
@@ -16,6 +17,7 @@ Implemented now:
 - Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - Reusable structured response wrappers in `src/lsh/formatters/structured.py`
+- Draft unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity and edge-case test coverage
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
@@ -34,11 +36,16 @@ Implemented now:
 - JSON output for machine-readable integrations (`--json`)
 - Adversarial regression coverage (obfuscated IPs, fragment deception, encoding evasion)
 - Aggregate scoring policy clarified: overall risk is `risk_score`-based; `confidence` is for trust-calibration messaging
+- V2 execution artifacts and tracking:
+  - blueprint: `docs/V2_BLUEPRINT.md`
+  - roadmap/issues tracker: `docs/V2_ROADMAP_ISSUES.md`
+  - GitHub epics/milestones: umbrella `#2`, phase epics `#3`-`#10`, child issues `#11`-`#12`
 
-Not implemented yet:
+In progress and next:
 
-- Hosted deployment hardening/operations pass
-- Expanded frontend UX beyond the minimal validation scaffold
+- Hosted validation closure for Session 9 deployment checklist
+- Full v2 `/analyze` workspace UX (Quick/Analyst mode split)
+- v2 policy management, history/compare flows, and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
 
 ## Quick Start
 
@@ -122,7 +129,7 @@ docker run --rm -p 8000:8000 link-safety-hub-api:local
 
 Deployment runbook: `docs/DEPLOYMENT.md`
 
-### Minimal Next.js UI Scaffold
+### Current Next.js UI (Validation Surface)
 
 ```bash
 cd ui
@@ -136,6 +143,9 @@ Contract smoke path:
 cd ui
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:api
 ```
+
+Roadmap note: the current `ui/` app is a contract-validation surface, not the final product UX.  
+The full v2 experience plan lives in `docs/V2_BLUEPRINT.md`.
 
 ### Quick Smoke Examples
 

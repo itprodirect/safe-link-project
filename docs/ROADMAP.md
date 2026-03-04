@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-03-01)
+## Current Progress (2026-03-04)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -104,8 +104,12 @@ Establish V2 execution structure in GitHub and complete the first foundation ref
    - introduce `/api/v2/analyze` draft endpoint
    - add application-layer regression tests for shared service behavior and edge inputs
 5. [ ] Remaining E1:
-   - add explicit endpoint-level parity tests for v1 and v2 response semantics where contracts overlap in hosted/API-enabled lanes (`#11`)
-   - finalize E1 docs closeout checklist (`#12`)
+   - [x] add non-optional service/formatter snapshot parity suite for v1/v2 overlap
+   - [ ] add explicit endpoint-level parity tests for v1 and v2 response semantics in hosted/API-enabled lanes (`#11`)
+   - [ ] finalize E1 docs closeout checklist (`#12`)
+6. [x] Create E1 child issues and acceptance criteria for closeout:
+   - `#11` parity and snapshot governance
+   - `#12` architecture/API docs sync closeout
 
 ## Risks and Mitigations
 

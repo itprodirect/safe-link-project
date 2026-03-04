@@ -1,6 +1,12 @@
-# Link Safety Hub UI (Minimal Scaffold)
+# Link Safety Hub UI (Contract Validation Surface)
 
-This folder contains a minimal Next.js UI for validating API contract behavior.
+This folder contains the current Next.js validation UI for checking API contract behavior.
+It is intentionally lean: reliable for integration validation, not yet the final v2 product UX.
+
+For the full product UX direction, see:
+
+- `docs/V2_BLUEPRINT.md`
+- `docs/V2_ROADMAP_ISSUES.md`
 
 ## Prerequisites
 
@@ -21,6 +27,8 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
 
 Open `http://127.0.0.1:3000`.
+
+Small reality check: the backend does the heavy lifting today, this UI keeps us honest on contracts while the v2 workspace is in progress.
 
 ## Contract Smoke
 

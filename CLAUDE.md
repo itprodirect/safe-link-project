@@ -2,89 +2,81 @@
 
 ## Project Summary
 
-Link Safety Hub (LSH) is a modular Python security toolbelt. Modules analyze one threat vector each (for example lookalike domains, redirect chains, or email authentication issues) and produce structured findings with risk scores plus plain-language guidance.
+Link Safety Hub (LSH) is a modular, local-first security toolbelt for URL, email-header, and QR-linked analysis.
+It targets clear risk decisions first, with technical evidence available when needed.
 
-## Current State (2026-02-23)
+## Current State (2026-03-04)
 
 Implemented:
 
-- Core contracts in `src/lsh/core/models.py`
-- Scoring normalization and compound aggregation in `src/lsh/core/scorer.py`
-- Dedicated orchestration layer in `src/lsh/core/orchestrator.py`
-- URL normalization/adversarial parsing helpers in `src/lsh/core/normalizer.py`
-- Shared URL runtime preprocessing context in `src/lsh/core/context.py` (initial detector migration)
-- CLI adapter in `src/lsh/adapters/cli.py`
-- Reusable family formatter in `src/lsh/formatters/family.py`
-- URL modules in `src/lsh/modules/`:
-  - `homoglyph`
-  - `ascii_lookalike`
-  - `url_structure`
-  - `net_ip`
-  - `redirect` (opt-in network mode)
-- `email_auth` module for local SPF/DKIM/DMARC header analysis
-- `qr_decode` module helpers and `lsh qr-scan` CLI URL handoff
-- Family output mode (`lsh check <url> --family`)
-- Adversarial URL regression coverage (obfuscated IPs, fragment deception, encoding evasion)
+- Core contracts/scoring/orchestration in `src/lsh/core/`
+- Shared URL runtime context and normalization hardening
+- Offline URL modules (`homoglyph`, `ascii_lookalike`, `url_structure`, `net_ip`)
+- Opt-in redirect module (`redirect`)
+- Email auth module (`email_auth`)
+- QR decode helpers and `qr-scan` flow
+- CLI + FastAPI adapters
+- Shared application service layer in `src/lsh/application/analysis_service.py`
+- Draft v2 endpoint: `POST /api/v2/analyze`
+- Contract wrappers and family formatter
+- Expanded regression coverage:
+  - adversarial URL tests
+  - v1/v2 parity and edge-case matrix tests
+  - snapshot parity fixtures in `tests/fixtures/contracts/`
+- V2 execution structure in GitHub:
+  - umbrella epic `#2`
+  - phase epics `#3`-`#10`
+  - E1 child issues `#11` and `#12`
 
-Not implemented yet:
+Open priorities:
 
-- Full migration of all URL detectors to shared runtime context (currently `net_ip` + `url_structure`)
-- Input-aware orchestrator routing by `input_type`
-- Python API adapter for future web UI integration
+1. Close E1 endpoint-level parity in API-enabled lanes (`#11`).
+2. Close E1 docs sync checklist (`#12`).
+3. Start E2 unified `/analyze` workspace shell (`#4`).
+4. Complete hosted validation pass from Session 9 roadmap item 3.
 
 ## Tech Stack
 
 - Python 3.11+
-- Click (CLI)
-- Pydantic v2 (models)
-- pytest
-- ruff
-- mypy (strict)
+- Click
+- FastAPI (optional extra)
+- Pydantic v2
+- pytest, ruff, mypy
+- Next.js (UI validation surface)
 
-## Core Architecture Rules
+## Architecture Rules
 
-1. Every detector module implements `ModuleInterface`.
-2. Modules are stateless and side-effect free.
-3. Scoring semantics live in core, not in adapters.
-4. Adapter code handles parsing, command flags, and rendering only.
-5. Family messaging is presentation logic, not detection logic.
-6. No dynamic code execution in analysis modules.
-7. Network behavior is opt-in for modules that require it.
+1. Modules detect; core orchestrates/scales risk; application services compose; adapters handle transport.
+2. Modules remain stateless and deterministic.
+3. Keep scoring semantics in core/application, not in adapter presentation logic.
+4. Keep network checks explicit and opt-in.
+5. Keep docs and tests in lockstep with behavior changes.
 
 ## Session Start Checklist
 
-1. Read the last 2-3 entries in `SESSION_LOG.md`.
-2. Read `docs/ROADMAP.md` and `docs/PLAN_REVIEW.md`.
-3. Confirm whether the session is feature, refactor, or docs/process.
-4. Make one scoped plan with a clear definition of done.
+1. Read last 2-3 entries in `SESSION_LOG.md`.
+2. Read `docs/ROADMAP.md` and `docs/V2_ROADMAP_ISSUES.md`.
+3. Check active GitHub issues for the current phase before coding.
+4. Define one scoped goal with explicit acceptance criteria.
 
-## Definition of Done (Every Session)
+## Definition of Done (Per Session)
 
 - `ruff check src tests` passes
 - `mypy src tests` passes
-- `pytest -v --tb=short` passes
-- `SESSION_LOG.md` has a new entry with reasoning and next steps
+- relevant `pytest` suites pass
+- docs updated for architecture/contract changes
+- `SESSION_LOG.md` appended with decisions, tests, and next steps
 
 ## Working Conventions
 
-- Prefer small, focused commits
-- Keep module boundaries strict
-- Keep CLI behavior deterministic and testable
-- Do not leave roadmap/docs out of sync with implementation
-- If architecture changes, update docs in the same session
-
-## Current Build Priority
-
-1. Shared URL runtime context migration for remaining detectors + input-aware orchestrator routing
-2. Python API adapter for future Next.js UI (reuse orchestrator + formatter)
-3. False-positive controls phase 2 (per-rule allowlist granularity + operator docs)
-4. Structured multi-item response wrappers (QR `--all`, batch flows)
-5. Dependency audit policy hardening (`pip-audit` enforcement workflow)
+- Prefer small commits with descriptive conventional messages.
+- Keep one theme per commit and per issue update.
+- Update roadmap/issue tracker when milestones or phase status moves.
+- Leave concrete breadcrumbs for the next session.
 
 ## What Not To Do
 
-- Do not add a web server yet
-- Do not add DB dependencies
-- Do not run dynamic malware detonation
-- Do not make network calls by default
-- Do not skip session logging
+- Do not enable network behavior by default.
+- Do not introduce hidden side effects in modules.
+- Do not ship behavior changes without test coverage.
+- Do not leave docs stale after architecture or contract changes.

@@ -1,5 +1,8 @@
 # Epic: Execute Link Safety Hub V2 Blueprint
 
+Note: this file is the source template used for issue creation/editing.  
+Live issue status is tracked in GitHub issue `#2`.
+
 ## Summary
 
 Track end-to-end execution of the V2 product and architecture plan:

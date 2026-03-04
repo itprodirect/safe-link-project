@@ -11,11 +11,10 @@ URL: https://github.com/itprodirect/safe-link-project/issues/2
 
 ## 1) How To Use This Tracker
 
-1. Create one GitHub milestone per phase (`V2-Phase-1` ... `V2-Phase-8`).
-2. Create one epic issue per phase.
-3. Create child issues from each epic checklist.
-4. Update this document with issue numbers and status.
-5. Use labels:
+1. Use existing milestones (`V2-Phase-1` ... `V2-Phase-8`) and phase epics (`#3`-`#10`).
+2. Create child issues from each epic checklist as work is pulled.
+3. Update this document with issue numbers and status.
+4. Use labels:
    - `v2`
    - `epic`
    - `backend`
@@ -66,9 +65,9 @@ Epic issues are now created and linked below.
 
 ### Child issues
 
-- [ ] `E1-I1` Build `AnalysisService` and `analysis_factory`.
-- [ ] `E1-I2` Move duplicated summary/wiring logic from adapters to service layer.
-- [ ] `E1-I3` Add `POST /api/v2/analyze` draft contract and response model.
+- [x] `E1-I1` Build `AnalysisService` and `analysis_factory`.
+- [x] `E1-I2` Move duplicated summary/wiring logic from adapters to service layer.
+- [x] `E1-I3` Add `POST /api/v2/analyze` draft contract and response model.
 - [ ] `E1-I4` Add contract tests and parity tests versus v1 baseline ([#11](https://github.com/itprodirect/safe-link-project/issues/11)).
 - [ ] `E1-I5` Update architecture docs for v2 structure ([#12](https://github.com/itprodirect/safe-link-project/issues/12)).
 

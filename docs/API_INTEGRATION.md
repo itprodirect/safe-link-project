@@ -2,8 +2,9 @@
 
 ## Status
 
-Current contract version: `1.0`  
-Updated: `2026-03-01` (Session 9D contract enforcement pass)
+Current stable contract: `1.0` (`/api/v1/*`)  
+Current draft contract: `2.0` (`/api/v2/analyze`)  
+Updated: `2026-03-04` (Session 11 v2 draft endpoint + parity test expansion)
 
 This document is the integration source of truth for backend consumers (Next.js UI, scripts, and service callers).
 
@@ -128,8 +129,8 @@ Notes:
 
 All successful analysis responses include:
 
-- `schema_version` (currently `"1.0"`)
-- `flow` (`url_check`, `email_check`, `qr_scan`)
+- `schema_version` (`"1.0"` for v1 flows, `"2.0"` for current v2 analyze flow)
+- `flow` (`url_check`, `email_check`, `qr_scan`, `analyze`)
 - `mode` (`single` or `multi`)
 - `input_type`
 - `item_count`
@@ -234,7 +235,8 @@ Validation errors (`422`) use FastAPI's default validation format and should be 
 ## Versioning Policy
 
 - Clients must check `schema_version`.
-- `1.x` can add non-breaking fields.
+- `1.x` can add non-breaking fields for `/api/v1/*`.
+- current v2 draft flow uses `schema_version: "2.0"` on `/api/v2/analyze`.
 - Breaking changes require a major version bump and migration notes.
 
 Contract enforcement:

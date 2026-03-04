@@ -1,6 +1,23 @@
 # Plan Review: Gaps, Risks, and Corrections
 
-Status note: updated on 2026-03-01 after Session 7 contract docs and API integration guidance.
+Status note: refreshed on 2026-03-04 after V2 kickoff, phase epic creation, and E1 foundation work.
+
+## 2026-03-04 Reality Check
+
+What changed since the previous review:
+
+- V2 execution now has active GitHub structure (umbrella `#2`, phase epics `#3`-`#10`).
+- E1 foundation delivered major pieces:
+  - shared application service layer (`src/lsh/application/analysis_service.py`)
+  - duplicate CLI/API orchestrator wiring removed
+  - draft `/api/v2/analyze` endpoint added
+- Parity/edge coverage expanded with both matrix tests and deterministic v1/v2 snapshot fixtures.
+
+Current focus (short version):
+
+1. Close E1 endpoint-level parity in API-enabled test lanes (`#11`).
+2. Finish docs closeout and keep architecture/API docs fully aligned (`#12`).
+3. Start Phase 2 (`#4`): unified `/analyze` workspace shell.
 
 ## What Is Working Well
 
@@ -135,7 +152,7 @@ Recommended practice:
 - Removed stale one-off session plan doc (`claude-code-session-plan-2-17-26.md`)
 - Updated agent workflow docs (`CLAUDE.md`, `SKILL.md`) to reference canonical planning docs
 
-## Highest-Leverage Alpha Next Steps (Top 5)
+## Historical Alpha Next Steps (Completed)
 
 - [x] Input-aware orchestrator routing + migrate remaining URL detectors to shared context
   Rationale: removes duplicate parsing paths and makes CLI/API behavior consistent on one preprocessing pipeline.

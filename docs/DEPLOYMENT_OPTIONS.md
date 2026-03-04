@@ -1,8 +1,13 @@
-# Deployment Options Research (Session Closeout)
+# Deployment Options Research
 
-Updated: 2026-03-01
+Updated: 2026-03-04
 
-Purpose: capture deployment options, tradeoffs, and a concrete next-step plan so the next session can execute quickly.
+Purpose: capture deployment options, tradeoffs, and a concrete next-step plan for hosted validation and production rollout.
+
+Current status:
+
+- Option analysis complete.
+- Hosted validation execution remains open in `docs/ROADMAP.md` Session 9 item 3.
 
 ## Current Project Shape
 

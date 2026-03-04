@@ -3,6 +3,7 @@
 ## Goal
 
 Validate that a minimal Next.js frontend can call and render all primary API flows against the `1.0` contract.
+Current validation focus is still v1 wrapper flows, with incremental checks added for draft v2 paths as they stabilize.
 
 Primary contract source: `docs/API_INTEGRATION.md`
 
