@@ -87,6 +87,25 @@ Close the remaining MVP gap between local validation and hosted-safe operation.
    Deployment option research and recommended paths are documented in `docs/DEPLOYMENT_OPTIONS.md`.
 4. [x] Tighten API contract enforcement strategy (response model strictness + legacy key deprecation plan).
 
+## Session 11: V2 Execution Kickoff (2026-03-04)
+
+### Goal
+
+Establish V2 execution structure in GitHub and complete the first foundation refactor slice.
+
+### Work Items
+
+1. [x] Publish V2 planning docs (`V2_BLUEPRINT`, `V2_ROADMAP_ISSUES`) and umbrella epic.
+2. [x] Create phase milestones (`V2-Phase-1` to `V2-Phase-8`) and phase epic issues (`#3`-`#10`).
+3. [x] Complete first E1 refactor slice:
+   - add shared application service (`src/lsh/application/analysis_service.py`)
+   - remove duplicated URL/email orchestrator wiring from CLI/API adapters
+4. [x] Continue E1:
+   - introduce `/api/v2/analyze` draft endpoint
+   - add application-layer regression tests for shared service behavior and edge inputs
+5. [ ] Remaining E1:
+   - add explicit parity tests for v1 and v2 response semantics where contracts overlap
+
 ## Risks and Mitigations
 
 - Risk: network-dependent logic increases flaky tests

@@ -5,30 +5,21 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
 from lsh.adapters.api_models import (
+    AnalyzeV2Response,
     ApiErrorEnvelope,
     EmailCheckResponse,
     QRScanResponse,
     UrlCheckResponse,
 )
-from lsh.core.models import AnalysisInput, AnalysisResult, Finding
-from lsh.core.orchestrator import AnalysisOrchestrator
+from lsh.application import analyze_email, analyze_url
 from lsh.formatters.structured import (
     build_qr_scan_payload,
     build_single_result_payload,
-)
-from lsh.modules import (
-    AsciiLookalikeDetector,
-    EmailAuthDetector,
-    HomoglyphDetector,
-    NetIPDetector,
-    RedirectChainDetector,
-    URLStructureDetector,
 )
 from lsh.modules.qr_decode import (
     QRDecodeError,
@@ -53,59 +44,13 @@ else:
     FASTAPI_AVAILABLE = True
 
 _SCHEMA_VERSION = "1.0"
+_SCHEMA_VERSION_V2 = "2.0"
 _CORS_ORIGINS_ENV = "LSH_API_CORS_ALLOW_ORIGINS"
 _DEFAULT_CORS_ORIGINS = ("http://127.0.0.1:3000", "http://localhost:3000")
 _QR_LEGACY_KEYS_ENV = "LSH_API_INCLUDE_QR_LEGACY_KEYS"
 _QR_LEGACY_KEYS_HEADER = "X-LSH-QR-Legacy-Keys"
 _QR_LEGACY_KEYS_HEADER_VALUE = "included; sunset=2026-06-01; use=item/items"
 _QR_LEGACY_KEYS_DISABLED_HEADER_VALUE = "disabled"
-
-_URL_ORCHESTRATOR = AnalysisOrchestrator(
-    modules=[
-        NetIPDetector(),
-        URLStructureDetector(),
-        AsciiLookalikeDetector(),
-        HomoglyphDetector(),
-        RedirectChainDetector(),
-    ]
-)
-
-
-def _build_email_summary(findings: Sequence[Finding], overall_risk: int) -> str:
-    if not findings:
-        return "No obvious email authentication issues were found in the provided headers."
-
-    if overall_risk >= 81:
-        return (
-            "High-risk email-authentication warning. "
-            "Do not trust links or urgent requests until independently verified."
-        )
-    if overall_risk >= 61:
-        return (
-            "This message has strong authentication warning signs. "
-            "Verify sender identity through a trusted channel."
-        )
-    if overall_risk >= 41:
-        return (
-            "This message has authentication concerns. "
-            "Use caution before acting on requests."
-        )
-    return (
-        "A mild email authentication warning sign was found. "
-        "Double-check sensitive requests before taking action."
-    )
-
-
-_EMAIL_ORCHESTRATOR = AnalysisOrchestrator(
-    modules=[EmailAuthDetector()],
-    summary_builder=_build_email_summary,
-)
-
-
-def _analyze_url_result(url: str, metadata: dict[str, object] | None = None) -> AnalysisResult:
-    return _URL_ORCHESTRATOR.analyze(
-        AnalysisInput(input_type="url", content=url, metadata=metadata or {})
-    )
 
 
 class URLCheckRequest(BaseModel):
@@ -125,19 +70,51 @@ class EmailCheckRequest(BaseModel):
     family: bool = False
 
 
-def _url_metadata(request: URLCheckRequest) -> dict[str, object]:
+class AnalyzeRequestV2(BaseModel):
+    input_type: Literal["url", "email_headers", "email_file"]
+    content: str = ""
+    subject: str | None = None
+    family: bool = False
+    allowlist_domains: list[str] = Field(default_factory=list)
+    allowlist_categories: list[str] = Field(default_factory=list)
+    allowlist_findings: list[str] = Field(default_factory=list)
+    network_enabled: bool = False
+    network_max_hops: int = Field(default=5, ge=1, le=15)
+    network_timeout: float = Field(default=3.0, ge=0.1)
+
+
+def _url_metadata_values(
+    *,
+    allowlist_domains: list[str],
+    allowlist_categories: list[str],
+    allowlist_findings: list[str],
+    network_enabled: bool,
+    network_max_hops: int,
+    network_timeout: float,
+) -> dict[str, object]:
     metadata: dict[str, object] = {
-        "network_enabled": request.network_enabled,
-        "network_max_hops": request.network_max_hops,
-        "network_timeout": request.network_timeout,
+        "network_enabled": network_enabled,
+        "network_max_hops": network_max_hops,
+        "network_timeout": network_timeout,
     }
-    if request.allowlist_domains:
-        metadata["allowlist_domains"] = request.allowlist_domains
-    if request.allowlist_categories:
-        metadata["allowlist_categories"] = [item.upper() for item in request.allowlist_categories]
-    if request.allowlist_findings:
-        metadata["allowlist_findings"] = [item.upper() for item in request.allowlist_findings]
+    if allowlist_domains:
+        metadata["allowlist_domains"] = allowlist_domains
+    if allowlist_categories:
+        metadata["allowlist_categories"] = [item.upper() for item in allowlist_categories]
+    if allowlist_findings:
+        metadata["allowlist_findings"] = [item.upper() for item in allowlist_findings]
     return metadata
+
+
+def _url_metadata(request: URLCheckRequest) -> dict[str, object]:
+    return _url_metadata_values(
+        allowlist_domains=request.allowlist_domains,
+        allowlist_categories=request.allowlist_categories,
+        allowlist_findings=request.allowlist_findings,
+        network_enabled=request.network_enabled,
+        network_max_hops=request.network_max_hops,
+        network_timeout=request.network_timeout,
+    )
 
 
 def _api_error(
@@ -209,7 +186,7 @@ def create_app() -> Any:
 
     @app.post("/api/v1/url/check", response_model=UrlCheckResponse)
     def url_check(request: URLCheckRequest) -> dict[str, object]:
-        result = _analyze_url_result(request.url, _url_metadata(request))
+        result = analyze_url(request.url, _url_metadata(request))
         return build_single_result_payload(
             flow="url_check",
             input_type="url",
@@ -220,15 +197,41 @@ def create_app() -> Any:
 
     @app.post("/api/v1/email/check", response_model=EmailCheckResponse)
     def email_check(request: EmailCheckRequest) -> dict[str, object]:
-        result = _EMAIL_ORCHESTRATOR.analyze(
-            AnalysisInput(input_type="email_headers", content=request.headers)
-        )
+        result = analyze_email(request.headers)
         return build_single_result_payload(
             flow="email_check",
             input_type="email_headers",
             subject=request.source_label,
             result=result,
             include_family=request.family,
+        )
+
+    @app.post("/api/v2/analyze", response_model=AnalyzeV2Response)
+    def analyze_v2(request: AnalyzeRequestV2) -> dict[str, object]:
+        if request.input_type == "url":
+            result = analyze_url(
+                request.content,
+                _url_metadata_values(
+                    allowlist_domains=request.allowlist_domains,
+                    allowlist_categories=request.allowlist_categories,
+                    allowlist_findings=request.allowlist_findings,
+                    network_enabled=request.network_enabled,
+                    network_max_hops=request.network_max_hops,
+                    network_timeout=request.network_timeout,
+                ),
+            )
+            subject = request.subject or request.content
+        else:
+            result = analyze_email(request.content, input_type=request.input_type)
+            subject = request.subject or "inline headers"
+
+        return build_single_result_payload(
+            flow="analyze",
+            input_type=request.input_type,
+            subject=subject,
+            result=result,
+            include_family=request.family,
+            schema_version=_SCHEMA_VERSION_V2,
         )
 
     @app.post(
@@ -289,7 +292,7 @@ def create_app() -> Any:
             )
 
         selected_urls = url_payloads if analyze_all else [url_payloads[0]]
-        url_results = [(url, _analyze_url_result(url)) for url in selected_urls]
+        url_results = [(url, analyze_url(url)) for url in selected_urls]
         include_legacy_keys = _include_qr_legacy_keys()
 
         response.headers[_QR_LEGACY_KEYS_HEADER] = (

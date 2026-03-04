@@ -1572,6 +1572,214 @@ Development session history. Each entry documents what was done, why, and what's
 
 ---
 
+## 2026-03-04 - Session 11A: V2 blueprint, roadmap tracker, and GitHub epic issue prep
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Produce a detailed V2 blueprint and execution-ready roadmap/issues documentation, then create a GitHub epic issue pointing to the new docs.
+
+**Module(s) Touched:** docs planning set, README docs index, session log
+
+**Changes:**
+- Added `docs/V2_BLUEPRINT.md`:
+  - end-to-end V2 product/UX/backend blueprint
+  - architecture, API v2, policy system, security, observability, testing, migration, and sprint plan
+- Added `docs/V2_ROADMAP_ISSUES.md`:
+  - phase roadmap (8 phases / 16 weeks)
+  - epic map, child issue checklists, definitions of done, risk table, governance cadence
+- Added `docs/V2_EPIC_ISSUE.md`:
+  - GitHub-ready epic issue body with objectives, checklist, exit criteria, and references
+- Created GitHub issue `#2`:
+  - URL: `https://github.com/itprodirect/safe-link-project/issues/2`
+  - title: `Epic: Execute Link Safety Hub V2 Blueprint`
+- Updated `README.md` documentation index with:
+  - `docs/V2_BLUEPRINT.md`
+  - `docs/V2_ROADMAP_ISSUES.md`
+
+**Decisions:**
+- Split strategy and execution docs into:
+  - one architecture/product blueprint (`V2_BLUEPRINT`)
+  - one issue/milestone execution tracker (`V2_ROADMAP_ISSUES`)
+  to keep planning actionable and GitHub issue creation straightforward.
+- Added a dedicated issue-body markdown file so GitHub issue creation can be repeated consistently.
+
+**Open Questions:**
+- Should we create one epic issue only first, or immediately open all 8 phase epics and child issues in GitHub?
+- Should milestone naming follow `V2-Phase-<N>` or calendar-based naming?
+
+**Next:**
+- Optionally create phase-level epics and convert the child checklist into individual linked issues.
+
+**Tests / Verification:**
+- Docs-only updates; no runtime behavior changes.
+
+---
+
+## 2026-03-04 - Session 11B: V2 phase epics in GitHub + E1 service-layer refactor slice
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Create all V2 phase epic issues/milestones in GitHub and begin E1 implementation by centralizing shared analysis orchestration.
+
+**Module(s) Touched:** GitHub issue/milestone planning assets, architecture/roadmap docs, CLI/API adapters, new application service layer
+
+**Changes:**
+- GitHub project management setup:
+  - created labels: `v2`, `epic`, `backend`, `frontend`, `api`, `ux`, `security`, `infra`, `docs`
+  - created milestones: `V2-Phase-1` through `V2-Phase-8`
+  - created phase epic issues:
+    - `#3` E1 Foundation
+    - `#4` E2 Unified Analyze Workspace
+    - `#5` E3 Verdict-First UX
+    - `#6` E4 Analyst Mode
+    - `#7` E5 Policy Packs
+    - `#8` E6 History/Compare/Feedback
+    - `#9` E7 Hardening
+    - `#10` E8 Stabilization/Launch
+  - updated umbrella issue `#2` with labels and linked phase checklist
+- Added issue body source files under `docs/issues/` for all phase epics (`V2_E1_*.md` ... `V2_E8_*.md`).
+- Updated `docs/V2_ROADMAP_ISSUES.md` with live issue links (`#3`-`#10`) and status.
+- E1 implementation slice:
+  - added `src/lsh/application/analysis_service.py` and package init at `src/lsh/application/__init__.py`
+  - centralized URL/email orchestrator composition and shared analyze entrypoints:
+    - `analyze_url(...)`
+    - `analyze_email(...)`
+  - refactored `src/lsh/adapters/cli.py` to use shared application service (removed duplicate orchestrator and email summary wiring)
+  - refactored `src/lsh/adapters/api.py` to use shared application service (removed duplicate orchestrator and email summary wiring)
+- Documentation sync:
+  - updated `docs/ARCHITECTURE.md` to document the new application layer
+  - updated `docs/ROADMAP.md` with Session 11 kickoff and E1 progress
+  - updated `README.md` to include `src/lsh/application/` in current structure and status notes
+
+**Decisions:**
+- Kept adapters thin and transport-focused by moving orchestration composition into application services.
+- Used milestone-per-phase plus epic-per-phase structure to keep V2 execution observable and enforce phase gates.
+- Added persistent issue body files in-repo to keep GitHub issue content reproducible and editable via PR.
+
+**Open Questions:**
+- Should we now open child issues for each E1-E8 checklist item (40+ items) or keep them nested until each phase starts?
+- Do you want due dates assigned to each phase milestone now or after hosted validation closes?
+
+**Next:**
+- Continue E1 with `/api/v2/analyze` draft endpoint and parity tests.
+- Optionally generate child issues from `docs/V2_ROADMAP_ISSUES.md` checklists.
+
+**Tests / Verification:**
+- `python -m ruff check src/lsh/application src/lsh/adapters/cli.py src/lsh/adapters/api.py` passed.
+- `python -m mypy src/lsh/application src/lsh/adapters/cli.py src/lsh/adapters/api.py` passed.
+- `python -m pytest tests/test_smoke.py tests/core/test_orchestrator.py -q` passed (`30 passed`).
+
+---
+
+## 2026-03-04 - Session 11C: Test expansion and `/api/v2/analyze` draft endpoint
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Increase continuity/regression coverage for the new application layer and add a draft unified v2 analyze endpoint with tests-first workflow.
+
+**Module(s) Touched:** application tests, API adapter and models, structured formatter, API docs, roadmap docs
+
+**Changes:**
+- Added new application-layer regression tests:
+  - `tests/application/test_analysis_service.py`
+  - coverage includes:
+    - safe URL baseline behavior
+    - allowlist finding-scope suppression behavior
+    - email pass/no-findings behavior
+    - empty email input edge case (`EML000_EMPTY_INPUT`)
+    - `email_file` input-type support
+- Added v2 API test cases (module-level; skipped in this shell when FastAPI optional deps are unavailable):
+  - `tests/adapters/test_api.py` additions:
+    - `/api/v2/analyze` URL shape
+    - `/api/v2/analyze` email shape
+    - family payload inclusion
+    - URL allowlist-finding suppression behavior
+    - unsupported input-type validation (`422`)
+- Implemented draft unified v2 endpoint:
+  - `POST /api/v2/analyze` in `src/lsh/adapters/api.py`
+  - request model: `AnalyzeRequestV2`
+  - response model: `AnalyzeV2Response` in `src/lsh/adapters/api_models.py`
+  - URL metadata controls are applied only for URL input-type paths
+- Updated structured payload builders to support explicit schema version override:
+  - `src/lsh/formatters/structured.py`
+  - `build_single_result_payload(..., schema_version=...)`
+  - `build_multi_result_payload(..., schema_version=...)`
+- Updated docs:
+  - `README.md` endpoint list includes draft `/api/v2/analyze`
+  - `docs/API_INTEGRATION.md` includes v2 draft request/response notes
+  - `docs/ROADMAP.md` Session 11 progress updated
+  - `docs/ARCHITECTURE.md` adapter section updated for v2 draft endpoint
+
+**Decisions:**
+- Kept `/api/v2/analyze` as single-mode response for initial E1 scope; batch/multi remains future scope.
+- Reused existing wrapper payload builder with explicit schema version override to minimize contract code duplication.
+
+**Open Questions:**
+- Should `/api/v2/analyze` accept `qr_image` in-band later (upload path) or remain URL/email-only and keep QR as a dedicated endpoint?
+- Do we want a dedicated v2 error envelope versioning strategy now (`schema_version: 2.0` for errors), or defer until v2 error surface broadens?
+
+**Next:**
+- Add explicit v1/v2 parity assertions for overlapping response semantics (E1 remaining item).
+- Add edge-case test matrix for URL normalization and metadata coercion in v2 request paths.
+
+**Tests / Verification:**
+- `python -m ruff check src/lsh/application src/lsh/adapters/api.py src/lsh/adapters/api_models.py src/lsh/formatters/structured.py tests/application/test_analysis_service.py tests/adapters/test_api.py` passed.
+- `python -m mypy src/lsh/application src/lsh/adapters/api.py src/lsh/adapters/api_models.py src/lsh/formatters/structured.py tests/application/test_analysis_service.py tests/adapters/test_api.py` passed.
+- `python -m pytest tests/application/test_analysis_service.py tests/adapters/test_api.py tests/test_smoke.py tests/core/test_orchestrator.py -q` passed (`35 passed`, `1 skipped`).
+  - `tests/adapters/test_api.py` remains environment-dependent via `pytest.importorskip("fastapi")`.
+
+---
+
+## 2026-03-04 - Session 11D: Edge-case matrix and v1/v2 parity test expansion
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Expand regression coverage for wide edge cases and continuity between v1 and v2 API behavior.
+
+**Module(s) Touched:** application tests, API adapter tests, formatter tests
+
+**Changes:**
+- Expanded `tests/application/test_analysis_service.py`:
+  - malformed URL content matrix (`""`, whitespace, malformed schemes, invalid encoding, spaced hosts)
+  - metadata coercion matrix coverage with mixed types/values for network and allowlist controls
+  - redirect-session monkeypatch integration to ensure network-enabled metadata paths remain deterministic in tests
+- Expanded `tests/adapters/test_api.py` (environment-dependent on FastAPI extras):
+  - OpenAPI coverage for `/api/v2/analyze` response schema
+  - lowercase allowlist category/finding normalization behavior in v2
+  - v2 empty URL content behavior (`HMG000_INVALID_URL`)
+  - email input path ignores URL-only metadata fields without failure
+  - explicit v1/v2 parity assertions for overlapping URL and email result semantics
+- Expanded `tests/formatters/test_structured.py`:
+  - schema-version override coverage for single/multi payload builders
+
+**Decisions:**
+- Kept parity assertions focused on overlapping contract fields (`item.result`, `item.family`, `subject`, `mode`, `item_count`) rather than top-level version/flow fields, which are intentionally different in v2.
+- Kept malformed-input handling non-throwing and assertion-based on bounded risk output to prioritize continuity and robustness.
+
+**Open Questions:**
+- Should we introduce snapshot fixtures for v1/v2 parity (canonical golden JSON), or keep parity checks structural to reduce brittle test churn?
+- Do we want to enforce non-empty `content` in v2 request model later, or preserve current permissive behavior for defensive analysis workflows?
+
+**Next:**
+- Add contract-level snapshot fixtures for critical flows once v2 response fields stabilize.
+- Add CI job matrix that exercises API tests with `[api]` extras enabled in all lanes where contract checks are required.
+
+**Tests / Verification:**
+- `python -m ruff check tests/application/test_analysis_service.py tests/adapters/test_api.py tests/formatters/test_structured.py` passed.
+- `python -m mypy tests/application/test_analysis_service.py tests/adapters/test_api.py tests/formatters/test_structured.py` passed.
+- `python -m pytest tests/application/test_analysis_service.py tests/formatters/test_structured.py tests/test_smoke.py tests/core/test_orchestrator.py -q` passed (`55 passed`).
+- `python -m pytest tests/adapters/test_api.py -q` resulted in `1 skipped` (FastAPI optional dependency gating in this shell).
+
+---
+
 ## 2026-03-01 - Session 10D: Complete false-positive control phase
 
 **Agent:** Codex

@@ -46,6 +46,15 @@ class EmailCheckResponse(_StrictModel):
     item: WrappedItem
 
 
+class AnalyzeV2Response(_StrictModel):
+    schema_version: Literal["2.0"]
+    flow: Literal["analyze"]
+    mode: Literal["single"]
+    input_type: Literal["url", "email_headers", "email_file"]
+    item_count: Literal[1]
+    item: WrappedItem
+
+
 class QRLegacyResultItem(_StrictModel):
     url: str
     result: AnalysisResult

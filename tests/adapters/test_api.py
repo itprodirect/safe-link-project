@@ -95,6 +95,11 @@ def test_openapi_uses_typed_response_models() -> None:
     ]["schema"]
     assert "$ref" in qr_error
 
+    v2_success = schema["paths"]["/api/v2/analyze"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+    assert "$ref" in v2_success or "allOf" in v2_success
+
 
 def test_url_check_endpoint_can_include_family_payload() -> None:
     client = _client()
@@ -106,6 +111,204 @@ def test_url_check_endpoint_can_include_family_payload() -> None:
     assert response.status_code == 200
     body = response.json()
     assert "family" in body["item"]
+
+
+def test_v2_analyze_url_returns_wrapped_shape() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={"input_type": "url", "content": "https://example.com"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "2.0"
+    assert body["flow"] == "analyze"
+    assert body["mode"] == "single"
+    assert body["input_type"] == "url"
+    assert body["item_count"] == 1
+
+
+def test_v2_analyze_email_returns_wrapped_shape() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "email_headers",
+            "content": "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass",
+            "subject": "sample headers",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "2.0"
+    assert body["flow"] == "analyze"
+    assert body["input_type"] == "email_headers"
+    assert body["item"]["subject"] == "sample headers"
+
+
+def test_v2_analyze_can_include_family_payload() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://example.com",
+            "family": True,
+        },
+    )
+    assert response.status_code == 200
+    assert "family" in response.json()["item"]
+
+
+def test_v2_analyze_url_allowlist_finding_targets_single_code() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://xn--pple-43d.com",
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+        },
+    )
+    assert response.status_code == 200
+    findings = response.json()["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+
+def test_v2_analyze_url_allowlist_categories_can_be_lowercase() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://xn--pple-43d.com",
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["none"],
+            "allowlist_findings": ["hmg002_punycode_visibility"],
+        },
+    )
+    assert response.status_code == 200
+    findings = response.json()["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+
+def test_v2_analyze_empty_url_content_is_handled() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={"input_type": "url", "content": ""},
+    )
+    assert response.status_code == 200
+    findings = response.json()["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG000_INVALID_URL" in categories
+
+
+def test_v2_analyze_email_ignores_url_only_metadata_fields() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "email_headers",
+            "content": "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass",
+            "allowlist_domains": ["example.com"],
+            "allowlist_categories": ["ALL"],
+            "allowlist_findings": ["HMG002*"],
+            "network_enabled": True,
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_type"] == "email_headers"
+    assert body["item"]["result"]["findings"] == []
+
+
+def test_v1_v2_url_result_parity_for_overlapping_fields() -> None:
+    client = _client()
+    v1_response = client.post(
+        "/api/v1/url/check",
+        json={
+            "url": "https://xn--pple-43d.com",
+            "family": True,
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+            "network_enabled": False,
+            "network_max_hops": 5,
+            "network_timeout": 3.0,
+        },
+    )
+    assert v1_response.status_code == 200
+    v1_body = v1_response.json()
+
+    v2_response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://xn--pple-43d.com",
+            "subject": "https://xn--pple-43d.com",
+            "family": True,
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+            "network_enabled": False,
+            "network_max_hops": 5,
+            "network_timeout": 3.0,
+        },
+    )
+    assert v2_response.status_code == 200
+    v2_body = v2_response.json()
+
+    assert v1_body["item"]["result"] == v2_body["item"]["result"]
+    assert v1_body["item"]["family"] == v2_body["item"]["family"]
+    assert v1_body["item"]["subject"] == v2_body["item"]["subject"]
+    assert v1_body["mode"] == v2_body["mode"] == "single"
+    assert v1_body["item_count"] == v2_body["item_count"] == 1
+
+
+def test_v1_v2_email_result_parity_for_overlapping_fields() -> None:
+    client = _client()
+    headers = "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass"
+
+    v1_response = client.post(
+        "/api/v1/email/check",
+        json={"headers": headers, "source_label": "sample", "family": True},
+    )
+    assert v1_response.status_code == 200
+    v1_body = v1_response.json()
+
+    v2_response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "email_headers",
+            "content": headers,
+            "subject": "sample",
+            "family": True,
+        },
+    )
+    assert v2_response.status_code == 200
+    v2_body = v2_response.json()
+
+    assert v1_body["item"]["result"] == v2_body["item"]["result"]
+    assert v1_body["item"]["family"] == v2_body["item"]["family"]
+    assert v1_body["item"]["subject"] == v2_body["item"]["subject"]
+    assert v1_body["mode"] == v2_body["mode"] == "single"
+    assert v1_body["item_count"] == v2_body["item_count"] == 1
+
+
+def test_v2_analyze_rejects_unknown_input_type() -> None:
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={"input_type": "qr_image", "content": "ignored"},
+    )
+    assert response.status_code == 422
 
 
 def test_url_check_allowlist_finding_targets_single_code() -> None:

@@ -21,6 +21,7 @@ Endpoints:
 - `POST /api/v1/url/check`
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan`
+- `POST /api/v2/analyze` (draft v2 unified endpoint)
 
 ## CORS Contract
 
@@ -37,6 +38,31 @@ LSH_API_CORS_ALLOW_ORIGINS=https://safe-link-ui.example.com
 ```
 
 ## Request Contracts
+
+### POST `/api/v2/analyze` (Draft)
+
+```json
+{
+  "input_type": "url",
+  "content": "https://example.com",
+  "subject": "optional display label",
+  "family": false,
+  "allowlist_domains": ["trusted.example"],
+  "allowlist_categories": ["HMG", "ASCII"],
+  "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+  "network_enabled": false,
+  "network_max_hops": 5,
+  "network_timeout": 3.0
+}
+```
+
+Notes:
+
+- `input_type` supports: `url`, `email_headers`, `email_file`.
+- `content` is the raw value to analyze for the declared `input_type`.
+- URL-only controls (`allowlist_*`, `network_*`) are applied when `input_type="url"`.
+- `subject` overrides display label in wrapped response output.
+- Current v2 implementation returns wrapped `single` mode responses only.
 
 ### POST `/api/v1/url/check`
 
@@ -107,6 +133,12 @@ All successful analysis responses include:
 - `mode` (`single` or `multi`)
 - `input_type`
 - `item_count`
+
+For `POST /api/v2/analyze`:
+
+- `schema_version` is `"2.0"`
+- `flow` is `"analyze"`
+- `mode` is currently `"single"`
 
 ### Single-mode shape
 

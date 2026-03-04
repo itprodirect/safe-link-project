@@ -78,6 +78,27 @@ def test_multi_payload_shape_is_stable() -> None:
     assert len(items) == 2
 
 
+def test_single_payload_can_override_schema_version() -> None:
+    payload = build_single_result_payload(
+        flow="analyze",
+        input_type="url",
+        subject="https://example.com",
+        result=_result("https://example.com"),
+        schema_version="2.0",
+    )
+    assert payload["schema_version"] == "2.0"
+
+
+def test_multi_payload_can_override_schema_version() -> None:
+    payload = build_multi_result_payload(
+        flow="batch",
+        input_type="url",
+        items=[("https://a.example", _result("https://a.example", risk=10))],
+        schema_version="2.0",
+    )
+    assert payload["schema_version"] == "2.0"
+
+
 def test_qr_payload_includes_wrapped_and_legacy_keys_for_single_mode() -> None:
     payload = build_qr_scan_payload(
         image_path="code.png",

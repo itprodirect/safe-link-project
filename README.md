@@ -11,6 +11,7 @@ Implemented now:
 - URL normalization and adversarial parsing helpers in `src/lsh/core/normalizer.py`
 - Shared per-analysis URL runtime context/preprocessing cache in `src/lsh/core/context.py`
 - Input-aware module routing in orchestrator (`supported_input_types` + orchestrator-side filtering)
+- Shared application service layer in `src/lsh/application/analysis_service.py` for adapter reuse
 - CLI adapter in `src/lsh/adapters/cli.py`
 - Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
@@ -105,6 +106,7 @@ Current endpoints:
 - `POST /api/v1/url/check`
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan` (`multipart/form-data` with uploaded file)
+- `POST /api/v2/analyze` (unified single-item analyze endpoint, draft)
 
 Contract and integration notes: `docs/API_INTEGRATION.md`
 
@@ -246,6 +248,8 @@ safe-link-project/
     lib/
     scripts/
   src/lsh/
+    application/
+      analysis_service.py
     adapters/
       cli.py
     core/
@@ -323,6 +327,8 @@ Canonical project docs live under `docs/` (planning docs were de-duplicated from
 - Dependency-audit policy: `docs/DEPENDENCY_AUDIT.md`
 - Next.js validation checklist: `docs/NEXTJS_UI_VALIDATION.md`
 - Roadmap: `docs/ROADMAP.md`
+- V2 blueprint: `docs/V2_BLUEPRINT.md`
+- V2 roadmap and issue tracker: `docs/V2_ROADMAP_ISSUES.md`
 - Plan review and risks: `docs/PLAN_REVIEW.md`
 - Security and responsible use: `docs/SECURITY.md`
 - GitHub workflow strategy: `docs/GITHUB_STRATEGY.md`

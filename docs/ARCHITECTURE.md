@@ -2,9 +2,9 @@
 
 ## Design Principle
 
-Modules detect. Core orchestrates and scores. Adapters render.
+Modules detect. Core orchestrates and scores. Application services compose. Adapters render.
 
-## Implemented Architecture (2026-03-01)
+## Implemented Architecture (2026-03-04)
 
 ### Core Layer (`src/lsh/core/`)
 
@@ -27,6 +27,13 @@ Modules detect. Core orchestrates and scores. Adapters render.
 - `email_auth/`: local email header auth analyzer (SPF/DKIM/DMARC parsing)
 - `qr_decode/`: local QR payload decode helpers + optional detector (used by CLI `qr-scan` URL handoff)
 
+### Application Layer (`src/lsh/application/`)
+
+- `analysis_service.py`: shared URL/email analysis entrypoints used by both CLI and API adapters
+  - centralizes orchestrator construction
+  - removes duplicated adapter wiring and summary-builder definitions
+  - keeps adapter responsibilities focused on input/output transport
+
 ### Adapter Layer (`src/lsh/adapters/`)
 
 - `cli.py`: command parsing and view rendering (technical and family modes) for:
@@ -34,6 +41,7 @@ Modules detect. Core orchestrates and scores. Adapters render.
   - `lsh email-check <headers_or_file>`
   - `lsh qr-scan <image_path>`
 - `api.py`: minimal FastAPI adapter with endpoint parity for URL, email, and QR flows
+  plus draft unified v2 analyze endpoint (`POST /api/v2/analyze`)
 
 ### Formatter Layer (`src/lsh/formatters/`)
 
@@ -42,12 +50,12 @@ Modules detect. Core orchestrates and scores. Adapters render.
 
 ## Runtime Flow
 
-1. CLI parses input and options.
-2. CLI builds `AnalysisInput` and metadata (allowlist + network options).
-3. CLI routes to a URL orchestrator or email orchestrator (and `qr-scan` decodes payloads before URL routing).
+1. CLI/API adapters parse transport input and options.
+2. Adapters call shared application services (`analyze_url`, `analyze_email`).
+3. Application service routes to shared orchestrators (URL or email).
 4. Orchestrator builds runtime context once (for URL inputs), runs modules, then normalizes and aggregates findings.
 5. Orchestrator returns `AnalysisResult` with summary wording influenced by overall risk and confidence.
-6. CLI/API adapters render technical/family/structured outputs using shared formatter helpers.
+6. Adapters render technical/family/structured outputs using shared formatter helpers.
 
 ## Current URL Processing Reality (Important)
 

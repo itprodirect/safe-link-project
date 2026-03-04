@@ -44,11 +44,12 @@ def build_single_result_payload(
     subject: str,
     result: AnalysisResult,
     include_family: bool = False,
+    schema_version: str = "1.0",
 ) -> dict[str, object]:
     """Build a stable single-item payload shape for API/JSON consumers."""
     item = _item_payload(subject=subject, result=result, include_family=include_family)
     return {
-        "schema_version": "1.0",
+        "schema_version": schema_version,
         "flow": flow,
         "mode": "single",
         "input_type": input_type,
@@ -63,6 +64,7 @@ def build_multi_result_payload(
     input_type: str,
     items: list[tuple[str, AnalysisResult]],
     include_family: bool = False,
+    schema_version: str = "1.0",
 ) -> dict[str, object]:
     """Build a stable multi-item payload shape for batch-like workflows."""
     payload_items = [
@@ -70,7 +72,7 @@ def build_multi_result_payload(
         for subject, result in items
     ]
     return {
-        "schema_version": "1.0",
+        "schema_version": schema_version,
         "flow": flow,
         "mode": "multi",
         "input_type": input_type,
