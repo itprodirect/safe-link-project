@@ -69,8 +69,8 @@ Epic issues are now created and linked below.
 - [ ] `E1-I1` Build `AnalysisService` and `analysis_factory`.
 - [ ] `E1-I2` Move duplicated summary/wiring logic from adapters to service layer.
 - [ ] `E1-I3` Add `POST /api/v2/analyze` draft contract and response model.
-- [ ] `E1-I4` Add contract tests and parity tests versus v1 baseline.
-- [ ] `E1-I5` Update architecture docs for v2 structure.
+- [ ] `E1-I4` Add contract tests and parity tests versus v1 baseline ([#11](https://github.com/itprodirect/safe-link-project/issues/11)).
+- [ ] `E1-I5` Update architecture docs for v2 structure ([#12](https://github.com/itprodirect/safe-link-project/issues/12)).
 
 ### Definition of done
 

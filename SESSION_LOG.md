@@ -1780,6 +1780,63 @@ Development session history. Each entry documents what was done, why, and what's
 
 ---
 
+## 2026-03-04 - Session 11E: Snapshot parity fixtures + E1 child-issue conversion + handoff breadcrumbs
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Finalize strict parity-fixture baseline, convert remaining E1 checklist items into child GitHub issues, and leave clear handoff breadcrumbs for next sessions.
+
+**Module(s) Touched:** contract fixtures/tests, roadmap issue-linking, issue templates, session handoff logging
+
+**Changes:**
+- Added strict non-optional snapshot fixture:
+  - `tests/fixtures/contracts/v1_v2_single_payloads.json`
+  - normalized runtime timestamp field (`<TIMESTAMP>`) for deterministic comparisons
+- Added new parity snapshot test suite:
+  - `tests/contracts/test_v1_v2_snapshot_parity.py`
+  - validates:
+    - v1/v2 payload snapshots for URL/email overlap paths
+    - overlap parity for `item.result`, `item.family`, and `subject`
+  - runs without FastAPI extras (service/formatter-level) for continuity in all environments
+- Added child-issue template files:
+  - `docs/issues/V2_E1_I4_PARITY_SNAPSHOT.md`
+  - `docs/issues/V2_E1_I5_DOCS_SYNC.md`
+- Created GitHub child issues with acceptance criteria:
+  - `#11` E1-I4 Contract parity and snapshot governance
+  - `#12` E1-I5 Docs sync for shared service layer and v2 analyze
+- Linked child issues back to E1 epic `#3` via issue comment:
+  - `https://github.com/itprodirect/safe-link-project/issues/3#issuecomment-3996998813`
+- Updated planning docs with child issue links:
+  - `docs/V2_ROADMAP_ISSUES.md`
+  - `docs/ROADMAP.md`
+
+**Decisions:**
+- Kept strict snapshot parity at the service/formatter layer to avoid dependency on optional FastAPI extras.
+- Preserved endpoint-level parity tests in API test suite for hosted/API-enabled lanes.
+
+**Open Questions:**
+- Should fixture update tooling be automated (for example `make snapshot-update`) or remain manual and code-review controlled?
+- Should we add branch-protection policy requiring parity snapshot tests in the mandatory CI lane?
+
+**Next (Breadcrumbs for next session):**
+- Short path to close E1:
+  1. Run API-enabled lane with extras (`pip install -e \".[api]\"`) and execute `tests/adapters/test_api.py`.
+  2. Tighten endpoint-level parity assertions where contracts overlap (#11).
+  3. Close docs-sync acceptance checklist and mark E1 phase status in roadmap/issue tracker (#12).
+- Follow-on Phase-2 kickoff:
+  1. Start `/analyze` unified workspace shell.
+  2. Introduce v2 typed frontend API client scaffolding.
+  3. Add Quick/Analyst mode state scaffold.
+
+**Tests / Verification:**
+- `python -m ruff check tests/contracts/test_v1_v2_snapshot_parity.py tests/application/test_analysis_service.py tests/formatters/test_structured.py` passed.
+- `python -m mypy tests/contracts/test_v1_v2_snapshot_parity.py tests/application/test_analysis_service.py tests/formatters/test_structured.py` passed.
+- `python -m pytest tests/contracts/test_v1_v2_snapshot_parity.py tests/application/test_analysis_service.py tests/formatters/test_structured.py tests/test_smoke.py tests/core/test_orchestrator.py -q` passed (`58 passed`).
+
+---
+
 ## 2026-03-01 - Session 10D: Complete false-positive control phase
 
 **Agent:** Codex

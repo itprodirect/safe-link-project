@@ -104,7 +104,8 @@ Establish V2 execution structure in GitHub and complete the first foundation ref
    - introduce `/api/v2/analyze` draft endpoint
    - add application-layer regression tests for shared service behavior and edge inputs
 5. [ ] Remaining E1:
-   - add explicit parity tests for v1 and v2 response semantics where contracts overlap
+   - add explicit endpoint-level parity tests for v1 and v2 response semantics where contracts overlap in hosted/API-enabled lanes (`#11`)
+   - finalize E1 docs closeout checklist (`#12`)
 
 ## Risks and Mitigations
 
