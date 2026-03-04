@@ -2,71 +2,19 @@
 
 import json
 import sys
-from collections.abc import Sequence
 from pathlib import Path
 
 import click
 
-from lsh.core.models import AnalysisInput, AnalysisResult, Finding
-from lsh.core.orchestrator import AnalysisOrchestrator
+from lsh.application import analyze_email, analyze_url
+from lsh.core.models import AnalysisResult, Finding
 from lsh.formatters.family import render_family_lines
 from lsh.formatters.structured import build_qr_scan_payload
-from lsh.modules import (
-    AsciiLookalikeDetector,
-    EmailAuthDetector,
-    HomoglyphDetector,
-    NetIPDetector,
-    RedirectChainDetector,
-    URLStructureDetector,
-)
 from lsh.modules.qr_decode import (
     QRDecodeError,
     QRDecodeUnavailableError,
     decode_qr_payloads_from_image,
     extract_url_payloads,
-)
-
-_URL_ORCHESTRATOR = AnalysisOrchestrator(
-    modules=[
-        NetIPDetector(),
-        URLStructureDetector(),
-        AsciiLookalikeDetector(),
-        HomoglyphDetector(),
-        RedirectChainDetector(),
-    ]
-)
-_EMAIL_ORCHESTRATOR: AnalysisOrchestrator
-
-
-def _build_email_summary(findings: Sequence[Finding], overall_risk: int) -> str:
-    """Build a concise summary tuned for email authentication results."""
-    if not findings:
-        return "No obvious email authentication issues were found in the provided headers."
-
-    if overall_risk >= 81:
-        return (
-            "High-risk email-authentication warning. "
-            "Do not trust links or urgent requests until independently verified."
-        )
-    if overall_risk >= 61:
-        return (
-            "This message has strong authentication warning signs. "
-            "Verify sender identity through a trusted channel."
-        )
-    if overall_risk >= 41:
-        return (
-            "This message has authentication concerns. "
-            "Use caution before acting on requests."
-        )
-    return (
-        "A mild email authentication warning sign was found. "
-        "Double-check sensitive requests before taking action."
-    )
-
-
-_EMAIL_ORCHESTRATOR = AnalysisOrchestrator(
-    modules=[EmailAuthDetector()],
-    summary_builder=_build_email_summary,
 )
 
 
@@ -152,9 +100,7 @@ def _resolve_email_input(source: str, treat_as_file: bool) -> tuple[str, str, st
 
 def _analyze_url_result(url: str, metadata: dict[str, object] | None = None) -> AnalysisResult:
     """Run URL analysis and return the aggregate result."""
-    return _URL_ORCHESTRATOR.analyze(
-        AnalysisInput(input_type="url", content=url, metadata=metadata or {})
-    )
+    return analyze_url(url, metadata)
 
 
 def _print_qr_scan_header(image_path: str, decoded_count: int, url_count: int) -> None:
@@ -386,9 +332,7 @@ def email_check(
 ) -> None:
     """Analyze email headers for SPF/DKIM/DMARC trust signals."""
     input_type, content, source_label = _resolve_email_input(headers_or_file, treat_as_file)
-    result = _EMAIL_ORCHESTRATOR.analyze(
-        AnalysisInput(input_type=input_type, content=content)
-    )
+    result = analyze_email(content, input_type=input_type)
 
     if as_json:
         _echo_json(result.model_dump(mode="json"))
