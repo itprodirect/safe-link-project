@@ -35,6 +35,9 @@ jobs:
       - name: Type check
         run: mypy src/
 
+      - name: Contract parity snapshots
+        run: pytest -v --tb=short tests/contracts/test_v1_v2_snapshot_parity.py
+
       - name: Dependency audit
         if: matrix.python-version == '3.11'
         run: |
@@ -120,3 +123,4 @@ jobs:
       - name: Stop API container
         if: always()
         run: docker rm -f lsh-api-ci
+
