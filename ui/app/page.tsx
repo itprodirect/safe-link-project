@@ -23,6 +23,9 @@ export default function HomePage() {
       <section className="card">
         <h2>Quick Actions</h2>
         <p>
+          <Link href="/analyze">Open unified analyze shell</Link>
+        </p>
+        <p>
           <Link href="/url">Run URL check</Link>
         </p>
         <p>

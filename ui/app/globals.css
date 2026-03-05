@@ -108,3 +108,33 @@ pre {
   border-radius: 10px;
   padding: 12px;
 }
+
+.tabRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tabButton {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+.tabButtonActive {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
+.placeholderPanel {
+  opacity: 0.95;
+}
+
+.placeholderNote {
+  margin-top: 12px;
+  color: var(--muted);
+}

@@ -19,6 +19,7 @@ export default function RootLayout({
           <nav className="topbar">
             <strong>Link Safety Hub UI</strong>
             <Link href="/">Overview</Link>
+            <Link href="/analyze">Analyze (V2)</Link>
             <Link href="/url">URL Check</Link>
             <Link href="/email">Email Check</Link>
             <Link href="/qr">QR Scan</Link>
