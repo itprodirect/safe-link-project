@@ -7,10 +7,15 @@ from copy import deepcopy
 import pytest
 
 pytest.importorskip("fastapi")
-from fastapi.testclient import TestClient  # type: ignore[import-not-found]
+from fastapi.testclient import TestClient
 
 from lsh.adapters import api
 
+_QR_UPLOADS_AVAILABLE = api._multipart_support_available()
+_QR_UPLOADS_SKIP = pytest.mark.skipif(
+    not _QR_UPLOADS_AVAILABLE,
+    reason="python-multipart is required for QR upload endpoint behavior tests.",
+)
 
 def _client() -> TestClient:
     app = api.create_app()
@@ -357,6 +362,20 @@ def test_email_check_endpoint_returns_wrapped_shape() -> None:
     assert body["item_count"] == 1
 
 
+def test_qr_scan_endpoint_reports_missing_multipart_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(api, "_multipart_support_available", lambda: False)
+    client = TestClient(api.create_app())
+
+    response = client.post("/api/v1/qr/scan")
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["schema_version"] == "1.0"
+    assert detail["error"]["code"] == "QRC_MULTIPART_UNAVAILABLE"
+
+
+@_QR_UPLOADS_SKIP
 def test_qr_scan_endpoint_returns_single_wrapped_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -383,6 +402,7 @@ def test_qr_scan_endpoint_returns_single_wrapped_shape(
     assert response.headers["x-lsh-qr-legacy-keys"].startswith("included;")
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_endpoint_returns_multi_wrapped_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -411,6 +431,7 @@ def test_qr_scan_endpoint_returns_multi_wrapped_shape(
     assert response.headers["x-lsh-qr-legacy-keys"].startswith("included;")
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_endpoint_can_disable_legacy_keys(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -436,6 +457,7 @@ def test_qr_scan_endpoint_can_disable_legacy_keys(
     assert response.headers["x-lsh-qr-legacy-keys"] == "disabled"
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_decoder_unavailable_uses_error_envelope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -458,6 +480,7 @@ def test_qr_scan_decoder_unavailable_uses_error_envelope(
     assert detail["error"]["code"] == "QRC_DECODER_UNAVAILABLE"
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_no_url_payloads_uses_error_envelope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -478,6 +501,7 @@ def test_qr_scan_no_url_payloads_uses_error_envelope(
     assert detail["error"]["code"] == "QRC_NO_URL_PAYLOADS"
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_no_payloads_uses_error_envelope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -498,7 +522,10 @@ def test_qr_scan_no_payloads_uses_error_envelope(
     assert detail["error"]["code"] == "QRC_NO_PAYLOADS"
 
 
+@_QR_UPLOADS_SKIP
 def test_qr_scan_requires_upload_file() -> None:
     client = _client()
     response = client.post("/api/v1/qr/scan", data={"analyze_all": "false"})
     assert response.status_code == 422
+
+

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+from importlib.util import find_spec
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
@@ -158,6 +159,10 @@ _QR_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 }
 
 
+def _multipart_support_available() -> bool:
+    return find_spec("multipart") is not None
+
+
 def create_app() -> Any:
     if not FASTAPI_AVAILABLE:
         raise RuntimeError(
@@ -234,83 +239,104 @@ def create_app() -> Any:
             schema_version=_SCHEMA_VERSION_V2,
         )
 
-    @app.post(
-        "/api/v1/qr/scan",
-        response_model=QRScanResponse,
-        response_model_exclude_none=True,
-        responses=_QR_ERROR_RESPONSES,
-    )
-    async def qr_scan(
-        response: Response,
-        file: Annotated[UploadFile, File(...)],
-        analyze_all: Annotated[bool, Form()] = False,
-        family: Annotated[bool, Form()] = False,
-    ) -> dict[str, object]:
-        image_name = (file.filename or "uploaded-image").strip() or "uploaded-image"
-        try:
-            image_bytes = await file.read()
-        except Exception as exc:
-            raise _api_error(
-                status_code=400,
-                code="QRC_IMAGE_READ_ERROR",
-                message=f"Could not read uploaded image '{image_name}': {exc}",
-            ) from exc
-        finally:
-            await file.close()
+    if _multipart_support_available():
 
-        try:
-            decoded_payloads = decode_qr_payloads_from_bytes(
-                image_bytes,
-                image_name=image_name,
+        @app.post(
+            "/api/v1/qr/scan",
+            response_model=QRScanResponse,
+            response_model_exclude_none=True,
+            responses=_QR_ERROR_RESPONSES,
+        )
+        async def qr_scan(
+            response: Response,
+            file: Annotated[UploadFile, File(...)],
+            analyze_all: Annotated[bool, Form()] = False,
+            family: Annotated[bool, Form()] = False,
+        ) -> dict[str, object]:
+            image_name = (file.filename or "uploaded-image").strip() or "uploaded-image"
+            try:
+                image_bytes = await file.read()
+            except Exception as exc:
+                raise _api_error(
+                    status_code=400,
+                    code="QRC_IMAGE_READ_ERROR",
+                    message=f"Could not read uploaded image '{image_name}': {exc}",
+                ) from exc
+            finally:
+                await file.close()
+
+            try:
+                decoded_payloads = decode_qr_payloads_from_bytes(
+                    image_bytes,
+                    image_name=image_name,
+                )
+            except QRDecodeUnavailableError as exc:
+                raise _api_error(
+                    status_code=503,
+                    code="QRC_DECODER_UNAVAILABLE",
+                    message=f"QR scanning unavailable: {exc}",
+                ) from exc
+            except QRDecodeError as exc:
+                raise _api_error(
+                    status_code=400,
+                    code="QRC_IMAGE_READ_ERROR",
+                    message=str(exc),
+                ) from exc
+
+            if not decoded_payloads:
+                raise _api_error(
+                    status_code=400,
+                    code="QRC_NO_PAYLOADS",
+                    message="No QR payloads were decoded from the image.",
+                )
+
+            url_payloads = extract_url_payloads(decoded_payloads)
+            if not url_payloads:
+                raise _api_error(
+                    status_code=400,
+                    code="QRC_NO_URL_PAYLOADS",
+                    message="Decoded QR payloads did not contain URL-like values.",
+                )
+
+            selected_urls = url_payloads if analyze_all else [url_payloads[0]]
+            url_results = [(url, analyze_url(url)) for url in selected_urls]
+            include_legacy_keys = _include_qr_legacy_keys()
+
+            response.headers[_QR_LEGACY_KEYS_HEADER] = (
+                _QR_LEGACY_KEYS_HEADER_VALUE
+                if include_legacy_keys
+                else _QR_LEGACY_KEYS_DISABLED_HEADER_VALUE
             )
-        except QRDecodeUnavailableError as exc:
+
+            return build_qr_scan_payload(
+                image_path=image_name,
+                decoded_payloads=decoded_payloads,
+                url_results=url_results,
+                analyzed_all=analyze_all,
+                include_family=family,
+                include_legacy_keys=include_legacy_keys,
+            )
+    else:
+
+        @app.post(
+            "/api/v1/qr/scan",
+            response_model=QRScanResponse,
+            response_model_exclude_none=True,
+            responses=_QR_ERROR_RESPONSES,
+        )
+        def qr_scan_unavailable() -> dict[str, object]:
             raise _api_error(
                 status_code=503,
-                code="QRC_DECODER_UNAVAILABLE",
-                message=f"QR scanning unavailable: {exc}",
-            ) from exc
-        except QRDecodeError as exc:
-            raise _api_error(
-                status_code=400,
-                code="QRC_IMAGE_READ_ERROR",
-                message=str(exc),
-            ) from exc
-
-        if not decoded_payloads:
-            raise _api_error(
-                status_code=400,
-                code="QRC_NO_PAYLOADS",
-                message="No QR payloads were decoded from the image.",
+                code="QRC_MULTIPART_UNAVAILABLE",
+                message=(
+                    "QR scan uploads require optional dependency "
+                    "'python-multipart'. Install with: pip install -e \".[api]\""
+                ),
             )
-
-        url_payloads = extract_url_payloads(decoded_payloads)
-        if not url_payloads:
-            raise _api_error(
-                status_code=400,
-                code="QRC_NO_URL_PAYLOADS",
-                message="Decoded QR payloads did not contain URL-like values.",
-            )
-
-        selected_urls = url_payloads if analyze_all else [url_payloads[0]]
-        url_results = [(url, analyze_url(url)) for url in selected_urls]
-        include_legacy_keys = _include_qr_legacy_keys()
-
-        response.headers[_QR_LEGACY_KEYS_HEADER] = (
-            _QR_LEGACY_KEYS_HEADER_VALUE
-            if include_legacy_keys
-            else _QR_LEGACY_KEYS_DISABLED_HEADER_VALUE
-        )
-
-        return build_qr_scan_payload(
-            image_path=image_name,
-            decoded_payloads=decoded_payloads,
-            url_results=url_results,
-            analyzed_all=analyze_all,
-            include_family=family,
-            include_legacy_keys=include_legacy_keys,
-        )
 
     return app
 
 
 app: Any | None = create_app() if FASTAPI_AVAILABLE else None
+
+
