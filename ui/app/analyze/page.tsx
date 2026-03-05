@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import {
+  AnalyzeV2Response,
+  ApiRequestError,
+  asPrettyJson,
+  analyzeV2
+} from "../../lib/api";
 
 type AnalyzeTab = "url" | "email" | "qr";
 
@@ -18,8 +24,8 @@ export default function AnalyzePage() {
       <section className="card">
         <h1>Unified Analyze (V2 Shell)</h1>
         <p className="muted">
-          First E2 slice: one workspace route with URL, email, and QR tabs. Submission wiring to
-          `/api/v2/analyze` will follow in the next increment.
+          E2 foundation slice: one workspace route with URL, email, and QR tabs. URL is now wired
+          to `POST /api/v2/analyze`; email and QR tab flows are staged next.
         </p>
         <div className="tabRow" role="tablist" aria-label="Analyze input type tabs">
           {(Object.keys(TAB_LABELS) as AnalyzeTab[]).map((tab) => {
@@ -41,7 +47,7 @@ export default function AnalyzePage() {
       </section>
 
       <section className="card placeholderPanel">
-        {activeTab === "url" ? <UrlPlaceholder /> : null}
+        {activeTab === "url" ? <UrlAnalyzePanel /> : null}
         {activeTab === "email" ? <EmailPlaceholder /> : null}
         {activeTab === "qr" ? <QrPlaceholder /> : null}
       </section>
@@ -49,22 +55,94 @@ export default function AnalyzePage() {
   );
 }
 
-function UrlPlaceholder() {
+function UrlAnalyzePanel() {
+  const [url, setUrl] = useState("https://example.com");
+  const [family, setFamily] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [response, setResponse] = useState<AnalyzeV2Response | null>(null);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+    try {
+      const result = await analyzeV2({
+        input_type: "url",
+        content: url,
+        subject: url,
+        family,
+        network_enabled: false,
+        network_max_hops: 5,
+        network_timeout: 3.0
+      });
+      setResponse(result);
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        setError(`${err.message}${err.code ? ` (${err.code})` : ""}`);
+      } else {
+        setError("Unexpected error while calling API.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <>
       <h2>URL Analyze</h2>
-      <label>
-        URL
-        <input placeholder="https://example.com" disabled />
-      </label>
-      <label className="inline">
-        <input type="checkbox" style={{ width: "auto" }} disabled />
-        Include family summary payload
-      </label>
-      <button type="button" disabled>
-        Analyze URL (coming soon)
-      </button>
-      <p className="placeholderNote">Target contract: `POST /api/v2/analyze` (`input_type=url`).</p>
+      <form onSubmit={onSubmit}>
+        <label>
+          URL
+          <input value={url} onChange={(event) => setUrl(event.target.value)} />
+        </label>
+        <label className="inline">
+          <input
+            type="checkbox"
+            checked={family}
+            onChange={(event) => setFamily(event.target.checked)}
+            style={{ width: "auto" }}
+          />
+          Include family summary payload
+        </label>
+        <button type="submit" disabled={loading}>
+          {loading ? "Analyzing..." : "Analyze URL"}
+        </button>
+      </form>
+
+      {error ? (
+        <section className="card">
+          <h3>API Error</h3>
+          <p>{error}</p>
+        </section>
+      ) : null}
+
+      {response ? (
+        <>
+          <section className="card">
+            <h3>Contract Summary</h3>
+            <p>
+              `schema_version`: <strong>{response.schema_version}</strong>
+            </p>
+            <p>
+              `flow`: <strong>{response.flow}</strong>
+            </p>
+            <p>
+              `mode`: <strong>{response.mode}</strong>
+            </p>
+            <p>
+              `item_count`: <strong>{response.item_count}</strong>
+            </p>
+          </section>
+          <section className="card">
+            <h3>Raw JSON</h3>
+            <pre>{asPrettyJson(response)}</pre>
+          </section>
+        </>
+      ) : null}
+
+      <p className="placeholderNote">Active contract target: `POST /api/v2/analyze` (`input_type=url`).</p>
     </>
   );
 }
@@ -85,7 +163,7 @@ function EmailPlaceholder() {
         Analyze Email (coming soon)
       </button>
       <p className="placeholderNote">
-        Target contract: `POST /api/v2/analyze` (`input_type=email_headers`).
+        Next target: `POST /api/v2/analyze` (`input_type=email_headers`).
       </p>
     </>
   );

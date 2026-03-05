@@ -22,6 +22,21 @@ export interface ApiItem {
   };
 }
 
+export type AnalyzeV2InputType = "url" | "email_headers" | "email_file";
+
+export interface AnalyzeV2Request {
+  input_type: AnalyzeV2InputType;
+  content: string;
+  subject?: string;
+  family?: boolean;
+  allowlist_domains?: string[];
+  allowlist_categories?: string[];
+  allowlist_findings?: string[];
+  network_enabled?: boolean;
+  network_max_hops?: number;
+  network_timeout?: number;
+}
+
 export interface ApiWrappedResponse {
   schema_version: string;
   flow: string;
@@ -31,6 +46,14 @@ export interface ApiWrappedResponse {
   item?: ApiItem;
   items?: ApiItem[];
   [key: string]: unknown;
+}
+
+export interface AnalyzeV2Response extends ApiWrappedResponse {
+  schema_version: "2.0";
+  flow: "analyze";
+  mode: "single";
+  input_type: AnalyzeV2InputType;
+  item: ApiItem;
 }
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:8000";
@@ -58,9 +81,7 @@ async function parseApiResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorPayload = (payload as ApiErrorEnvelope) ?? {};
     const code = errorPayload.detail?.error?.code;
-    const message =
-      errorPayload.detail?.error?.message ??
-      `API request failed (${response.status})`;
+    const message = errorPayload.detail?.error?.message ?? `API request failed (${response.status})`;
     throw new ApiRequestError(message, response.status, code);
   }
 
@@ -84,6 +105,10 @@ export async function postApiForm<T>(path: string, body: FormData): Promise<T> {
     cache: "no-store"
   });
   return parseApiResponse<T>(response);
+}
+
+export async function analyzeV2(request: AnalyzeV2Request): Promise<AnalyzeV2Response> {
+  return postApi<AnalyzeV2Response>("/api/v2/analyze", request);
 }
 
 export function asPrettyJson(value: unknown): string {
