@@ -3,7 +3,7 @@
 Modular, local-first security CLI for analyzing suspicious links and email headers and giving clear next steps.
 Security-first, practical, and intentionally plain-spoken.
 
-## Current Status (2026-03-04)
+## Current Status (2026-03-05)
 
 Implemented now:
 
@@ -14,7 +14,7 @@ Implemented now:
 - Input-aware module routing in orchestrator (`supported_input_types` + orchestrator-side filtering)
 - Shared application service layer in `src/lsh/application/analysis_service.py` for adapter reuse
 - CLI adapter in `src/lsh/adapters/cli.py`
-- Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency)
+- Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency; QR upload route degrades gracefully when `python-multipart` is missing)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - Reusable structured response wrappers in `src/lsh/formatters/structured.py`
 - Draft unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity and edge-case test coverage
@@ -351,3 +351,4 @@ Agent workflow docs:
 ## License
 
 MIT
+

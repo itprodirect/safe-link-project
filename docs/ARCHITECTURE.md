@@ -4,7 +4,7 @@
 
 Modules detect. Core orchestrates and scores. Application services compose. Adapters render.
 
-## Implemented Architecture (2026-03-04)
+## Implemented Architecture (2026-03-05)
 
 ### Core Layer (`src/lsh/core/`)
 
@@ -40,8 +40,8 @@ Modules detect. Core orchestrates and scores. Application services compose. Adap
   - `lsh check <url>`
   - `lsh email-check <headers_or_file>`
   - `lsh qr-scan <image_path>`
-- `api.py`: minimal FastAPI adapter with endpoint parity for URL, email, and QR flows
-  plus draft unified v2 analyze endpoint (`POST /api/v2/analyze`)
+- `api.py`: minimal FastAPI adapter with endpoint parity for URL, email, and QR flows plus draft unified v2 analyze endpoint (`POST /api/v2/analyze`)
+  - when `python-multipart` is unavailable, `/api/v1/qr/scan` returns a structured unavailable envelope while URL/email/v2 endpoints remain available
 
 ### Formatter Layer (`src/lsh/formatters/`)
 
@@ -108,3 +108,4 @@ Every module must:
 - Orchestrator tests for aggregate semantics and summary behavior
 - CLI tests for output mode behavior and flag interactions
 - Adversarial URL regression tests for obfuscated/encoded evasion patterns
+

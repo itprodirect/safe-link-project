@@ -1,4 +1,4 @@
-﻿# E1-I5: Architecture and API Docs Sync for Shared Service Layer and v2 Analyze
+# E1-I5: Architecture and API Docs Sync for Shared Service Layer and v2 Analyze
 
 Parent epic: #3
 Milestone: V2-Phase-1
@@ -16,8 +16,9 @@ Complete and harden E1 documentation for the shared application service layer an
 
 ## Acceptance Criteria
 
-- [ ] `docs/ARCHITECTURE.md` includes application service layer role and runtime flow updates.
-- [ ] `docs/API_INTEGRATION.md` includes v2 analyze request/response contract notes.
-- [ ] `README.md` endpoint/index entries include v2 artifacts.
-- [ ] `docs/ROADMAP.md` reflects E1 completed vs remaining work accurately.
-- [ ] Session log includes next-session breadcrumbs and verification status.
+- [x] `docs/ARCHITECTURE.md` includes application service layer role and runtime flow updates.
+- [x] `docs/API_INTEGRATION.md` includes v2 analyze request/response contract notes.
+- [x] `README.md` endpoint/index entries include v2 artifacts.
+- [x] `docs/ROADMAP.md` reflects E1 completed vs remaining work accurately.
+- [x] Session log includes next-session breadcrumbs and verification status.
+

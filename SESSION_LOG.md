@@ -2163,3 +2163,50 @@ Development session history. Each entry documents what was done, why, and what's
 
 **Tests / Verification:**
 - `python -m ruff check src tests` passed.
+
+---
+
+## 2026-03-05 - Session 11I: E1-I4/E1-I5 closeout (parity governance + docs sync)
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Close E1 child-issue remaining work by hardening parity governance and syncing architecture/API/roadmap docs with current v2 foundation state.
+
+**Module(s) Touched:** API adapter fallback behavior, API adapter tests, CI workflow, architecture/API/roadmap docs, issue checklist docs
+
+**Changes:**
+- Hardened API adapter startup when `python-multipart` is unavailable:
+  - `src/lsh/adapters/api.py` now conditionally wires `/api/v1/qr/scan`
+  - when multipart support is missing, QR scan returns a structured `503` envelope (`QRC_MULTIPART_UNAVAILABLE`) while URL/email/v2 endpoints remain available
+- Updated API adapter tests:
+  - added fallback coverage for missing multipart dependency
+  - scoped QR upload behavior tests behind conditional skip when multipart support is unavailable
+  - preserved non-QR endpoint parity checks in the same test module
+- Added explicit parity fixture step to required CI lane:
+  - `.github/workflows/ci.yml` now runs `tests/contracts/test_v1_v2_snapshot_parity.py` in the `check` job
+- Added snapshot governance documentation:
+  - `docs/API_INTEGRATION.md` now includes update procedure, rerun command, and review expectations for v1/v2 overlap fixtures
+- Synced E1 status/docs trackers:
+  - `docs/issues/V2_E1_I4_PARITY_SNAPSHOT.md` acceptance checklist marked complete
+  - `docs/issues/V2_E1_I5_DOCS_SYNC.md` acceptance checklist marked complete
+  - `docs/ROADMAP.md` and `docs/V2_ROADMAP_ISSUES.md` updated to reflect E1-I4/E1-I5 completion
+  - `docs/ARCHITECTURE.md` and `README.md` updated with current adapter/runtime notes
+
+**Decisions:**
+- Kept endpoint-level parity and snapshot governance explicit in both CI and docs instead of relying on implicit inclusion via broad test commands.
+- Chose graceful QR-route degradation over module-import failure so optional dependency gaps do not block unrelated API contract validation.
+
+**Open Questions:**
+- Should we close GitHub issues `#11` and `#12` now and immediately mark parent E1 (`#3`) complete, or keep E1 open until hosted validation notes are also linked?
+
+**Next:**
+- Close GitHub child issues `#11` and `#12` with links to this verification run.
+- If desired, post a short E1 summary comment on `#3` and update epic checklist state.
+- Begin E2 scoping once E1 closure is confirmed.
+
+**Tests / Verification:**
+- `python -m ruff check src/lsh/adapters/api.py tests/adapters/test_api.py` passed.
+- `python -m mypy src/lsh/adapters/api.py tests/adapters/test_api.py` passed.
+- `python -m pytest tests/adapters/test_api.py tests/contracts/test_v1_v2_snapshot_parity.py -q` passed (`22 passed, 7 skipped`).

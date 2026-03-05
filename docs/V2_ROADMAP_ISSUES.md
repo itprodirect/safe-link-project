@@ -1,6 +1,6 @@
 # V2 Roadmap and Issue Tracker
 
-Updated: 2026-03-04
+Updated: 2026-03-05
 Owner: Product + Engineering
 Status: Execution tracker
 
@@ -68,8 +68,8 @@ Epic issues are now created and linked below.
 - [x] `E1-I1` Build `AnalysisService` and `analysis_factory`.
 - [x] `E1-I2` Move duplicated summary/wiring logic from adapters to service layer.
 - [x] `E1-I3` Add `POST /api/v2/analyze` draft contract and response model.
-- [ ] `E1-I4` Add contract tests and parity tests versus v1 baseline ([#11](https://github.com/itprodirect/safe-link-project/issues/11)).
-- [ ] `E1-I5` Update architecture docs for v2 structure ([#12](https://github.com/itprodirect/safe-link-project/issues/12)).
+- [x] `E1-I4` Add contract tests and parity tests versus v1 baseline ([#11](https://github.com/itprodirect/safe-link-project/issues/11)).
+- [x] `E1-I5` Update architecture/docs status for shared service layer and v2 analyze ([#12](https://github.com/itprodirect/safe-link-project/issues/12)).
 
 ### Definition of done
 
@@ -251,3 +251,4 @@ Track these in parallel labels and sprint planning:
 4. UX:
    - mode usage split.
    - drop-off points in analyze flow.
+
