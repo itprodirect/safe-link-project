@@ -20,12 +20,16 @@ test("runs the URL flow and exposes analyst details", async ({ page }) => {
   await expect(page.getByText("Primary verdict")).toBeVisible();
   await expect(page.getByText("Action: Safe")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Why this verdict" })).toBeVisible();
+  await expect(page.getByText("Recommended next step")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Next actions" })).toBeVisible();
   await expect(page.getByText("Subject: https://example.com")).toBeVisible();
   await expect(page.getByText("Flow: analyze")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Raw JSON" })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "Analyst" }).click();
   await expect(page.getByRole("heading", { name: "Contract summary" })).toBeVisible();
   await expect(page.getByText("Primary subject")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Raw JSON" })).toBeVisible();
 });
 
 test("runs the email-header flow from the same workspace", async ({ page }) => {
@@ -39,6 +43,7 @@ test("runs the email-header flow from the same workspace", async ({ page }) => {
   await expect(page.getByText("Primary verdict")).toBeVisible();
   await expect(page.getByText("Action: Block")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Next actions" })).toBeVisible();
+  await expect(page.getByText("Recommended next step")).toBeVisible();
   await expect(page.getByText("Subject: smoke-email")).toBeVisible();
   await expect(page.getByText("Flow: analyze")).toBeVisible();
 });

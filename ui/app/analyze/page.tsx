@@ -129,6 +129,11 @@ interface RunState {
   lastSubmission: Submission | null;
 }
 
+interface VerdictContext {
+  flow: string;
+  inputType: string;
+}
+
 function parseTokenList(raw: string): string[] {
   return raw
     .split(/[\s,]+/)
@@ -181,21 +186,89 @@ function getRankedFindings(item: ApiItem): Record<string, unknown>[] {
   });
 }
 
-function getReasons(item: ApiItem): string[] {
+function dedupeStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function isEmailContext(context: VerdictContext): boolean {
+  return context.inputType === "email_headers" || context.inputType === "email_file";
+}
+
+function isQrContext(context: VerdictContext): boolean {
+  return context.flow === "qr_scan";
+}
+
+function rewriteReason(reason: string, context: VerdictContext): string {
+  if (isEmailContext(context)) {
+    if (/sender server did not pass.*SPF/i.test(reason)) {
+      return "The sender check failed, so this message may not be from who it claims.";
+    }
+    if (/signed authenticity check \(DKIM\) did not pass/i.test(reason)) {
+      return "The message signature check failed, which can mean spoofing or tampering.";
+    }
+    if (/domain policy check \(DMARC\) failed/i.test(reason)) {
+      return "The sender domain did not match its own policy, which is a strong warning sign.";
+    }
+    if (/weak or missing SPF/i.test(reason)) {
+      return "A sender check is weak or missing, so trust is lower than normal.";
+    }
+    if (/weak or missing DKIM/i.test(reason)) {
+      return "A message signature check is weak or missing, so trust is lower than normal.";
+    }
+    if (/weak or missing DMARC/i.test(reason)) {
+      return "A sender-domain policy check is weak or missing, so this message deserves extra caution.";
+    }
+    if (/did not include standard authentication results/i.test(reason)) {
+      return "Standard sender-verification results are missing, so trust checks are limited.";
+    }
+  }
+
+  if (/hidden technical form \(`xn--\.\.\.`\)/i.test(reason)) {
+    return "Part of this link is encoded in a way often used by lookalike domains.";
+  }
+
+  return reason;
+}
+
+function rewriteRecommendation(recommendation: string, context: VerdictContext): string {
+  if (isEmailContext(context)) {
+    if (/Treat the message as suspicious until independently verified\./i.test(recommendation)) {
+      return "Treat this message as suspicious until you verify it another way.";
+    }
+    if (/Do not act on sensitive requests until verified independently\./i.test(recommendation)) {
+      return "Do not follow sensitive requests until you verify them another way.";
+    }
+    if (/Use caution before trusting links or requests in this message\./i.test(recommendation)) {
+      return "Be careful with links or requests in this message until you verify the sender.";
+    }
+  }
+
+  return recommendation;
+}
+
+function getReasons(item: ApiItem, context: VerdictContext): string[] {
   if (item.family?.reasons?.length) {
-    return item.family.reasons.slice(0, 3);
+    return dedupeStrings(item.family.reasons.map((reason) => rewriteReason(reason, context))).slice(
+      0,
+      3
+    );
   }
 
   const reasons = getRankedFindings(item)
     .map((finding) => getString(finding.family_explanation) ?? getString(finding.explanation))
-    .filter((reason): reason is string => reason !== null);
+    .filter((reason): reason is string => reason !== null)
+    .map((reason) => rewriteReason(reason, context));
 
-  return [...new Set(reasons)].slice(0, 3);
+  return dedupeStrings(reasons).slice(0, 3);
 }
 
-function getRecommendations(item: ApiItem): string[] {
+function getRecommendations(item: ApiItem, context: VerdictContext): string[] {
   if (item.family?.recommendations?.length) {
-    return item.family.recommendations.slice(0, 3);
+    return dedupeStrings(
+      item.family.recommendations.map((recommendation) =>
+        rewriteRecommendation(recommendation, context)
+      )
+    ).slice(0, 3);
   }
 
   const recommendations = new Set<string>();
@@ -207,7 +280,7 @@ function getRecommendations(item: ApiItem): string[] {
     for (const recommendation of rawRecommendations) {
       const parsedRecommendation = getString(recommendation);
       if (parsedRecommendation) {
-        recommendations.add(parsedRecommendation);
+        recommendations.add(rewriteRecommendation(parsedRecommendation, context));
       }
     }
   }
@@ -260,8 +333,12 @@ function getActionLevel(item: ApiItem): ActionLevel {
   return "safe";
 }
 
-function getPrimaryRecommendation(item: ApiItem, actionLevel: ActionLevel): string {
-  return getRecommendations(item)[0] ?? ACTION_COPY[actionLevel].fallbackRecommendation;
+function getPrimaryRecommendation(
+  item: ApiItem,
+  actionLevel: ActionLevel,
+  context: VerdictContext
+): string {
+  return getRecommendations(item, context)[0] ?? ACTION_COPY[actionLevel].fallbackRecommendation;
 }
 
 function getConfidenceNote(confidence: ConfidenceLevel | null): string {
@@ -275,6 +352,77 @@ function getConfidenceNote(confidence: ConfidenceLevel | null): string {
     return "Signals are limited, so verify before acting.";
   }
   return "No confidence label was returned for this result.";
+}
+
+function getPlainLanguageSummary(item: ApiItem, context: VerdictContext): string {
+  const actionLevel = getActionLevel(item);
+
+  if (isEmailContext(context)) {
+    if (actionLevel === "safe") {
+      return "No major trust problems were found in these email headers.";
+    }
+    if (actionLevel === "caution") {
+      return "This message is missing some trust signals, so verify it before acting.";
+    }
+    if (actionLevel === "avoid") {
+      return "This message shows strong signs that it may not be trustworthy.";
+    }
+    return "This message failed key trust checks and should be treated as suspicious.";
+  }
+
+  if (isQrContext(context)) {
+    if (actionLevel === "safe") {
+      return "The QR code was read and the selected destination did not show strong warning signs.";
+    }
+    if (actionLevel === "caution") {
+      return "The QR code leads to a destination with some warning signs, so verify it before opening.";
+    }
+    if (actionLevel === "avoid") {
+      return "The QR code leads to a destination that should be avoided for now.";
+    }
+    return "The QR code leads to a destination that looks unsafe.";
+  }
+
+  if (actionLevel === "safe") {
+    return "This destination did not show strong warning signs in this scan.";
+  }
+  if (actionLevel === "caution") {
+    return "This destination has some warning signs, so verify it before opening.";
+  }
+  if (actionLevel === "avoid") {
+    return "This destination shows strong warning signs and should be avoided for now.";
+  }
+  return "This destination looks unsafe and should be blocked or reported.";
+}
+
+function getVerdictDetail(actionLevel: ActionLevel, context: VerdictContext): string {
+  if (isEmailContext(context)) {
+    if (actionLevel === "safe") {
+      return "The visible sender checks look normal enough that this message does not need an immediate block.";
+    }
+    if (actionLevel === "caution") {
+      return "Some sender checks are missing or weak, so this message deserves a second look.";
+    }
+    if (actionLevel === "avoid") {
+      return "Several sender checks failed or degraded, which raises spoofing risk.";
+    }
+    return "Multiple sender checks failed, which is common in spoofed or malicious messages.";
+  }
+
+  if (isQrContext(context)) {
+    if (actionLevel === "safe") {
+      return "The QR code resolved cleanly and the visible destination did not trigger major warnings.";
+    }
+    if (actionLevel === "caution") {
+      return "The QR code resolved, but the destination still deserves a quick verification step.";
+    }
+    if (actionLevel === "avoid") {
+      return "The QR code resolves to a destination that should not be trusted casually.";
+    }
+    return "The QR code resolves to a destination with high-risk signals.";
+  }
+
+  return ACTION_COPY[actionLevel].detail;
 }
 
 function formatRequestError(error: unknown): string {
@@ -353,11 +501,11 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function VerdictCard({ item, flow }: { item: ApiItem; flow: string }) {
+function VerdictCard({ item, context }: { item: ApiItem; context: VerdictContext }) {
   const riskScore = getRiskScore(item);
   const confidence = getConfidence(item);
   const actionLevel = getActionLevel(item);
-  const primaryRecommendation = getPrimaryRecommendation(item, actionLevel);
+  const primaryRecommendation = getPrimaryRecommendation(item, actionLevel, context);
   const actionCopy = ACTION_COPY[actionLevel];
 
   return (
@@ -370,8 +518,8 @@ function VerdictCard({ item, flow }: { item: ApiItem; flow: string }) {
         <span className={`actionPill actionPill-${actionLevel}`}>Action: {actionCopy.badge}</span>
       </div>
 
-      <p className="verdictSummary">{getSummary(item)}</p>
-      <p className="muted compactText">{actionCopy.detail}</p>
+      <p className="verdictSummary">{getPlainLanguageSummary(item, context)}</p>
+      <p className="muted compactText">{getVerdictDetail(actionLevel, context)}</p>
 
       <div className="verdictPrimaryAction">
         <span className="metricLabel">Recommended next step</span>
@@ -382,7 +530,7 @@ function VerdictCard({ item, flow }: { item: ApiItem; flow: string }) {
         <span className="badge">Subject: {item.subject}</span>
         <span className="badge">Risk: {riskScore !== null ? String(riskScore) : "-"}</span>
         <span className="badge">Findings: {String(getFindingCount(item))}</span>
-        <span className="badge">Flow: {flow}</span>
+        <span className="badge">Flow: {context.flow}</span>
         <span className="badge">
           Confidence: {confidence ?? "Not provided"}
         </span>
@@ -393,10 +541,10 @@ function VerdictCard({ item, flow }: { item: ApiItem; flow: string }) {
   );
 }
 
-function WhyPanel({ item }: { item: ApiItem }) {
+function WhyPanel({ item, context }: { item: ApiItem; context: VerdictContext }) {
   const actionLevel = getActionLevel(item);
-  const reasons = getReasons(item);
-  const recommendations = getRecommendations(item);
+  const reasons = getReasons(item, context);
+  const recommendations = getRecommendations(item, context);
   const nextSteps =
     recommendations.length > 0
       ? recommendations
@@ -436,11 +584,15 @@ function QuickResult({ response }: { response: ApiWrappedResponse }) {
   }
 
   const items = getResponseItems(response);
+  const context: VerdictContext = {
+    flow: response.flow,
+    inputType: response.input_type
+  };
 
   return (
     <>
-      <VerdictCard item={primaryItem} flow={response.flow} />
-      <WhyPanel item={primaryItem} />
+      <VerdictCard item={primaryItem} context={context} />
+      <WhyPanel item={primaryItem} context={context} />
 
       {items.length > 1 ? (
         <section className="miniCard">
