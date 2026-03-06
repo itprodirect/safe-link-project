@@ -105,9 +105,9 @@ Epic issues are now created and linked below.
 
 ### Child issues
 
-- [ ] `E3-I1` Implement `VerdictCard`.
-- [ ] `E3-I2` Implement `WhyPanel` and recommendation ordering.
-- [ ] `E3-I3` Add action-level mapping (`safe/caution/avoid/block`).
+- [x] `E3-I1` Implement `VerdictCard`.
+- [x] `E3-I2` Implement `WhyPanel` and recommendation ordering.
+- [x] `E3-I3` Add action-level mapping (`safe/caution/avoid/block`).
 - [ ] `E3-I4` Add UX copy pass for plain-language flow.
 - [ ] `E3-I5` Add usability checks for decision speed.
 
@@ -251,4 +251,3 @@ Track these in parallel labels and sprint planning:
 4. UX:
    - mode usage split.
    - drop-off points in analyze flow.
-

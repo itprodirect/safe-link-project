@@ -15,6 +15,8 @@ import {
 
 type AnalyzeTab = "url" | "email" | "qr";
 type WorkspaceMode = "quick" | "analyst";
+type ConfidenceLevel = "LOW" | "MEDIUM" | "HIGH";
+type ActionLevel = "safe" | "caution" | "avoid" | "block";
 
 const DEFAULT_EMAIL_HEADERS =
   "Authentication-Results: mx.example; spf=pass; dkim=pass; dmarc=pass\n";
@@ -38,6 +40,50 @@ const TAB_HELP: Record<AnalyzeTab, string> = {
 const MODE_COPY: Record<WorkspaceMode, string> = {
   quick: "Quick mode keeps the first verdict, top reasons, and next actions in view.",
   analyst: "Analyst mode keeps contract details and raw JSON visible for deeper inspection."
+};
+
+const CONFIDENCE_RANK: Record<ConfidenceLevel, number> = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3
+};
+
+const ACTION_COPY: Record<
+  ActionLevel,
+  {
+    badge: string;
+    title: string;
+    detail: string;
+    fallbackRecommendation: string;
+  }
+> = {
+  safe: {
+    badge: "Safe",
+    title: "Safe to continue",
+    detail: "No strong warning signals were returned for this result.",
+    fallbackRecommendation:
+      "Proceed only if you expected this item, and use trusted bookmarks for sensitive accounts."
+  },
+  caution: {
+    badge: "Caution",
+    title: "Pause and verify",
+    detail: "A mild warning sign was found, so a quick verification step is still worth it.",
+    fallbackRecommendation: "Pause and verify the destination or sender before taking action."
+  },
+  avoid: {
+    badge: "Avoid",
+    title: "Avoid interacting for now",
+    detail: "This result shows strong warning signs that should stop a routine click-through.",
+    fallbackRecommendation:
+      "Avoid opening links, replying, or signing in until you verify the destination through a trusted path."
+  },
+  block: {
+    badge: "Block",
+    title: "Block and report",
+    detail: "This result has high-risk signals and should be treated as unsafe by default.",
+    fallbackRecommendation:
+      "Do not open or reply. Report it and use an official contact path instead."
+  }
 };
 
 interface UrlFormState {
@@ -102,6 +148,13 @@ function getNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function getConfidenceLevel(value: unknown): ConfidenceLevel | null {
+  if (value === "LOW" || value === "MEDIUM" || value === "HIGH") {
+    return value;
+  }
+  return null;
+}
+
 function getFindings(item: ApiItem): Record<string, unknown>[] {
   const findings = item.result.findings;
   if (!Array.isArray(findings)) {
@@ -110,12 +163,30 @@ function getFindings(item: ApiItem): Record<string, unknown>[] {
   return findings.filter(isRecord);
 }
 
+function getRankedFindings(item: ApiItem): Record<string, unknown>[] {
+  return [...getFindings(item)].sort((left, right) => {
+    const riskDelta = (getNumber(right.risk_score) ?? 0) - (getNumber(left.risk_score) ?? 0);
+    if (riskDelta !== 0) {
+      return riskDelta;
+    }
+
+    const confidenceDelta =
+      (CONFIDENCE_RANK[getConfidenceLevel(right.confidence) ?? "LOW"] ?? 0) -
+      (CONFIDENCE_RANK[getConfidenceLevel(left.confidence) ?? "LOW"] ?? 0);
+    if (confidenceDelta !== 0) {
+      return confidenceDelta;
+    }
+
+    return (getString(left.title) ?? "").localeCompare(getString(right.title) ?? "");
+  });
+}
+
 function getReasons(item: ApiItem): string[] {
   if (item.family?.reasons?.length) {
     return item.family.reasons.slice(0, 3);
   }
 
-  const reasons = getFindings(item)
+  const reasons = getRankedFindings(item)
     .map((finding) => getString(finding.family_explanation) ?? getString(finding.explanation))
     .filter((reason): reason is string => reason !== null);
 
@@ -128,7 +199,7 @@ function getRecommendations(item: ApiItem): string[] {
   }
 
   const recommendations = new Set<string>();
-  for (const finding of getFindings(item)) {
+  for (const finding of getRankedFindings(item)) {
     const rawRecommendations = finding.recommendations;
     if (!Array.isArray(rawRecommendations)) {
       continue;
@@ -148,6 +219,19 @@ function getSeverity(item: ApiItem): string {
   return getString(item.family?.severity) ?? getString(item.result.overall_severity) ?? "UNKNOWN";
 }
 
+function getConfidence(item: ApiItem): ConfidenceLevel | null {
+  const familyConfidence = getConfidenceLevel(item.family?.signal_confidence);
+  if (familyConfidence) {
+    return familyConfidence;
+  }
+
+  const findingConfidence = getRankedFindings(item)
+    .map((finding) => getConfidenceLevel(finding.confidence))
+    .find((confidence): confidence is ConfidenceLevel => confidence !== null);
+
+  return findingConfidence ?? null;
+}
+
 function getSummary(item: ApiItem): string {
   return getString(item.family?.summary) ?? getString(item.result.summary) ?? "Analysis completed.";
 }
@@ -158,6 +242,39 @@ function getRiskScore(item: ApiItem): number | null {
 
 function getFindingCount(item: ApiItem): number {
   return getFindings(item).length;
+}
+
+function getActionLevel(item: ApiItem): ActionLevel {
+  const riskScore = getRiskScore(item) ?? 0;
+  const severity = getSeverity(item);
+
+  if (riskScore >= 81 || severity === "CRITICAL") {
+    return "block";
+  }
+  if (riskScore >= 61 || severity === "HIGH") {
+    return "avoid";
+  }
+  if (riskScore >= 21 || severity === "MEDIUM" || severity === "LOW" || getFindingCount(item) > 0) {
+    return "caution";
+  }
+  return "safe";
+}
+
+function getPrimaryRecommendation(item: ApiItem, actionLevel: ActionLevel): string {
+  return getRecommendations(item)[0] ?? ACTION_COPY[actionLevel].fallbackRecommendation;
+}
+
+function getConfidenceNote(confidence: ConfidenceLevel | null): string {
+  if (confidence === "HIGH") {
+    return "High-confidence signals support this verdict.";
+  }
+  if (confidence === "MEDIUM") {
+    return "Signal confidence is moderate, so context still matters.";
+  }
+  if (confidence === "LOW") {
+    return "Signals are limited, so verify before acting.";
+  }
+  return "No confidence label was returned for this result.";
 }
 
 function formatRequestError(error: unknown): string {
@@ -236,6 +353,82 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function VerdictCard({ item, flow }: { item: ApiItem; flow: string }) {
+  const riskScore = getRiskScore(item);
+  const confidence = getConfidence(item);
+  const actionLevel = getActionLevel(item);
+  const primaryRecommendation = getPrimaryRecommendation(item, actionLevel);
+  const actionCopy = ACTION_COPY[actionLevel];
+
+  return (
+    <section className={`verdictCard verdictCard-${actionLevel}`}>
+      <div className="verdictHeader">
+        <div>
+          <p className="eyebrow">Primary verdict</p>
+          <h3>{actionCopy.title}</h3>
+        </div>
+        <span className={`actionPill actionPill-${actionLevel}`}>Action: {actionCopy.badge}</span>
+      </div>
+
+      <p className="verdictSummary">{getSummary(item)}</p>
+      <p className="muted compactText">{actionCopy.detail}</p>
+
+      <div className="verdictPrimaryAction">
+        <span className="metricLabel">Recommended next step</span>
+        <strong>{primaryRecommendation}</strong>
+      </div>
+
+      <div className="badgeRow">
+        <span className="badge">Subject: {item.subject}</span>
+        <span className="badge">Risk: {riskScore !== null ? String(riskScore) : "-"}</span>
+        <span className="badge">Findings: {String(getFindingCount(item))}</span>
+        <span className="badge">Flow: {flow}</span>
+        <span className="badge">
+          Confidence: {confidence ?? "Not provided"}
+        </span>
+      </div>
+
+      <p className="verdictConfidence">{getConfidenceNote(confidence)}</p>
+    </section>
+  );
+}
+
+function WhyPanel({ item }: { item: ApiItem }) {
+  const actionLevel = getActionLevel(item);
+  const reasons = getReasons(item);
+  const recommendations = getRecommendations(item);
+  const nextSteps =
+    recommendations.length > 0
+      ? recommendations
+      : [ACTION_COPY[actionLevel].fallbackRecommendation];
+
+  return (
+    <div className="resultList">
+      <section className="miniCard">
+        <h3>Why this verdict</h3>
+        {reasons.length > 0 ? (
+          <ol className="rankedList">
+            {reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ol>
+        ) : (
+          <p className="muted">No reason strings were returned for this item.</p>
+        )}
+      </section>
+
+      <section className="miniCard">
+        <h3>Next actions</h3>
+        <ul className="cleanList">
+          {nextSteps.map((recommendation) => (
+            <li key={recommendation}>{recommendation}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function QuickResult({ response }: { response: ApiWrappedResponse }) {
   const primaryItem = getPrimaryItem(response);
   if (!primaryItem) {
@@ -243,73 +436,31 @@ function QuickResult({ response }: { response: ApiWrappedResponse }) {
   }
 
   const items = getResponseItems(response);
-  const riskScore = getRiskScore(primaryItem);
-  const reasons = getReasons(primaryItem);
-  const recommendations = getRecommendations(primaryItem);
-  const confidence = getString(primaryItem.family?.signal_confidence);
 
   return (
     <>
-      <section className="verdictCard">
-        <p className="eyebrow">Primary verdict</p>
-        <h3>{getSeverity(primaryItem)} risk</h3>
-        <p>{getSummary(primaryItem)}</p>
-        <div className="badgeRow">
-          <span className="badge">Subject: {primaryItem.subject}</span>
-          <span className="badge">Risk: {riskScore !== null ? String(riskScore) : "-"}</span>
-          <span className="badge">Findings: {String(getFindingCount(primaryItem))}</span>
-          <span className="badge">Flow: {response.flow}</span>
-          {confidence ? <span className="badge">Confidence: {confidence}</span> : null}
-        </div>
-      </section>
+      <VerdictCard item={primaryItem} flow={response.flow} />
+      <WhyPanel item={primaryItem} />
 
-      <div className="resultList">
+      {items.length > 1 ? (
         <section className="miniCard">
-          <h3>Top reasons</h3>
-          {reasons.length > 0 ? (
-            <ul className="cleanList">
-              {reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">No reason strings were returned for this item.</p>
-          )}
+          <h3>Additional decoded items</h3>
+          <div className="resultListCompact">
+            {items.slice(1).map((item) => (
+              <article className="miniCard insetCard" key={item.subject}>
+                <strong>{item.subject}</strong>
+                <p className="muted compactText">{getSummary(item)}</p>
+                <div className="badgeRow">
+                  <span className="badge">Action: {ACTION_COPY[getActionLevel(item)].badge}</span>
+                  <span className="badge">
+                    Risk: {getRiskScore(item) !== null ? String(getRiskScore(item)) : "-"}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
-
-        <section className="miniCard">
-          <h3>Recommended next steps</h3>
-          {recommendations.length > 0 ? (
-            <ul className="cleanList">
-              {recommendations.map((recommendation) => (
-                <li key={recommendation}>{recommendation}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">No recommendation strings were returned for this item.</p>
-          )}
-        </section>
-
-        {items.length > 1 ? (
-          <section className="miniCard">
-            <h3>Additional decoded items</h3>
-            <div className="resultListCompact">
-              {items.map((item) => (
-                <article className="miniCard insetCard" key={item.subject}>
-                  <strong>{item.subject}</strong>
-                  <p className="muted compactText">{getSummary(item)}</p>
-                  <div className="badgeRow">
-                    <span className="badge">{getSeverity(item)}</span>
-                    <span className="badge">
-                      Risk: {getRiskScore(item) !== null ? String(getRiskScore(item)) : "-"}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-      </div>
+      ) : null}
     </>
   );
 }

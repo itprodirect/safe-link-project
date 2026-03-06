@@ -18,6 +18,8 @@ test("runs the URL flow and exposes analyst details", async ({ page }) => {
   await page.getByRole("button", { name: "Analyze URL" }).click();
 
   await expect(page.getByText("Primary verdict")).toBeVisible();
+  await expect(page.getByText("Action: Safe")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Why this verdict" })).toBeVisible();
   await expect(page.getByText("Subject: https://example.com")).toBeVisible();
   await expect(page.getByText("Flow: analyze")).toBeVisible();
 
@@ -35,6 +37,8 @@ test("runs the email-header flow from the same workspace", async ({ page }) => {
   await page.getByRole("button", { name: "Analyze email headers" }).click();
 
   await expect(page.getByText("Primary verdict")).toBeVisible();
+  await expect(page.getByText("Action: Block")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Next actions" })).toBeVisible();
   await expect(page.getByText("Subject: smoke-email")).toBeVisible();
   await expect(page.getByText("Flow: analyze")).toBeVisible();
 });

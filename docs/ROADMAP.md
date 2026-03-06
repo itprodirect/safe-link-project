@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-03-05)
+## Current Progress (2026-03-06)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -27,6 +27,7 @@
   - [x] per-finding allowlist scope (`--allowlist-finding`, API `allowlist_findings`)
   - [x] category `NONE` override for finding-only suppression on allowlisted domains
   - [x] broadened brand/suffix calibration fixtures and operator confidence guidance
+- [x] Session 13: Verdict-first UX slice (`VerdictCard`, `WhyPanel`, action-level mapping)
 
 ## Session 8: Deployment + UI Validation
 
@@ -126,6 +127,20 @@ Move `/analyze` from a shell into a usable shared workspace for Phase 2.
 4. [x] Add workspace status states (loading, error, retry) and `Quick` / `Analyst` mode scaffold.
 5. [x] Add end-to-end smoke coverage that drives all three flows through the rendered UI.
 
+## Session 13: Verdict-First UX Slice (2026-03-06)
+
+### Goal
+
+Shift Quick mode from a generic summary layout to a decision-first surface.
+
+### Work Items
+
+1. [x] Add `VerdictCard` with explicit action-level mapping (`safe`, `caution`, `avoid`, `block`).
+2. [x] Add `WhyPanel` with ranked reasons and ordered next actions.
+3. [x] Refresh Quick-mode styling so the primary decision reads at a glance.
+4. [ ] Complete plain-language copy pass for all major outcomes across flows.
+5. [ ] Add broader UX/usability validation beyond the current smoke path.
+
 ## Risks and Mitigations
 
 - Risk: network-dependent logic increases flaky tests
@@ -136,4 +151,3 @@ Move `/analyze` from a shell into a usable shared workspace for Phase 2.
   Mitigation: maintain per-finding allowlist controls, calibration fixtures, and confidence guidance updates.
 - Risk: docs drift from implementation
   Mitigation: keep `docs/` as the canonical docs location and update docs in the same change as behavior updates.
-

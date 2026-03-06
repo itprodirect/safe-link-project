@@ -16,9 +16,9 @@ Prioritize user decisions and safe next actions before deep technical detail.
 
 ## Checklist
 
-- [ ] Build `VerdictCard` component.
-- [ ] Build `WhyPanel` with ranked reasons.
-- [ ] Add action-level mapping (`safe`, `caution`, `avoid`, `block`).
+- [x] Build `VerdictCard` component.
+- [x] Build `WhyPanel` with ranked reasons.
+- [x] Add action-level mapping (`safe`, `caution`, `avoid`, `block`).
 - [ ] Add plain-language copy pass for all major outcomes.
 - [ ] Add UX tests for first-decision clarity and speed.
 

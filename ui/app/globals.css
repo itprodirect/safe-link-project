@@ -9,6 +9,14 @@
   --accent: #eef7f7;
   --danger-border: #db8f8f;
   --danger-bg: #fff5f5;
+  --safe-ink: #14532d;
+  --safe-bg: #effaf1;
+  --caution-ink: #8a4b00;
+  --caution-bg: #fff6e8;
+  --avoid-ink: #9a3412;
+  --avoid-bg: #fff1ec;
+  --block-ink: #9f1239;
+  --block-bg: #fff0f4;
 }
 
 * {
@@ -256,16 +264,113 @@ pre {
 
 .verdictCard {
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 18px;
   background: linear-gradient(180deg, var(--accent), #ffffff 72%);
   margin-bottom: 14px;
+  box-shadow: 0 14px 30px rgba(20, 32, 56, 0.08);
+}
+
+.verdictCard-safe {
+  background: linear-gradient(180deg, #eef9f1, #ffffff 72%);
+}
+
+.verdictCard-caution {
+  background: linear-gradient(180deg, #fff8eb, #ffffff 72%);
+}
+
+.verdictCard-avoid {
+  background: linear-gradient(180deg, #fff2eb, #ffffff 72%);
+}
+
+.verdictCard-block {
+  background: linear-gradient(180deg, #fff1f5, #ffffff 72%);
+}
+
+.verdictHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.verdictHeader h3 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.verdictSummary {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.verdictPrimaryAction {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(20, 32, 56, 0.08);
+}
+
+.verdictPrimaryAction strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.verdictConfidence {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.actionPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.actionPill-safe {
+  background: var(--safe-bg);
+  color: var(--safe-ink);
+}
+
+.actionPill-caution {
+  background: var(--caution-bg);
+  color: var(--caution-ink);
+}
+
+.actionPill-avoid {
+  background: var(--avoid-bg);
+  color: var(--avoid-ink);
+}
+
+.actionPill-block {
+  background: var(--block-bg);
+  color: var(--block-ink);
 }
 
 .resultList,
 .resultListCompact {
   display: grid;
   gap: 12px;
+}
+
+.rankedList {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.rankedList li + li {
+  margin-top: 10px;
 }
 
 .miniCard {
@@ -335,6 +440,10 @@ pre {
 
   .fieldGrid {
     grid-template-columns: 1fr;
+  }
+
+  .verdictHeader h3 {
+    font-size: 1.4rem;
   }
 }
 
