@@ -139,7 +139,7 @@ Shift Quick mode from a generic summary layout to a decision-first surface.
 2. [x] Add `WhyPanel` with ranked reasons and ordered next actions.
 3. [x] Refresh Quick-mode styling so the primary decision reads at a glance.
 4. [x] Complete plain-language copy pass for all major outcomes across flows.
-5. [ ] Add broader UX/usability validation beyond the current smoke path.
+5. [x] Add broader UX/usability validation beyond the current smoke path.
 
 ## Risks and Mitigations
 

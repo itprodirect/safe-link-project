@@ -109,7 +109,7 @@ Epic issues are now created and linked below.
 - [x] `E3-I2` Implement `WhyPanel` and recommendation ordering.
 - [x] `E3-I3` Add action-level mapping (`safe/caution/avoid/block`).
 - [x] `E3-I4` Add UX copy pass for plain-language flow.
-- [ ] `E3-I5` Add usability checks for decision speed.
+- [x] `E3-I5` Add usability checks for decision speed.
 
 ### Definition of done
 
