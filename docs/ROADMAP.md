@@ -111,6 +111,21 @@ Establish V2 execution structure in GitHub and complete the first foundation ref
    - `#11` parity and snapshot governance
    - `#12` architecture/API docs sync closeout
 
+
+## Session 12: Unified Analyze Workspace Slice (2026-03-05)
+
+### Goal
+
+Move `/analyze` from a shell into a usable shared workspace for Phase 2.
+
+### Work Items
+
+1. [x] Replace placeholder tabs with working URL, email, and QR forms on `/analyze`.
+2. [x] Reuse typed client helpers for `POST /api/v2/analyze` and shared wrapped-response handling.
+3. [x] Add type-specific validation plus URL allowlist/network controls in the workspace.
+4. [x] Add workspace status states (loading, error, retry) and `Quick` / `Analyst` mode scaffold.
+5. [x] Add end-to-end smoke coverage that drives all three flows through the rendered UI.
+
 ## Risks and Mitigations
 
 - Risk: network-dependent logic increases flaky tests

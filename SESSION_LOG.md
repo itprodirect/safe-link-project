@@ -2210,3 +2210,103 @@ Development session history. Each entry documents what was done, why, and what's
 - `python -m ruff check src/lsh/adapters/api.py tests/adapters/test_api.py` passed.
 - `python -m mypy src/lsh/adapters/api.py tests/adapters/test_api.py` passed.
 - `python -m pytest tests/adapters/test_api.py tests/contracts/test_v1_v2_snapshot_parity.py -q` passed (`22 passed, 7 skipped`).
+
+---
+
+## 2026-03-05 - Session 12A: Unified `/analyze` workspace implementation slice
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Move the Next.js `/analyze` route from a placeholder shell into a usable shared workspace for E2 with URL/email v2 wiring, QR fallback, and verdict-first states.
+
+**Module(s) Touched:** UI analyze workspace, UI API client helpers, UI smoke script, roadmap/docs, session log
+
+**Changes:**
+- Replaced the placeholder `ui/app/analyze/page.tsx` shell with a working shared workspace:
+  - URL form now submits to `POST /api/v2/analyze`
+  - email-header form now submits to `POST /api/v2/analyze`
+  - QR upload runs from the same page through existing `POST /api/v1/qr/scan`
+  - added type-specific validation, retry, loading/error handling, and persisted `Quick` / `Analyst` mode scaffold
+  - added verdict-first rendering for basic use plus analyst raw JSON/detail view
+- Expanded `ui/lib/api.ts`:
+  - typed QR helper
+  - wrapped-response item helpers reused by the workspace
+- Extended `ui/scripts/api-contract-smoke.mjs`:
+  - added `/api/v2/analyze` smoke coverage for URL and email-header flows
+- Synced docs/status trackers:
+  - `docs/V2_ROADMAP_ISSUES.md` now marks E2-I1 through E2-I4 complete
+  - `docs/ROADMAP.md` now includes a Session 12 execution slice
+  - `README.md` and `ui/README.md` now describe the shared `/analyze` behavior
+
+**Decisions:**
+- Kept QR on the unified page via the existing v1 upload route instead of blocking on a v2 file-upload contract.
+- Always requested family summaries from the workspace so Quick mode can render verdict-first output without depending on raw JSON.
+- Left the legacy route-per-feature pages intact as validation surfaces while `/analyze` becomes the primary v2 path.
+
+**Open Questions:**
+- Should the next E2 slice add browser-level end-to-end coverage for `/analyze`, or should effort shift to E3 verdict-first component extraction first?
+
+**Next:**
+- Add rendered e2e/smoke coverage for URL, email, and QR flows from `/analyze`.
+- Decide whether to keep legacy `/url`, `/email`, and `/qr` routes once `/analyze` coverage is strong enough.
+- Continue E3 by extracting `VerdictCard` and `WhyPanel` from the new workspace view.
+
+**Tests / Verification:**
+- `npm run build` passed in `ui/`.
+- `npm run typecheck` passed in `ui/` after build generated `.next/types`.
+- `python -m ruff check src tests` passed.
+- `python -m mypy src tests` passed.
+- `python -m pytest -q` passed (`219 passed, 7 skipped`).
+- `npm run smoke:api` was not run here because no live local API server was started in this session.
+
+---
+
+## 2026-03-05 - Session 12B: Browser smoke coverage for unified `/analyze`
+
+**Agent:** Codex
+
+**Branch:** `main`
+
+**Goal:** Close E2-I5 by adding a real browser-level smoke path that exercises URL, email, and QR flows from the shared `/analyze` workspace.
+
+**Module(s) Touched:** UI Playwright harness, UI package scripts, CI workflow, UI/client typing, docs, session log
+
+**Changes:**
+- Added Playwright-based browser smoke coverage:
+  - `ui/e2e/analyze.smoke.spec.ts` covers URL success, email-header success, and QR structured-error flow from `/analyze`
+  - `ui/playwright.config.ts` added for smoke execution
+- Updated UI scripts and dependency surface:
+  - added `@playwright/test`
+  - added `npm run start:smoke`
+  - added `npm run smoke:e2e`
+- Updated CI `docker-smoke` job:
+  - build UI with hosted smoke env vars
+  - install Chromium via Playwright
+  - start the built UI on `127.0.0.1:3000`
+  - run browser smoke against the live API container
+- Tightened UI client typing:
+  - corrected QR wrapped-response `input_type` typing to match current API payloads
+- Synced docs/status:
+  - `docs/V2_ROADMAP_ISSUES.md` now marks E2-I5 complete
+  - `docs/ROADMAP.md` Session 12 checklist now marks browser smoke complete
+  - `README.md` and `ui/README.md` now document the browser smoke workflow
+  - `.gitignore` now ignores Playwright output folders
+
+**Decisions:**
+- Managed UI startup explicitly outside Playwright config for verification/CI instead of using Playwright's `webServer` abstraction, because this repo needs build-time public env injection and the local Windows sandbox was hostile to the embedded server launcher.
+- Kept the QR smoke assertion contract-focused: the test accepts the structured QR error path whether the environment returns `QRC_NO_URL_PAYLOADS`, `QRC_DECODER_UNAVAILABLE`, or `QRC_MULTIPART_UNAVAILABLE`.
+
+**Open Questions:**
+- Do we want to keep the legacy `/url`, `/email`, and `/qr` pages once the browser smoke path has been stable in CI for a few runs?
+
+**Next:**
+- Watch the first CI runs for the new browser smoke lane and tighten selectors only if real flake shows up.
+- Begin E3 by extracting `VerdictCard` and `WhyPanel` from the current `/analyze` quick view.
+
+**Tests / Verification:**
+- `npm run build` passed in `ui/`.
+- `npm run typecheck` passed in `ui/`.
+- `npm run smoke:e2e` passed locally against a live API + built UI (`3 passed`).
+- Local verification used a temporary API instance on `127.0.0.1:8010` and the built UI on `127.0.0.1:3000`.

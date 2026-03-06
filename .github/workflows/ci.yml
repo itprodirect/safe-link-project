@@ -116,11 +116,62 @@ jobs:
           NEXT_PUBLIC_UI_ORIGIN: http://127.0.0.1:3000
         run: npm run smoke:api
 
+      - name: Build UI for browser smoke
+        working-directory: ui
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
+          NEXT_PUBLIC_UI_ORIGIN: http://127.0.0.1:3000
+        run: npm run build
+
+      - name: Install Playwright browser
+        working-directory: ui
+        run: npx playwright install --with-deps chromium
+
+      - name: Start UI server
+        working-directory: ui
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
+          NEXT_PUBLIC_UI_ORIGIN: http://127.0.0.1:3000
+        run: |
+          nohup npm run start:smoke > /tmp/lsh-ui.log 2>&1 &
+          echo $! > /tmp/lsh-ui.pid
+
+      - name: Wait for UI endpoint
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/analyze > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "UI failed health check in time"
+          exit 1
+
+      - name: Browser smoke for unified analyze workspace
+        working-directory: ui
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
+          NEXT_PUBLIC_UI_ORIGIN: http://127.0.0.1:3000
+        run: npm run smoke:e2e
+
       - name: Show container logs on failure
         if: failure()
         run: docker logs lsh-api-ci
 
+      - name: Show UI logs on failure
+        if: failure()
+        run: |
+          if [ -f /tmp/lsh-ui.log ]; then
+            cat /tmp/lsh-ui.log
+          fi
+
+      - name: Stop UI server
+        if: always()
+        run: |
+          if [ -f /tmp/lsh-ui.pid ]; then
+            kill $(cat /tmp/lsh-ui.pid) || true
+          fi
+
       - name: Stop API container
         if: always()
         run: docker rm -f lsh-api-ci
-

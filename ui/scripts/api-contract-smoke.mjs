@@ -69,6 +69,19 @@ async function run() {
   await check(urlResult.payload.item_count === 1, "url item_count should be 1");
   console.log("[smoke] url check ok");
 
+  const analyzeUrlResult = await postJson("/api/v2/analyze", {
+    input_type: "url",
+    content: "https://example.com",
+    subject: "smoke-url",
+    family: true
+  });
+  await check(analyzeUrlResult.response.ok, "v2 url analyze failed");
+  await check(analyzeUrlResult.payload.schema_version === "2.0", "v2 url schema mismatch");
+  await check(analyzeUrlResult.payload.flow === "analyze", "v2 url flow mismatch");
+  await check(analyzeUrlResult.payload.input_type === "url", "v2 url input type mismatch");
+  await check(analyzeUrlResult.payload.item?.subject === "smoke-url", "v2 url subject mismatch");
+  console.log("[smoke] v2 url analyze ok");
+
   const allowlistScopedResult = await postJson("/api/v1/url/check", {
     url: "https://xn--pple-43d.com",
     allowlist_domains: ["xn--pple-43d.com"],
@@ -96,6 +109,25 @@ async function run() {
   await check(emailResult.payload.flow === "email_check", "email flow mismatch");
   await check(emailResult.payload.mode === "single", "email mode should be single");
   console.log("[smoke] email check ok");
+
+  const analyzeEmailResult = await postJson("/api/v2/analyze", {
+    input_type: "email_headers",
+    content: "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass",
+    subject: "smoke-email",
+    family: true
+  });
+  await check(analyzeEmailResult.response.ok, "v2 email analyze failed");
+  await check(analyzeEmailResult.payload.schema_version === "2.0", "v2 email schema mismatch");
+  await check(analyzeEmailResult.payload.flow === "analyze", "v2 email flow mismatch");
+  await check(
+    analyzeEmailResult.payload.input_type === "email_headers",
+    "v2 email input type mismatch"
+  );
+  await check(
+    analyzeEmailResult.payload.item?.subject === "smoke-email",
+    "v2 email subject mismatch"
+  );
+  console.log("[smoke] v2 email analyze ok");
 
   const formData = new FormData();
   formData.append("file", new Blob(["not-a-valid-image"]), "smoke-invalid.png");

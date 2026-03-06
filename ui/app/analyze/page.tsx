@@ -1,14 +1,27 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
-  AnalyzeV2Response,
+  AnalyzeV2Request,
+  ApiItem,
   ApiRequestError,
+  ApiWrappedResponse,
   asPrettyJson,
-  analyzeV2
+  analyzeV2,
+  getPrimaryItem,
+  getResponseItems,
+  scanQr
 } from "../../lib/api";
 
 type AnalyzeTab = "url" | "email" | "qr";
+type WorkspaceMode = "quick" | "analyst";
+
+const DEFAULT_EMAIL_HEADERS =
+  "Authentication-Results: mx.example; spf=pass; dkim=pass; dmarc=pass\n";
+const MODE_STORAGE_KEY = "lsh.analyze.mode";
+const ALLOWLIST_CATEGORY_OPTIONS = ["HMG", "ASCII", "URL", "NET", "ALL", "NONE"] as const;
+
+type AllowlistCategory = (typeof ALLOWLIST_CATEGORY_OPTIONS)[number];
 
 const TAB_LABELS: Record<AnalyzeTab, string> = {
   url: "URL",
@@ -16,177 +29,825 @@ const TAB_LABELS: Record<AnalyzeTab, string> = {
   qr: "QR"
 };
 
-export default function AnalyzePage() {
-  const [activeTab, setActiveTab] = useState<AnalyzeTab>("url");
+const TAB_HELP: Record<AnalyzeTab, string> = {
+  url: "Paste a destination, tune false-positive controls, and optionally enable redirect analysis.",
+  email: "Paste raw email authentication headers and send them through the shared v2 analyze contract.",
+  qr: "Upload a QR image from the same workspace. QR still uses the v1 upload route until v2 adds file inputs."
+};
 
-  return (
-    <>
-      <section className="card">
-        <h1>Unified Analyze (V2 Shell)</h1>
-        <p className="muted">
-          E2 foundation slice: one workspace route with URL, email, and QR tabs. URL is now wired
-          to `POST /api/v2/analyze`; email and QR tab flows are staged next.
-        </p>
-        <div className="tabRow" role="tablist" aria-label="Analyze input type tabs">
-          {(Object.keys(TAB_LABELS) as AnalyzeTab[]).map((tab) => {
-            const active = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={`tabButton${active ? " tabButtonActive" : ""}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {TAB_LABELS[tab]}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+const MODE_COPY: Record<WorkspaceMode, string> = {
+  quick: "Quick mode keeps the first verdict, top reasons, and next actions in view.",
+  analyst: "Analyst mode keeps contract details and raw JSON visible for deeper inspection."
+};
 
-      <section className="card placeholderPanel">
-        {activeTab === "url" ? <UrlAnalyzePanel /> : null}
-        {activeTab === "email" ? <EmailPlaceholder /> : null}
-        {activeTab === "qr" ? <QrPlaceholder /> : null}
-      </section>
-    </>
-  );
+interface UrlFormState {
+  url: string;
+  allowlistDomains: string;
+  allowlistFindings: string;
+  allowlistCategories: AllowlistCategory[];
+  networkEnabled: boolean;
+  networkMaxHops: number;
+  networkTimeout: number;
 }
 
-function UrlAnalyzePanel() {
-  const [url, setUrl] = useState("https://example.com");
-  const [family, setFamily] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<AnalyzeV2Response | null>(null);
+interface EmailFormState {
+  sourceLabel: string;
+  headers: string;
+}
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setResponse(null);
-    try {
-      const result = await analyzeV2({
-        input_type: "url",
-        content: url,
-        subject: url,
-        family,
-        network_enabled: false,
-        network_max_hops: 5,
-        network_timeout: 3.0
-      });
-      setResponse(result);
-    } catch (err) {
-      if (err instanceof ApiRequestError) {
-        setError(`${err.message}${err.code ? ` (${err.code})` : ""}`);
-      } else {
-        setError("Unexpected error while calling API.");
+interface QrFormState {
+  imageFile: File | null;
+  analyzeAll: boolean;
+}
+
+type Submission =
+  | {
+      kind: "url";
+      request: AnalyzeV2Request;
+    }
+  | {
+      kind: "email";
+      request: AnalyzeV2Request;
+    }
+  | {
+      kind: "qr";
+      file: File;
+      analyzeAll: boolean;
+      family: boolean;
+    };
+
+interface RunState {
+  loading: boolean;
+  error: string | null;
+  response: ApiWrappedResponse | null;
+  lastSubmission: Submission | null;
+}
+
+function parseTokenList(raw: string): string[] {
+  return raw
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function getNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function getFindings(item: ApiItem): Record<string, unknown>[] {
+  const findings = item.result.findings;
+  if (!Array.isArray(findings)) {
+    return [];
+  }
+  return findings.filter(isRecord);
+}
+
+function getReasons(item: ApiItem): string[] {
+  if (item.family?.reasons?.length) {
+    return item.family.reasons.slice(0, 3);
+  }
+
+  const reasons = getFindings(item)
+    .map((finding) => getString(finding.family_explanation) ?? getString(finding.explanation))
+    .filter((reason): reason is string => reason !== null);
+
+  return [...new Set(reasons)].slice(0, 3);
+}
+
+function getRecommendations(item: ApiItem): string[] {
+  if (item.family?.recommendations?.length) {
+    return item.family.recommendations.slice(0, 3);
+  }
+
+  const recommendations = new Set<string>();
+  for (const finding of getFindings(item)) {
+    const rawRecommendations = finding.recommendations;
+    if (!Array.isArray(rawRecommendations)) {
+      continue;
+    }
+    for (const recommendation of rawRecommendations) {
+      const parsedRecommendation = getString(recommendation);
+      if (parsedRecommendation) {
+        recommendations.add(parsedRecommendation);
       }
-    } finally {
-      setLoading(false);
     }
   }
 
+  return [...recommendations].slice(0, 3);
+}
+
+function getSeverity(item: ApiItem): string {
+  return getString(item.family?.severity) ?? getString(item.result.overall_severity) ?? "UNKNOWN";
+}
+
+function getSummary(item: ApiItem): string {
+  return getString(item.family?.summary) ?? getString(item.result.summary) ?? "Analysis completed.";
+}
+
+function getRiskScore(item: ApiItem): number | null {
+  return getNumber(item.family?.risk_score) ?? getNumber(item.result.overall_risk);
+}
+
+function getFindingCount(item: ApiItem): number {
+  return getFindings(item).length;
+}
+
+function formatRequestError(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return `${error.message}${error.code ? ` (${error.code})` : ""}`;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Unexpected error while calling API.";
+}
+
+function validateUrlForm(form: UrlFormState): string | null {
+  const trimmedUrl = form.url.trim();
+  if (!trimmedUrl) {
+    return "Enter a URL to analyze.";
+  }
+
+  try {
+    const parsed = new URL(trimmedUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "Only http:// and https:// URLs are supported.";
+    }
+  } catch {
+    return "Enter a full URL including http:// or https://.";
+  }
+
+  if (!Number.isInteger(form.networkMaxHops) || form.networkMaxHops < 1 || form.networkMaxHops > 15) {
+    return "Network max hops must be between 1 and 15.";
+  }
+
+  if (!Number.isFinite(form.networkTimeout) || form.networkTimeout < 0.1) {
+    return "Network timeout must be at least 0.1 seconds.";
+  }
+
+  return null;
+}
+
+function validateEmailForm(form: EmailFormState): string | null {
+  const trimmedHeaders = form.headers.trim();
+  if (!trimmedHeaders) {
+    return "Paste email headers to analyze.";
+  }
+  if (!trimmedHeaders.includes(":")) {
+    return "Email headers should include at least one header line like 'Authentication-Results: ...'.";
+  }
+  return null;
+}
+
+function validateQrForm(form: QrFormState): string | null {
+  if (!form.imageFile) {
+    return "Choose a QR image file first.";
+  }
+  if (form.imageFile.type && !form.imageFile.type.startsWith("image/")) {
+    return "QR uploads must be image files.";
+  }
+  return null;
+}
+
+function endpointLabel(submission: Submission | null): string | null {
+  if (!submission) {
+    return null;
+  }
+  if (submission.kind === "qr") {
+    return "POST /api/v1/qr/scan";
+  }
+  return "POST /api/v2/analyze";
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="metricCard">
+      <span className="metricLabel">{label}</span>
+      <span className="metricValue">{value}</span>
+    </div>
+  );
+}
+
+function QuickResult({ response }: { response: ApiWrappedResponse }) {
+  const primaryItem = getPrimaryItem(response);
+  if (!primaryItem) {
+    return <p className="muted">The API returned no items.</p>;
+  }
+
+  const items = getResponseItems(response);
+  const riskScore = getRiskScore(primaryItem);
+  const reasons = getReasons(primaryItem);
+  const recommendations = getRecommendations(primaryItem);
+  const confidence = getString(primaryItem.family?.signal_confidence);
+
   return (
     <>
-      <h2>URL Analyze</h2>
-      <form onSubmit={onSubmit}>
-        <label>
-          URL
-          <input value={url} onChange={(event) => setUrl(event.target.value)} />
-        </label>
-        <label className="inline">
-          <input
-            type="checkbox"
-            checked={family}
-            onChange={(event) => setFamily(event.target.checked)}
-            style={{ width: "auto" }}
-          />
-          Include family summary payload
-        </label>
-        <button type="submit" disabled={loading}>
-          {loading ? "Analyzing..." : "Analyze URL"}
-        </button>
-      </form>
+      <section className="verdictCard">
+        <p className="eyebrow">Primary verdict</p>
+        <h3>{getSeverity(primaryItem)} risk</h3>
+        <p>{getSummary(primaryItem)}</p>
+        <div className="badgeRow">
+          <span className="badge">Subject: {primaryItem.subject}</span>
+          <span className="badge">Risk: {riskScore !== null ? String(riskScore) : "-"}</span>
+          <span className="badge">Findings: {String(getFindingCount(primaryItem))}</span>
+          <span className="badge">Flow: {response.flow}</span>
+          {confidence ? <span className="badge">Confidence: {confidence}</span> : null}
+        </div>
+      </section>
 
-      {error ? (
-        <section className="card">
-          <h3>API Error</h3>
-          <p>{error}</p>
+      <div className="resultList">
+        <section className="miniCard">
+          <h3>Top reasons</h3>
+          {reasons.length > 0 ? (
+            <ul className="cleanList">
+              {reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No reason strings were returned for this item.</p>
+          )}
+        </section>
+
+        <section className="miniCard">
+          <h3>Recommended next steps</h3>
+          {recommendations.length > 0 ? (
+            <ul className="cleanList">
+              {recommendations.map((recommendation) => (
+                <li key={recommendation}>{recommendation}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No recommendation strings were returned for this item.</p>
+          )}
+        </section>
+
+        {items.length > 1 ? (
+          <section className="miniCard">
+            <h3>Additional decoded items</h3>
+            <div className="resultListCompact">
+              {items.map((item) => (
+                <article className="miniCard insetCard" key={item.subject}>
+                  <strong>{item.subject}</strong>
+                  <p className="muted compactText">{getSummary(item)}</p>
+                  <div className="badgeRow">
+                    <span className="badge">{getSeverity(item)}</span>
+                    <span className="badge">
+                      Risk: {getRiskScore(item) !== null ? String(getRiskScore(item)) : "-"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function AnalystResult({ response }: { response: ApiWrappedResponse }) {
+  const items = getResponseItems(response);
+  const primaryItem = getPrimaryItem(response);
+
+  return (
+    <div className="resultList">
+      <section className="miniCard">
+        <h3>Contract summary</h3>
+        <div className="summaryGrid">
+          <MetricCard label="Schema" value={response.schema_version} />
+          <MetricCard label="Flow" value={response.flow} />
+          <MetricCard label="Mode" value={response.mode} />
+          <MetricCard label="Items" value={String(response.item_count)} />
+          <MetricCard label="Input type" value={response.input_type} />
+          <MetricCard label="Primary subject" value={primaryItem?.subject ?? "-"} />
+        </div>
+      </section>
+
+      {primaryItem ? (
+        <section className="miniCard">
+          <h3>Primary item snapshot</h3>
+          <div className="summaryGrid">
+            <MetricCard label="Severity" value={getSeverity(primaryItem)} />
+            <MetricCard
+              label="Risk"
+              value={getRiskScore(primaryItem) !== null ? String(getRiskScore(primaryItem)) : "-"}
+            />
+            <MetricCard label="Findings" value={String(getFindingCount(primaryItem))} />
+            <MetricCard
+              label="Confidence"
+              value={getString(primaryItem.family?.signal_confidence) ?? "-"}
+            />
+          </div>
+          <p className="compactText">{getSummary(primaryItem)}</p>
         </section>
       ) : null}
 
-      {response ? (
-        <>
-          <section className="card">
-            <h3>Contract Summary</h3>
-            <p>
-              `schema_version`: <strong>{response.schema_version}</strong>
-            </p>
-            <p>
-              `flow`: <strong>{response.flow}</strong>
-            </p>
-            <p>
-              `mode`: <strong>{response.mode}</strong>
-            </p>
-            <p>
-              `item_count`: <strong>{response.item_count}</strong>
-            </p>
-          </section>
-          <section className="card">
-            <h3>Raw JSON</h3>
-            <pre>{asPrettyJson(response)}</pre>
-          </section>
-        </>
-      ) : null}
+      <section className="miniCard">
+        <h3>Returned subjects</h3>
+        {items.length > 0 ? (
+          <ul className="cleanList">
+            {items.map((item) => (
+              <li key={item.subject}>
+                {item.subject} ({getSeverity(item)}, risk {getRiskScore(item) ?? "-"})
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No item subjects were returned.</p>
+        )}
+      </section>
 
-      <p className="placeholderNote">Active contract target: `POST /api/v2/analyze` (`input_type=url`).</p>
-    </>
+      <section className="miniCard">
+        <h3>Raw JSON</h3>
+        <pre>{asPrettyJson(response)}</pre>
+      </section>
+    </div>
   );
 }
 
-function EmailPlaceholder() {
+function EmptyState() {
   return (
-    <>
-      <h2>Email Analyze</h2>
-      <label>
-        Source label
-        <input placeholder="inline headers" disabled />
-      </label>
-      <label>
-        Email headers
-        <textarea placeholder="Authentication-Results: ..." disabled />
-      </label>
-      <button type="button" disabled>
-        Analyze Email (coming soon)
-      </button>
-      <p className="placeholderNote">
-        Next target: `POST /api/v2/analyze` (`input_type=email_headers`).
+    <section className="statusPanel">
+      <p className="eyebrow">Ready</p>
+      <h3>Run an analysis from the left panel</h3>
+      <p className="muted">
+        This workspace always asks the API for family summaries so Quick mode can render a verdict
+        without falling back to raw JSON.
       </p>
-    </>
+    </section>
   );
 }
 
-function QrPlaceholder() {
+export default function AnalyzePage() {
+  const [activeTab, setActiveTab] = useState<AnalyzeTab>("url");
+  const [mode, setMode] = useState<WorkspaceMode>("quick");
+  const [urlForm, setUrlForm] = useState<UrlFormState>({
+    url: "https://example.com",
+    allowlistDomains: "",
+    allowlistFindings: "",
+    allowlistCategories: [],
+    networkEnabled: false,
+    networkMaxHops: 5,
+    networkTimeout: 3.0
+  });
+  const [emailForm, setEmailForm] = useState<EmailFormState>({
+    sourceLabel: "inline headers",
+    headers: DEFAULT_EMAIL_HEADERS
+  });
+  const [qrForm, setQrForm] = useState<QrFormState>({
+    imageFile: null,
+    analyzeAll: false
+  });
+  const [runState, setRunState] = useState<RunState>({
+    loading: false,
+    error: null,
+    response: null,
+    lastSubmission: null
+  });
+
+  useEffect(() => {
+    const storedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
+    if (storedMode === "quick" || storedMode === "analyst") {
+      setMode(storedMode);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+  }, [mode]);
+
+  function toggleCategory(category: AllowlistCategory) {
+    setUrlForm((current) => {
+      const selected = new Set(current.allowlistCategories);
+      if (selected.has(category)) {
+        selected.delete(category);
+        return { ...current, allowlistCategories: [...selected] as AllowlistCategory[] };
+      }
+      if (category === "NONE") {
+        return { ...current, allowlistCategories: ["NONE"] };
+      }
+      selected.delete("NONE");
+      selected.add(category);
+      return { ...current, allowlistCategories: [...selected] as AllowlistCategory[] };
+    });
+  }
+
+  async function executeSubmission(submission: Submission): Promise<void> {
+    setRunState({
+      loading: true,
+      error: null,
+      response: null,
+      lastSubmission: submission
+    });
+
+    try {
+      let response: ApiWrappedResponse;
+      if (submission.kind === "qr") {
+        const formData = new FormData();
+        formData.append("file", submission.file);
+        formData.append("analyze_all", String(submission.analyzeAll));
+        formData.append("family", String(submission.family));
+        response = await scanQr(formData);
+      } else {
+        response = await analyzeV2(submission.request);
+      }
+
+      setRunState({
+        loading: false,
+        error: null,
+        response,
+        lastSubmission: submission
+      });
+    } catch (error) {
+      setRunState({
+        loading: false,
+        error: formatRequestError(error),
+        response: null,
+        lastSubmission: submission
+      });
+    }
+  }
+
+  async function onUrlSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateUrlForm(urlForm);
+    if (validationError) {
+      setRunState((current) => ({
+        ...current,
+        error: validationError,
+        response: null
+      }));
+      return;
+    }
+
+    const trimmedUrl = urlForm.url.trim();
+    const request: AnalyzeV2Request = {
+      input_type: "url",
+      content: trimmedUrl,
+      subject: trimmedUrl,
+      family: true,
+      allowlist_domains: parseTokenList(urlForm.allowlistDomains),
+      allowlist_categories: urlForm.allowlistCategories,
+      allowlist_findings: parseTokenList(urlForm.allowlistFindings).map((item) => item.toUpperCase()),
+      network_enabled: urlForm.networkEnabled,
+      network_max_hops: urlForm.networkMaxHops,
+      network_timeout: urlForm.networkTimeout
+    };
+
+    await executeSubmission({ kind: "url", request });
+  }
+
+  async function onEmailSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateEmailForm(emailForm);
+    if (validationError) {
+      setRunState((current) => ({
+        ...current,
+        error: validationError,
+        response: null
+      }));
+      return;
+    }
+
+    const request: AnalyzeV2Request = {
+      input_type: "email_headers",
+      content: emailForm.headers.trim(),
+      subject: emailForm.sourceLabel.trim() || "inline headers",
+      family: true
+    };
+
+    await executeSubmission({ kind: "email", request });
+  }
+
+  async function onQrSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateQrForm(qrForm);
+    if (validationError) {
+      setRunState((current) => ({
+        ...current,
+        error: validationError,
+        response: null
+      }));
+      return;
+    }
+
+    await executeSubmission({
+      kind: "qr",
+      file: qrForm.imageFile as File,
+      analyzeAll: qrForm.analyzeAll,
+      family: true
+    });
+  }
+
+  const endpoint = endpointLabel(runState.lastSubmission);
+
   return (
     <>
-      <h2>QR Analyze</h2>
-      <label>
-        QR image file
-        <input type="file" disabled />
-      </label>
-      <label className="inline">
-        <input type="checkbox" style={{ width: "auto" }} disabled />
-        Analyze all decoded URL payloads
-      </label>
-      <button type="button" disabled>
-        Analyze QR (coming soon)
-      </button>
-      <p className="placeholderNote">
-        QR input in the unified v2 flow will map to `input_type` once that contract expands.
-      </p>
+      <section className="card workspaceHero">
+        <div>
+          <p className="eyebrow">V2 phase 2</p>
+          <h1>Unified Analyze Workspace</h1>
+          <p className="muted">
+            URL and email now submit through <code>POST /api/v2/analyze</code>. QR still uses the
+            existing upload route from this page until the v2 contract grows file input support.
+          </p>
+        </div>
+
+        <div className="modeRail">
+          <p className="eyebrow">View mode</p>
+          <div className="modeToggle" role="tablist" aria-label="Analyze workspace mode">
+            {(["quick", "analyst"] as WorkspaceMode[]).map((nextMode) => {
+              const active = mode === nextMode;
+              return (
+                <button
+                  key={nextMode}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`modeButton${active ? " modeButtonActive" : ""}`}
+                  onClick={() => setMode(nextMode)}
+                >
+                  {nextMode === "quick" ? "Quick" : "Analyst"}
+                </button>
+              );
+            })}
+          </div>
+          <p className="muted compactText">{MODE_COPY[mode]}</p>
+        </div>
+      </section>
+
+      <div className="workspaceGrid">
+        <section className="card">
+          <div className="workspaceSectionTitle">
+            <div>
+              <h2>Input</h2>
+              <p className="muted compactText">{TAB_HELP[activeTab]}</p>
+            </div>
+            <span className="badge">Family summaries enabled</span>
+          </div>
+
+          <div className="tabRow" role="tablist" aria-label="Analyze input type tabs">
+            {(Object.keys(TAB_LABELS) as AnalyzeTab[]).map((tab) => {
+              const active = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`tabButton${active ? " tabButtonActive" : ""}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {TAB_LABELS[tab]}
+                </button>
+              );
+            })}
+          </div>
+
+          {activeTab === "url" ? (
+            <form onSubmit={onUrlSubmit} className="formStack">
+              <label>
+                URL
+                <input
+                  value={urlForm.url}
+                  onChange={(event) =>
+                    setUrlForm((current) => ({ ...current, url: event.target.value }))
+                  }
+                  placeholder="https://example.com"
+                />
+              </label>
+
+              <label className="inline">
+                <input
+                  type="checkbox"
+                  checked={urlForm.networkEnabled}
+                  onChange={(event) =>
+                    setUrlForm((current) => ({ ...current, networkEnabled: event.target.checked }))
+                  }
+                  style={{ width: "auto" }}
+                />
+                Enable redirect-chain network checks
+              </label>
+
+              <div className="fieldGrid">
+                <label>
+                  Max hops
+                  <input
+                    type="number"
+                    min={1}
+                    max={15}
+                    value={urlForm.networkMaxHops}
+                    disabled={!urlForm.networkEnabled}
+                    onChange={(event) =>
+                      setUrlForm((current) => ({
+                        ...current,
+                        networkMaxHops: Number(event.target.value)
+                      }))
+                    }
+                  />
+                </label>
+
+                <label>
+                  Timeout (seconds)
+                  <input
+                    type="number"
+                    min={0.1}
+                    step={0.1}
+                    value={urlForm.networkTimeout}
+                    disabled={!urlForm.networkEnabled}
+                    onChange={(event) =>
+                      setUrlForm((current) => ({
+                        ...current,
+                        networkTimeout: Number(event.target.value)
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label>
+                Allowlist domains
+                <textarea
+                  className="textareaCompact"
+                  value={urlForm.allowlistDomains}
+                  onChange={(event) =>
+                    setUrlForm((current) => ({ ...current, allowlistDomains: event.target.value }))
+                  }
+                  placeholder="example.com trusted.example"
+                />
+              </label>
+
+              <label>
+                Allowlist categories
+                <div className="optionGrid">
+                  {ALLOWLIST_CATEGORY_OPTIONS.map((category) => (
+                    <label className="inline" key={category}>
+                      <input
+                        type="checkbox"
+                        checked={urlForm.allowlistCategories.includes(category)}
+                        onChange={() => toggleCategory(category)}
+                        style={{ width: "auto" }}
+                      />
+                      {category}
+                    </label>
+                  ))}
+                </div>
+              </label>
+              <p className="muted compactText">
+                Select <code>NONE</code> if you only want exact finding-token suppression.
+              </p>
+
+              <label>
+                Allowlist findings
+                <textarea
+                  className="textareaCompact"
+                  value={urlForm.allowlistFindings}
+                  onChange={(event) =>
+                    setUrlForm((current) => ({ ...current, allowlistFindings: event.target.value }))
+                  }
+                  placeholder="HMG002_PUNYCODE_VISIBILITY HMG004*"
+                />
+              </label>
+
+              <button type="submit" disabled={runState.loading}>
+                {runState.loading ? "Analyzing..." : "Analyze URL"}
+              </button>
+            </form>
+          ) : null}
+
+          {activeTab === "email" ? (
+            <form onSubmit={onEmailSubmit} className="formStack">
+              <label>
+                Source label
+                <input
+                  value={emailForm.sourceLabel}
+                  onChange={(event) =>
+                    setEmailForm((current) => ({ ...current, sourceLabel: event.target.value }))
+                  }
+                  placeholder="inline headers"
+                />
+              </label>
+
+              <label>
+                Email headers
+                <textarea
+                  value={emailForm.headers}
+                  onChange={(event) =>
+                    setEmailForm((current) => ({ ...current, headers: event.target.value }))
+                  }
+                  placeholder="Authentication-Results: ..."
+                />
+              </label>
+
+              <button type="submit" disabled={runState.loading}>
+                {runState.loading ? "Analyzing..." : "Analyze email headers"}
+              </button>
+            </form>
+          ) : null}
+
+          {activeTab === "qr" ? (
+            <form onSubmit={onQrSubmit} className="formStack">
+              <label>
+                QR image file
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setQrForm((current) => ({
+                      ...current,
+                      imageFile: event.target.files?.[0] ?? null
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="inline">
+                <input
+                  type="checkbox"
+                  checked={qrForm.analyzeAll}
+                  onChange={(event) =>
+                    setQrForm((current) => ({ ...current, analyzeAll: event.target.checked }))
+                  }
+                  style={{ width: "auto" }}
+                />
+                Analyze all decoded URL payloads
+              </label>
+
+              <p className="muted compactText">
+                This tab uses <code>POST /api/v1/qr/scan</code> today so the workspace can cover QR
+                uploads before file support lands in v2.
+              </p>
+
+              <button type="submit" disabled={runState.loading}>
+                {runState.loading ? "Scanning..." : "Scan QR"}
+              </button>
+            </form>
+          ) : null}
+        </section>
+
+        <section className="card">
+          <div className="workspaceSectionTitle">
+            <div>
+              <h2>{mode === "quick" ? "Verdict" : "Analysis details"}</h2>
+              <p className="muted compactText">
+                {endpoint ? `Latest endpoint: ${endpoint}` : "No request sent yet."}
+              </p>
+            </div>
+            {runState.lastSubmission ? (
+              <button
+                type="button"
+                className="secondaryButton"
+                disabled={runState.loading}
+                onClick={() => {
+                  if (runState.lastSubmission) {
+                    void executeSubmission(runState.lastSubmission);
+                  }
+                }}
+              >
+                Retry last request
+              </button>
+            ) : null}
+          </div>
+
+          {runState.loading ? (
+            <section className="statusPanel">
+              <p className="eyebrow">In progress</p>
+              <h3>Waiting on the API</h3>
+              <p className="muted">The workspace clears stale output while a fresh result is loading.</p>
+            </section>
+          ) : null}
+
+          {!runState.loading && runState.error ? (
+            <section className="statusPanel statusPanelError">
+              <p className="eyebrow">Error</p>
+              <h3>Request failed</h3>
+              <p>{runState.error}</p>
+            </section>
+          ) : null}
+
+          {!runState.loading && !runState.error && runState.response ? (
+            mode === "quick" ? (
+              <QuickResult response={runState.response} />
+            ) : (
+              <AnalystResult response={runState.response} />
+            )
+          ) : null}
+
+          {!runState.loading && !runState.error && !runState.response ? <EmptyState /> : null}
+        </section>
+      </div>
     </>
   );
 }

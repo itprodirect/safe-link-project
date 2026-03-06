@@ -23,6 +23,7 @@ export interface ApiItem {
 }
 
 export type AnalyzeV2InputType = "url" | "email_headers" | "email_file";
+export type ApiWrappedMode = "single" | "multi";
 
 export interface AnalyzeV2Request {
   input_type: AnalyzeV2InputType;
@@ -40,7 +41,7 @@ export interface AnalyzeV2Request {
 export interface ApiWrappedResponse {
   schema_version: string;
   flow: string;
-  mode: "single" | "multi";
+  mode: ApiWrappedMode;
   input_type: string;
   item_count: number;
   item?: ApiItem;
@@ -54,6 +55,12 @@ export interface AnalyzeV2Response extends ApiWrappedResponse {
   mode: "single";
   input_type: AnalyzeV2InputType;
   item: ApiItem;
+}
+
+export interface QrScanResponse extends ApiWrappedResponse {
+  schema_version: "1.0";
+  flow: "qr_scan";
+  input_type: "url";
 }
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:8000";
@@ -111,6 +118,22 @@ export async function analyzeV2(request: AnalyzeV2Request): Promise<AnalyzeV2Res
   return postApi<AnalyzeV2Response>("/api/v2/analyze", request);
 }
 
+export async function scanQr(body: FormData): Promise<QrScanResponse> {
+  return postApiForm<QrScanResponse>("/api/v1/qr/scan", body);
+}
+
+export function getResponseItems(response: ApiWrappedResponse): ApiItem[] {
+  if (response.mode === "multi") {
+    return response.items ?? [];
+  }
+  return response.item ? [response.item] : [];
+}
+
+export function getPrimaryItem(response: ApiWrappedResponse): ApiItem | null {
+  return getResponseItems(response)[0] ?? null;
+}
+
 export function asPrettyJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
+

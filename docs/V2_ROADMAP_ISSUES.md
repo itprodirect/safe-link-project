@@ -86,11 +86,11 @@ Epic issues are now created and linked below.
 
 ### Child issues
 
-- [ ] `E2-I1` Build unified input panel with type-specific validation.
-- [ ] `E2-I2` Add typed API client for v2 payloads.
-- [ ] `E2-I3` Add load/error/retry states.
-- [ ] `E2-I4` Add mode toggle scaffold (`Quick` vs `Analyst`).
-- [ ] `E2-I5` Add e2e smoke path for all three input types.
+- [x] `E2-I1` Build unified input panel with type-specific validation.
+- [x] `E2-I2` Add typed API client for v2 payloads.
+- [x] `E2-I3` Add load/error/retry states.
+- [x] `E2-I4` Add mode toggle scaffold (`Quick` vs `Analyst`).
+- [x] `E2-I5` Add e2e smoke path for all three input types.
 
 ### Definition of done
 

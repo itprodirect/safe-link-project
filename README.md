@@ -144,6 +144,17 @@ cd ui
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:api
 ```
 
+Browser smoke path for the unified `/analyze` workspace:
+
+```bash
+cd ui
+npx playwright install chromium
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run build
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run start:smoke
+# in another shell
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:e2e
+```
+
 Roadmap note: the current `ui/` app is a contract-validation surface, not the final product UX.  
 The full v2 experience plan lives in `docs/V2_BLUEPRINT.md`.
 

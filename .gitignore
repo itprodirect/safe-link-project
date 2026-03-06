@@ -53,3 +53,5 @@ node_modules/
 ui/node_modules/
 ui/.next/
 *.tsbuildinfo
+ui/playwright-report/
+ui/test-results/
