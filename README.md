@@ -3,7 +3,56 @@
 Modular, local-first security CLI for analyzing suspicious links and email headers and giving clear next steps.
 Security-first, practical, and intentionally plain-spoken.
 
-## Current Status (2026-03-05)
+## Run Locally
+
+```bash
+# Backend
+python -m venv .venv
+source .venv/Scripts/activate   # Windows Git Bash
+# source .venv/bin/activate     # macOS / Linux
+pip install -e ".[dev]"
+uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
+
+# Frontend (separate terminal)
+cd ui
+npm install
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev
+# opens http://localhost:3000
+
+# Tests
+pytest -q                              # backend (226 tests)
+ruff check src tests                   # lint
+mypy src                               # type check
+cd ui && npm run lint && npm run build  # frontend
+```
+
+## Current Functionality
+
+**Backend API** (FastAPI, Python 3.11+):
+
+| Route | Purpose |
+|---|---|
+| `GET /health` | Liveness probe |
+| `POST /api/v1/url/check` | Analyze a URL for homoglyph/IDN tricks, ASCII lookalikes, suspicious structure, IP literals, and optional redirect-chain following |
+| `POST /api/v1/email/check` | Analyze raw email authentication headers (SPF/DKIM/DMARC) |
+| `POST /api/v1/qr/scan` | Upload a QR image, decode payloads, extract URLs, run URL analysis |
+| `POST /api/v2/analyze` | Unified endpoint for URL, email_headers, and email_file input types with family-friendly summaries |
+
+**CLI** (`lsh`): `check`, `email-check`, `qr-scan` commands with `--json`, `--family`, `--network`, and allowlist flags.
+
+**Frontend** (Next.js at `ui/`):
+
+| Page | Purpose |
+|---|---|
+| `/` | Landing page |
+| `/url` | Standalone URL check |
+| `/email` | Standalone email header check |
+| `/qr` | Standalone QR scan |
+| `/analyze` | Unified workspace with URL/Email/QR tabs, Quick mode (verdict-first UX) and Analyst mode (raw contract details) |
+
+**Detection modules**: `homoglyph` (Unicode/IDN), `ascii_lookalike` (leet/brand), `url_structure` (deceptive patterns), `net_ip` (IP literals), `redirect` (opt-in redirect chains), `email_auth` (SPF/DKIM/DMARC), `qr_decode` (QR payload extraction).
+
+## Current Status (2026-03-07)
 
 Implemented now:
 
