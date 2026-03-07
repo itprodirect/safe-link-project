@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 import os
-from importlib import import_module
 from importlib.util import find_spec
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -31,26 +30,19 @@ from lsh.modules.qr_decode import (
 )
 
 try:
-    fastapi_module = import_module("fastapi")
-    fastapi_cors_module = import_module("fastapi.middleware.cors")
+    from fastapi import (  # type: ignore[import-not-found]
+        FastAPI,
+        File,
+        Form,
+        HTTPException,
+        Response,
+        UploadFile,
+    )
+    from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found]
 except ImportError:
     FASTAPI_AVAILABLE = False
-    FastAPI = cast(Any, None)
-    File = cast(Any, None)
-    Form = cast(Any, None)
-    HTTPException = cast(Any, None)
-    Response = cast(Any, None)
-    UploadFile = cast(Any, None)
-    CORSMiddleware = cast(Any, None)
 else:
     FASTAPI_AVAILABLE = True
-    FastAPI = fastapi_module.FastAPI
-    File = fastapi_module.File
-    Form = fastapi_module.Form
-    HTTPException = fastapi_module.HTTPException
-    Response = fastapi_module.Response
-    UploadFile = fastapi_module.UploadFile
-    CORSMiddleware = fastapi_cors_module.CORSMiddleware
 
 _SCHEMA_VERSION = "1.0"
 _SCHEMA_VERSION_V2 = "2.0"
