@@ -25,6 +25,14 @@ const ALLOWLIST_CATEGORY_OPTIONS = ["HMG", "ASCII", "URL", "NET", "ALL", "NONE"]
 
 type AllowlistCategory = (typeof ALLOWLIST_CATEGORY_OPTIONS)[number];
 
+function readStoredMode(): WorkspaceMode {
+  if (typeof window === "undefined") {
+    return "quick";
+  }
+  const storedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
+  return storedMode === "quick" || storedMode === "analyst" ? storedMode : "quick";
+}
+
 const TAB_LABELS: Record<AnalyzeTab, string> = {
   url: "URL",
   email: "Email",
@@ -692,7 +700,7 @@ function EmptyState() {
 
 export default function AnalyzePage() {
   const [activeTab, setActiveTab] = useState<AnalyzeTab>("url");
-  const [mode, setMode] = useState<WorkspaceMode>("quick");
+  const [mode, setMode] = useState<WorkspaceMode>(() => readStoredMode());
   const [urlForm, setUrlForm] = useState<UrlFormState>({
     url: "https://example.com",
     allowlistDomains: "",
@@ -716,13 +724,6 @@ export default function AnalyzePage() {
     response: null,
     lastSubmission: null
   });
-
-  useEffect(() => {
-    const storedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (storedMode === "quick" || storedMode === "analyst") {
-      setMode(storedMode);
-    }
-  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(MODE_STORAGE_KEY, mode);
@@ -1154,3 +1155,4 @@ export default function AnalyzePage() {
     </>
   );
 }
+

@@ -8,11 +8,12 @@ from typing import Any
 from lsh.core.allowlist import should_suppress_finding_for_allowlist
 from lsh.core.context import url_context_for_input
 from lsh.core.models import AnalysisInput, Confidence, Evidence, Finding, ModuleInterface, Severity
+from lsh.modules.homoglyph.confusables_compat import load_confusables_compat
 
 try:
     import confusables  # type: ignore[import-untyped]
-except ImportError:  # pragma: no cover - exercised when optional dependency is missing
-    confusables = None
+except Exception:  # pragma: no cover - exercised when optional dependency is missing or broken
+    confusables = load_confusables_compat()
 
 _PUNYCODE_PREFIX = "xn--"
 _SCRIPT_NAME_MAP: tuple[tuple[str, str], ...] = (
@@ -382,3 +383,5 @@ class HomoglyphDetector(ModuleInterface):
             )
 
         return findings
+
+
