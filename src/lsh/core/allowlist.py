@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from urllib.parse import urlparse
 
+from lsh.core.context import SuppressionTraceEvent, append_suppression_trace_event
 from lsh.core.models import AnalysisInput
 from lsh.core.url_tools import normalize_hostname
 
@@ -118,17 +119,27 @@ def allowlist_findings_for_input(analysis_input: AnalysisInput) -> set[str]:
     return {finding.strip().upper() for finding in raw_findings if finding.strip()}
 
 
-def is_hostname_allowlisted(hostname: str, allowlist_domains: set[str]) -> bool:
-    """Check exact/suffix match against allowlist with IDNA form expansion."""
+def matching_allowlist_domain(hostname: str, allowlist_domains: set[str]) -> str | None:
+    """Return the most specific allowlist domain that matches this hostname."""
     if not allowlist_domains:
-        return False
+        return None
 
+    matches: set[str] = set()
     host_forms = _expanded_domain_forms(hostname)
     for host in host_forms:
         for allowed in allowlist_domains:
             if host == allowed or host.endswith(f".{allowed}"):
-                return True
-    return False
+                matches.add(allowed)
+
+    if not matches:
+        return None
+
+    return sorted(matches, key=lambda domain: (-len(domain), domain))[0]
+
+
+def is_hostname_allowlisted(hostname: str, allowlist_domains: set[str]) -> bool:
+    """Check exact/suffix match against allowlist with IDNA form expansion."""
+    return matching_allowlist_domain(hostname, allowlist_domains) is not None
 
 
 def should_suppress_for_allowlist(
@@ -143,7 +154,8 @@ def should_suppress_for_allowlist(
         return False
 
     allowlist_domains = allowlist_domains_for_input(analysis_input)
-    if not is_hostname_allowlisted(hostname, allowlist_domains):
+    matched_domain = matching_allowlist_domain(hostname, allowlist_domains)
+    if matched_domain is None:
         return False
 
     categories = allowlist_category_prefixes_for_input(analysis_input)
@@ -165,10 +177,46 @@ def _finding_token_matches(code: str, token: str) -> bool:
     return code.startswith(f"{token}_")
 
 
+def _matching_finding_token(code: str, finding_tokens: set[str]) -> str | None:
+    for token in sorted(
+        finding_tokens,
+        key=lambda value: (-len(value.removesuffix("*")), value.endswith("*"), value),
+    ):
+        if _finding_token_matches(code, token):
+            return token
+    return None
+
+
+def _record_suppression_event(
+    analysis_input: AnalysisInput,
+    *,
+    module_name: str,
+    hostname: str,
+    finding_code: str,
+    category_prefix: str,
+    matched_allowlist_domain: str,
+    suppression_scope: str,
+    matched_rule: str,
+) -> None:
+    append_suppression_trace_event(
+        analysis_input,
+        SuppressionTraceEvent(
+            module=module_name,
+            finding_code=finding_code,
+            category_prefix=category_prefix,
+            hostname=hostname,
+            matched_allowlist_domain=matched_allowlist_domain,
+            suppression_scope=suppression_scope,
+            matched_rule=matched_rule,
+        ),
+    )
+
+
 def should_suppress_finding_for_allowlist(
     analysis_input: AnalysisInput,
     hostname: str,
     *,
+    module_name: str | None = None,
     category_prefix: str,
     finding_code: str,
 ) -> bool:
@@ -178,16 +226,42 @@ def should_suppress_finding_for_allowlist(
         return False
 
     allowlist_domains = allowlist_domains_for_input(analysis_input)
-    if not is_hostname_allowlisted(hostname, allowlist_domains):
+    matched_domain = matching_allowlist_domain(hostname, allowlist_domains)
+    if matched_domain is None:
         return False
-
-    categories = allowlist_category_prefixes_for_input(analysis_input)
-    if category in categories:
-        return True
 
     code = finding_code.strip().upper()
     if not code:
         return False
 
+    resolved_module = module_name or category.lower()
+    categories = allowlist_category_prefixes_for_input(analysis_input)
+    if category in categories:
+        _record_suppression_event(
+            analysis_input,
+            module_name=resolved_module,
+            hostname=hostname,
+            finding_code=code,
+            category_prefix=category,
+            matched_allowlist_domain=matched_domain,
+            suppression_scope="category",
+            matched_rule=category,
+        )
+        return True
+
     finding_tokens = allowlist_findings_for_input(analysis_input)
-    return any(_finding_token_matches(code, token) for token in finding_tokens)
+    matched_token = _matching_finding_token(code, finding_tokens)
+    if matched_token is None:
+        return False
+
+    _record_suppression_event(
+        analysis_input,
+        module_name=resolved_module,
+        hostname=hostname,
+        finding_code=code,
+        category_prefix=category,
+        matched_allowlist_domain=matched_domain,
+        suppression_scope="finding",
+        matched_rule=matched_token,
+    )
+    return True

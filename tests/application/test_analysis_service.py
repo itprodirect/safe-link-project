@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import pytest
 
 from lsh.application import analyze_email, analyze_url
+from lsh.core.context import get_runtime_context
 from lsh.core.models import Severity
 
 
@@ -29,6 +30,26 @@ def test_analyze_url_allowlist_finding_scope_suppresses_only_targeted_code() -> 
     categories = {finding.category for finding in result.findings}
     assert "HMG002_PUNYCODE_VISIBILITY" not in categories
     assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+
+def test_analyze_url_records_allowlist_suppression_trace() -> None:
+    result = analyze_url(
+        "https://xn--pple-43d.com",
+        metadata={
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+        },
+    )
+
+    runtime_context = get_runtime_context(result.input)
+    assert runtime_context is not None
+    assert len(runtime_context.suppressed_findings) == 1
+    event = runtime_context.suppressed_findings[0]
+    assert event.module == "homoglyph"
+    assert event.finding_code == "HMG002_PUNYCODE_VISIBILITY"
+    assert event.suppression_scope == "finding"
+    assert event.matched_rule == "HMG002_PUNYCODE_VISIBILITY"
 
 
 def test_analyze_email_pass_results_have_no_findings() -> None:

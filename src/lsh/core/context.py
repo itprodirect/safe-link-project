@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from ipaddress import IPv4Address
 from typing import cast
 from urllib.parse import ParseResult
@@ -53,10 +53,24 @@ class URLAnalysisContext:
 
 
 @dataclass(slots=True)
+class SuppressionTraceEvent:
+    """Runtime-only record of one allowlist suppression decision."""
+
+    module: str
+    finding_code: str
+    category_prefix: str
+    hostname: str
+    matched_allowlist_domain: str
+    suppression_scope: str
+    matched_rule: str
+
+
+@dataclass(slots=True)
 class AnalysisRuntimeContext:
     """Runtime-only context attached to `AnalysisInput` (not serialized)."""
 
     url: URLAnalysisContext | None = None
+    suppressed_findings: list[SuppressionTraceEvent] = field(default_factory=list)
 
 
 def _build_url_context(raw_url: str) -> URLAnalysisContext:
@@ -127,6 +141,18 @@ def get_runtime_context(analysis_input: AnalysisInput) -> AnalysisRuntimeContext
     if context is None:
         return None
     return cast(AnalysisRuntimeContext, context)
+
+
+def append_suppression_trace_event(
+    analysis_input: AnalysisInput,
+    event: SuppressionTraceEvent,
+) -> None:
+    """Attach one suppression event to the input runtime context."""
+    runtime_context = get_runtime_context(analysis_input)
+    if runtime_context is None:
+        runtime_context = build_runtime_context(analysis_input)
+        set_runtime_context(analysis_input, runtime_context)
+    runtime_context.suppressed_findings.append(event)
 
 
 def url_context_for_input(analysis_input: AnalysisInput) -> URLAnalysisContext | None:

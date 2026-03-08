@@ -189,6 +189,26 @@ const ANALYST_URL_RESPONSE = {
         timed_out: false,
         loop_target: null,
         request_error: null
+      },
+      suppression_trace: {
+        hostname: "login.example.test",
+        configured_allowlist_domains: ["example.test"],
+        configured_allowlist_categories: ["URL"],
+        configured_allowlist_findings: [],
+        matched_allowlist_domains: ["example.test"],
+        suppressed_count: 1,
+        suppressed_rows: [
+          {
+            module: "url_structure",
+            category: "URL003_NESTED_URL_PARAMETER",
+            hostname: "login.example.test",
+            matched_allowlist_domain: "example.test",
+            suppression_scope: "category",
+            matched_rule: "URL",
+            reason:
+              "Suppressed because the hostname matched an allowlist domain and category prefix URL was enabled."
+          }
+        ]
       }
     }
   }
@@ -312,6 +332,8 @@ test("analyst mode renders URL-specific panels from structured v2 payloads", asy
   await expect(page.getByText("login.example.test")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Redirect path" })).toBeVisible();
   await expect(page.getByText("Cross-domain redirect")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Suppression trace" })).toBeVisible();
+  await expect(page.getByText("Suppressed: 1")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Evidence panel" })).toBeVisible();
   await expect(page.getByText("Suspicious brand token appears in a subdomain")).toBeVisible();
   await expect(page.getByRole("button", { name: "redirect" })).toBeVisible();

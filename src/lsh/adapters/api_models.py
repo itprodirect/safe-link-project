@@ -72,10 +72,31 @@ class RedirectTracePayload(_StrictModel):
     request_error: str | None = None
 
 
+class SuppressionTraceRowPayload(_StrictModel):
+    module: str
+    category: str
+    hostname: str
+    matched_allowlist_domain: str
+    suppression_scope: Literal["category", "finding"]
+    matched_rule: str
+    reason: str
+
+
+class SuppressionTracePayload(_StrictModel):
+    hostname: str | None = None
+    configured_allowlist_domains: list[str]
+    configured_allowlist_categories: list[str]
+    configured_allowlist_findings: list[str]
+    matched_allowlist_domains: list[str]
+    suppressed_count: int = Field(ge=0)
+    suppressed_rows: list[SuppressionTraceRowPayload]
+
+
 class UrlAnalystPayload(_StrictModel):
     domain_anatomy: DomainAnatomyPayload
     evidence_rows: list[AnalystEvidenceRowPayload]
     redirect_trace: RedirectTracePayload | None = None
+    suppression_trace: SuppressionTracePayload | None = None
 
 
 class WrappedItem(_StrictModel):

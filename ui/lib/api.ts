@@ -94,10 +94,31 @@ export interface ApiRedirectTrace {
   request_error: string | null;
 }
 
+export interface ApiSuppressionTraceRow {
+  module: string;
+  category: string;
+  hostname: string;
+  matched_allowlist_domain: string;
+  suppression_scope: "category" | "finding";
+  matched_rule: string;
+  reason: string;
+}
+
+export interface ApiSuppressionTrace {
+  hostname: string | null;
+  configured_allowlist_domains: string[];
+  configured_allowlist_categories: string[];
+  configured_allowlist_findings: string[];
+  matched_allowlist_domains: string[];
+  suppressed_count: number;
+  suppressed_rows: ApiSuppressionTraceRow[];
+}
+
 export interface ApiUrlAnalystPayload {
   domain_anatomy: ApiDomainAnatomy;
   evidence_rows: ApiAnalystEvidenceRow[];
   redirect_trace?: ApiRedirectTrace | null;
+  suppression_trace?: ApiSuppressionTrace | null;
 }
 
 export interface ApiItem {

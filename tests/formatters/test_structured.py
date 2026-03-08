@@ -119,6 +119,43 @@ def test_v2_url_payload_includes_analyst_projection() -> None:
     assert evidence_rows[0]["cumulative_risk_score"] >= evidence_rows[-1]["cumulative_risk_score"]
 
 
+def test_v2_url_payload_includes_suppression_trace() -> None:
+    result = analyze_url(
+        "https://xn--pple-43d.com",
+        metadata={
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+        },
+    )
+    payload = build_single_result_payload(
+        flow="analyze",
+        input_type="url",
+        subject="https://xn--pple-43d.com",
+        result=result,
+        schema_version="2.0",
+    )
+
+    item = payload["item"]
+    assert isinstance(item, dict)
+    analyst = item["analyst"]
+    assert isinstance(analyst, dict)
+    suppression_trace = analyst["suppression_trace"]
+    assert isinstance(suppression_trace, dict)
+    assert suppression_trace["configured_allowlist_domains"] == [
+        "xn--pple-43d.com",
+        "\u0430pple.com",
+    ]
+    assert suppression_trace["configured_allowlist_categories"] == []
+    assert suppression_trace["configured_allowlist_findings"] == ["HMG002_PUNYCODE_VISIBILITY"]
+    assert suppression_trace["suppressed_count"] == 1
+    row = suppression_trace["suppressed_rows"][0]
+    assert row["module"] == "homoglyph"
+    assert row["category"] == "HMG002_PUNYCODE_VISIBILITY"
+    assert row["suppression_scope"] == "finding"
+    assert row["matched_rule"] == "HMG002_PUNYCODE_VISIBILITY"
+
+
 def test_v2_url_payload_builds_redirect_trace_from_findings() -> None:
     redirect_findings = [
         Finding(

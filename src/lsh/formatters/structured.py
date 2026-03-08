@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from lsh.core.context import url_context_for_input
+from lsh.core.allowlist import (
+    allowlist_category_prefixes_for_input,
+    allowlist_domains_for_input,
+    allowlist_findings_for_input,
+)
+from lsh.core.context import get_runtime_context, url_context_for_input
 from lsh.core.models import AnalysisResult
 from lsh.core.url_tools import extract_hostname, registrable_domain, registrable_labels
 from lsh.formatters.family import build_family_view
@@ -160,6 +165,65 @@ def _domain_anatomy_payload(result: AnalysisResult) -> dict[str, object] | None:
     }
 
 
+def _suppression_reason(scope: str, *, matched_rule: str) -> str:
+    if scope == "category":
+        return (
+            "Suppressed because the hostname matched an allowlist domain and "
+            f"category prefix {matched_rule} was enabled."
+        )
+    return (
+        "Suppressed because the hostname matched an allowlist domain and "
+        f"finding token {matched_rule} was enabled."
+    )
+
+
+def _suppression_trace_payload(result: AnalysisResult) -> dict[str, object] | None:
+    runtime_context = get_runtime_context(result.input)
+    url_context = url_context_for_input(result.input)
+    configured_domains = sorted(allowlist_domains_for_input(result.input))
+    if not configured_domains:
+        return None
+
+    configured_categories = sorted(allowlist_category_prefixes_for_input(result.input))
+    configured_findings = sorted(allowlist_findings_for_input(result.input))
+    suppressed_events = [] if runtime_context is None else list(runtime_context.suppressed_findings)
+    suppressed_rows = [
+        {
+            "module": event.module,
+            "category": event.finding_code,
+            "hostname": event.hostname,
+            "matched_allowlist_domain": event.matched_allowlist_domain,
+            "suppression_scope": event.suppression_scope,
+            "matched_rule": event.matched_rule,
+            "reason": _suppression_reason(
+                event.suppression_scope,
+                matched_rule=event.matched_rule,
+            ),
+        }
+        for event in sorted(
+            suppressed_events,
+            key=lambda value: (value.module, value.finding_code, value.matched_rule),
+        )
+    ]
+    matched_domains = sorted(
+        {
+            row["matched_allowlist_domain"]
+            for row in suppressed_rows
+            if row["matched_allowlist_domain"]
+        }
+    )
+
+    return {
+        "hostname": None if url_context is None else url_context.hostname,
+        "configured_allowlist_domains": configured_domains,
+        "configured_allowlist_categories": configured_categories,
+        "configured_allowlist_findings": configured_findings,
+        "matched_allowlist_domains": matched_domains,
+        "suppressed_count": len(suppressed_rows),
+        "suppressed_rows": suppressed_rows,
+    }
+
+
 def _url_analyst_payload(result: AnalysisResult) -> dict[str, object] | None:
     domain_anatomy = _domain_anatomy_payload(result)
     if domain_anatomy is None:
@@ -169,6 +233,7 @@ def _url_analyst_payload(result: AnalysisResult) -> dict[str, object] | None:
         "domain_anatomy": domain_anatomy,
         "evidence_rows": _finding_evidence_payload(result),
         "redirect_trace": _redirect_trace_payload(result),
+        "suppression_trace": _suppression_trace_payload(result),
     }
 
 

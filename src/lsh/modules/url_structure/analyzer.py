@@ -79,6 +79,7 @@ class URLStructureDetector(ModuleInterface):
             if should_suppress_finding_for_allowlist(
                 input,
                 hostname,
+                module_name=self.name,
                 category_prefix="URL",
                 finding_code=code,
             ):
@@ -218,6 +219,7 @@ class URLStructureDetector(ModuleInterface):
             if fragment_finding is not None and not should_suppress_finding_for_allowlist(
                 input,
                 hostname,
+                module_name=self.name,
                 category_prefix="URL",
                 finding_code=fragment_finding.category,
             ):

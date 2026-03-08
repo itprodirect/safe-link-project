@@ -7,6 +7,7 @@ import {
   ApiFinding,
   ApiItem,
   ApiRedirectTrace,
+  ApiSuppressionTrace,
   ApiWrappedResponse,
   asPrettyJson,
   getPrimaryItem,
@@ -555,6 +556,75 @@ function RedirectPathView({ trace }: { trace: ApiRedirectTrace }) {
   );
 }
 
+function SuppressionTracePanel({ trace }: { trace: ApiSuppressionTrace }) {
+  return (
+    <section className="miniCard">
+      <div className="panelHeaderRow">
+        <div>
+          <h3>Suppression trace</h3>
+          <p className="muted compactText">
+            Allowlist rules that removed findings before the final analyst result was shaped.
+          </p>
+        </div>
+        <span className="badge">Suppressed: {trace.suppressed_count}</span>
+      </div>
+      <div className="summaryGrid analystSummaryGrid">
+        <MetricCard label="Hostname" value={metricValue(trace.hostname)} />
+        <MetricCard
+          label="Allowlist domains"
+          value={formatLabelList(trace.configured_allowlist_domains)}
+        />
+        <MetricCard
+          label="Category rules"
+          value={formatLabelList(trace.configured_allowlist_categories)}
+        />
+        <MetricCard
+          label="Finding rules"
+          value={formatLabelList(trace.configured_allowlist_findings)}
+        />
+        <MetricCard
+          label="Matched domains"
+          value={formatLabelList(trace.matched_allowlist_domains)}
+        />
+      </div>
+      {trace.suppressed_rows.length > 0 ? (
+        <div className="resultListCompact">
+          {trace.suppressed_rows.map((row) => (
+            <article
+              className="evidenceCard suppressionCard"
+              key={`${row.module}-${row.category}-${row.matched_rule}`}
+            >
+              <div className="evidenceHeader">
+                <div>
+                  <h4>{row.category}</h4>
+                  <p className="muted compactText">{row.reason}</p>
+                </div>
+                <div className="badgeRow analystBadgeRow">
+                  <span className="badge">{row.module}</span>
+                  <span className="badge">Scope: {row.suppression_scope}</span>
+                  <span className="badge">Rule: {row.matched_rule}</span>
+                </div>
+              </div>
+              <dl className="evidenceList">
+                <div className="evidencePair">
+                  <dt>Hostname</dt>
+                  <dd>{row.hostname}</dd>
+                </div>
+                <div className="evidencePair">
+                  <dt>Matched allowlist domain</dt>
+                  <dd>{row.matched_allowlist_domain}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="muted">No findings were suppressed for the current allowlist inputs.</p>
+      )}
+    </section>
+  );
+}
+
 function EvidencePanel({ rows }: { rows: ApiAnalystEvidenceRow[] }) {
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState<string>("all");
@@ -790,6 +860,7 @@ export function AnalystResult({ response }: { response: ApiWrappedResponse }) {
 
       <DomainAnatomy anatomy={analyst.domain_anatomy} />
       {analyst.redirect_trace ? <RedirectPathView trace={analyst.redirect_trace} /> : null}
+      {analyst.suppression_trace ? <SuppressionTracePanel trace={analyst.suppression_trace} /> : null}
       <EvidencePanel rows={analyst.evidence_rows} />
 
       {items.length > 1 ? (

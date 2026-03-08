@@ -192,10 +192,16 @@ def test_v2_analyze_url_allowlist_finding_targets_single_code() -> None:
         },
     )
     assert response.status_code == 200
-    findings = response.json()["item"]["result"]["findings"]
+    body = response.json()
+    findings = body["item"]["result"]["findings"]
     categories = {finding["category"] for finding in findings}
     assert "HMG002_PUNYCODE_VISIBILITY" not in categories
     assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+    suppression_trace = body["item"]["analyst"]["suppression_trace"]
+    assert suppression_trace["suppressed_count"] == 1
+    assert suppression_trace["suppressed_rows"][0]["category"] == "HMG002_PUNYCODE_VISIBILITY"
+    assert suppression_trace["suppressed_rows"][0]["suppression_scope"] == "finding"
 
 
 def test_v2_analyze_url_allowlist_categories_can_be_lowercase() -> None:

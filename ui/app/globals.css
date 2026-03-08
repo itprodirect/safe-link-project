@@ -591,3 +591,9 @@ pre {
     height: 32px;
   }
 }
+
+.suppressionCard {
+  border-color: rgba(180, 118, 27, 0.25);
+  background: linear-gradient(180deg, rgba(255, 248, 233, 0.9), rgba(255, 255, 255, 0.96));
+}
+
