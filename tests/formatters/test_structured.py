@@ -129,14 +129,18 @@ def test_v2_url_payload_builds_redirect_trace_from_findings() -> None:
             risk_score=15,
             title="URL redirects before reaching a final destination",
             explanation="Redirect chain present.",
-            family_explanation="This link bounces through another address before it finishes loading.",
+            family_explanation=(
+                "This link bounces through another address before it finishes loading."
+            ),
             evidence=[
                 Evidence(label="Redirect Hops", value="2"),
                 Evidence(label="Chain", value="https://start.example -> https://mid.example -> https://final.example"),
                 Evidence(label="Start URL", value="https://start.example"),
                 Evidence(label="Final URL", value="https://final.example"),
             ],
-            recommendations=["Check the final destination before signing in or entering payment details."],
+            recommendations=[
+                "Check the final destination before signing in or entering payment details."
+            ],
         ),
         Finding(
             module="redirect",
@@ -146,11 +150,16 @@ def test_v2_url_payload_builds_redirect_trace_from_findings() -> None:
             risk_score=40,
             title="Redirect chain changes registrable domain",
             explanation="Cross-domain jumps increase destination uncertainty.",
-            family_explanation="This link starts on one site name and ends on a different site name.",
+            family_explanation=(
+                "This link starts on one site name and ends on a different site name."
+            ),
             evidence=[
                 Evidence(label="Redirect Hops", value="2"),
                 Evidence(label="Chain", value="https://start.example -> https://mid.example -> https://final.example"),
-                Evidence(label="Domain Path", value="start.example -> mid.example -> final.example"),
+                Evidence(
+                    label="Domain Path",
+                    value="start.example -> mid.example -> final.example",
+                ),
             ],
             recommendations=["Verify that the final site name is expected and trusted."],
         ),
@@ -272,4 +281,3 @@ def test_qr_payload_can_disable_legacy_keys_for_multi_mode() -> None:
     assert "items" in payload
     assert "image_path" not in payload
     assert "results" not in payload
-
