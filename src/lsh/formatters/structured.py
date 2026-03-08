@@ -281,9 +281,10 @@ def _suppression_trace_payload(result: AnalysisResult) -> dict[str, object] | No
     suppressed_rows = _suppression_rows_payload(result)
     matched_domains = sorted(
         {
-            row["matched_allowlist_domain"]
+            matched_domain
             for row in suppressed_rows
-            if row["matched_allowlist_domain"]
+            for matched_domain in [row.get("matched_allowlist_domain")]
+            if isinstance(matched_domain, str) and matched_domain
         }
     )
 
