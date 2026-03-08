@@ -9,17 +9,102 @@ export interface ApiErrorEnvelope {
   };
 }
 
+export interface ApiEvidence {
+  label: string;
+  value: string;
+}
+
+export interface ApiFinding {
+  module: string;
+  category: string;
+  severity: string;
+  confidence: string;
+  risk_score: number;
+  title: string;
+  explanation: string;
+  family_explanation: string;
+  evidence: ApiEvidence[];
+  recommendations: string[];
+}
+
+export interface ApiAnalysisResult {
+  input: {
+    input_type: string;
+    content: string;
+    metadata: Record<string, unknown>;
+  };
+  findings: ApiFinding[];
+  overall_risk: number;
+  overall_severity: string;
+  summary: string;
+  analyzed_at: string;
+}
+
+export interface ApiFamilyPayload {
+  risk_score: number;
+  severity: string;
+  summary: string;
+  signal_confidence: string | null;
+  reasons: string[];
+  recommendations: string[];
+}
+
+export interface ApiAnalystEvidenceRow {
+  module: string;
+  category: string;
+  severity: string;
+  confidence: string;
+  cumulative_risk_score: number;
+  title: string;
+  explanation: string;
+  family_explanation: string;
+  recommendations: string[];
+  evidence: ApiEvidence[];
+}
+
+export interface ApiDomainAnatomy {
+  submitted_url: string;
+  canonical_url: string;
+  hostname: string | null;
+  canonical_hostname: string | null;
+  registrable_domain: string | null;
+  canonical_registrable_domain: string | null;
+  subdomain_labels: string[];
+  registrable_labels: string[];
+  idna_ascii_hostname: string | null;
+  idna_unicode_hostname: string | null;
+  is_ip_literal: boolean;
+  ip_literal: string | null;
+  obfuscated_ipv4: string | null;
+  obfuscated_ipv4_notes: string[];
+  ipv6_mapped_ipv4: string | null;
+  normalization_notes: string[];
+}
+
+export interface ApiRedirectTrace {
+  hops: string[];
+  start_url: string;
+  final_url: string;
+  registrable_domain_path: string[];
+  hop_count: number;
+  crosses_registrable_domain: boolean;
+  max_hops_reached: boolean;
+  timed_out: boolean;
+  loop_target: string | null;
+  request_error: string | null;
+}
+
+export interface ApiUrlAnalystPayload {
+  domain_anatomy: ApiDomainAnatomy;
+  evidence_rows: ApiAnalystEvidenceRow[];
+  redirect_trace?: ApiRedirectTrace | null;
+}
+
 export interface ApiItem {
   subject: string;
-  result: Record<string, unknown>;
-  family?: {
-    risk_score: number;
-    severity: string;
-    summary: string;
-    signal_confidence: string | null;
-    reasons: string[];
-    recommendations: string[];
-  };
+  result: ApiAnalysisResult;
+  family?: ApiFamilyPayload;
+  analyst?: ApiUrlAnalystPayload;
 }
 
 export type AnalyzeV2InputType = "url" | "email_headers" | "email_file";
@@ -136,4 +221,3 @@ export function getPrimaryItem(response: ApiWrappedResponse): ApiItem | null {
 export function asPrettyJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
-

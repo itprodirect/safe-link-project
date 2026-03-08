@@ -22,10 +22,70 @@ class FamilyPayload(_StrictModel):
     recommendations: list[str]
 
 
+class EvidenceValuePayload(_StrictModel):
+    label: str
+    value: str
+
+
+class AnalystEvidenceRowPayload(_StrictModel):
+    module: str
+    category: str
+    severity: str
+    confidence: str
+    cumulative_risk_score: int
+    title: str
+    explanation: str
+    family_explanation: str
+    recommendations: list[str]
+    evidence: list[EvidenceValuePayload]
+
+
+class DomainAnatomyPayload(_StrictModel):
+    submitted_url: str
+    canonical_url: str
+    hostname: str | None = None
+    canonical_hostname: str | None = None
+    registrable_domain: str | None = None
+    canonical_registrable_domain: str | None = None
+    subdomain_labels: list[str]
+    registrable_labels: list[str]
+    idna_ascii_hostname: str | None = None
+    idna_unicode_hostname: str | None = None
+    is_ip_literal: bool
+    ip_literal: str | None = None
+    obfuscated_ipv4: str | None = None
+    obfuscated_ipv4_notes: list[str]
+    ipv6_mapped_ipv4: str | None = None
+    normalization_notes: list[str]
+
+
+class RedirectTracePayload(_StrictModel):
+    hops: list[str]
+    start_url: str
+    final_url: str
+    registrable_domain_path: list[str]
+    hop_count: int = Field(ge=0)
+    crosses_registrable_domain: bool
+    max_hops_reached: bool
+    timed_out: bool
+    loop_target: str | None = None
+    request_error: str | None = None
+
+
+class UrlAnalystPayload(_StrictModel):
+    domain_anatomy: DomainAnatomyPayload
+    evidence_rows: list[AnalystEvidenceRowPayload]
+    redirect_trace: RedirectTracePayload | None = None
+
+
 class WrappedItem(_StrictModel):
     subject: str
     result: AnalysisResult
     family: FamilyPayload | None = None
+
+
+class WrappedItemV2(WrappedItem):
+    analyst: UrlAnalystPayload | None = None
 
 
 class UrlCheckResponse(_StrictModel):
@@ -52,7 +112,7 @@ class AnalyzeV2Response(_StrictModel):
     mode: Literal["single"]
     input_type: Literal["url", "email_headers", "email_file"]
     item_count: Literal[1]
-    item: WrappedItem
+    item: WrappedItemV2
 
 
 class QRLegacyResultItem(_StrictModel):

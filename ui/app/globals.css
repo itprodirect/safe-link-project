@@ -447,3 +447,147 @@ pre {
   }
 }
 
+
+.panelHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.analystSummaryGrid {
+  margin-top: 10px;
+}
+
+.anatomyNoteGroup {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+
+.anatomyNoteGroup strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.analystBadgeRow {
+  margin-top: 0;
+}
+
+.redirectTimeline {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.redirectHop {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.redirectStep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.evidenceToolbar {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.searchField {
+  margin-bottom: 0;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chipButton {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.chipButtonActive {
+  background: var(--text);
+  color: #ffffff;
+}
+
+.evidenceCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.evidenceHeader {
+  display: grid;
+  gap: 10px;
+}
+
+.evidenceHeader h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.evidenceList {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.evidencePair {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.evidencePair:first-child {
+  border-top: 0;
+}
+
+.evidencePair dt {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.evidencePair dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .redirectHop,
+  .evidencePair {
+    grid-template-columns: 1fr;
+  }
+
+  .redirectStep {
+    width: 32px;
+    height: 32px;
+  }
+}

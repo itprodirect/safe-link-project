@@ -1,356 +1,27 @@
 {
-  "url_v1": {
-    "schema_version": "1.0",
-    "flow": "url_check",
-    "mode": "single",
-    "input_type": "url",
-    "item_count": 1,
-    "item": {
-      "subject": "https://xn--pple-43d.com",
-      "result": {
-        "input": {
-          "input_type": "url",
-          "content": "https://xn--pple-43d.com",
-          "metadata": {
-            "allowlist_domains": [
-              "xn--pple-43d.com"
-            ],
-            "allowlist_categories": [
-              "NONE"
-            ],
-            "allowlist_findings": [
-              "HMG002_PUNYCODE_VISIBILITY"
-            ],
-            "network_enabled": false,
-            "network_max_hops": 5,
-            "network_timeout": 3.0
-          }
-        },
-        "findings": [
-          {
-            "module": "homoglyph",
-            "category": "HMG001_NON_ASCII_HOSTNAME",
-            "severity": "LOW",
-            "confidence": "MEDIUM",
-            "risk_score": 25,
-            "title": "Hostname contains non-ASCII characters",
-            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
-            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+25"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "25"
-              },
-              {
-                "label": "Signal",
-                "value": "At least one hostname character is outside ASCII."
-              }
-            ],
-            "recommendations": [
-              "Pause before opening this link.",
-              "For important accounts, type the known website address yourself."
-            ]
-          },
-          {
-            "module": "homoglyph",
-            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
-            "severity": "MEDIUM",
-            "confidence": "HIGH",
-            "risk_score": 60,
-            "title": "Hostname label mixes writing systems",
-            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
-            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+35"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "60"
-              },
-              {
-                "label": "Label Scripts",
-                "value": "\u0430pple (Cyrillic, Latin)"
-              }
-            ],
-            "recommendations": [
-              "Do not sign in from this link.",
-              "Verify the destination through a trusted app or bookmark."
-            ]
-          },
-          {
-            "module": "homoglyph",
-            "category": "HMG004_CONFUSABLE_CHARACTERS",
-            "severity": "CRITICAL",
-            "confidence": "HIGH",
-            "risk_score": 85,
-            "title": "Confusable hostname characters detected",
-            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
-            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+25"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "85"
-              },
-              {
-                "label": "ASCII Lookalike",
-                "value": "apple.com"
-              },
-              {
-                "label": "Character Mapping",
-                "value": "\u0430 -> a"
-              }
-            ],
-            "recommendations": [
-              "Treat this as suspicious until confirmed by a trusted source.",
-              "Use official bookmarks for banking, shopping, and email logins."
-            ]
-          }
-        ],
-        "overall_risk": 94,
-        "overall_severity": "CRITICAL",
-        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself.",
-        "analyzed_at": "<TIMESTAMP>"
-      },
-      "family": {
-        "risk_score": 94,
-        "severity": "CRITICAL",
-        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself.",
-        "signal_confidence": "HIGH",
-        "reasons": [
-          "This web address uses unusual letters. Some scam links use this trick to look real.",
-          "This link mixes different alphabets in one word to look like a known website.",
-          "Some letters in this link can be mistaken for normal English letters or numbers."
-        ],
-        "recommendations": [
-          "Pause before opening this link.",
-          "For important accounts, type the known website address yourself.",
-          "Do not sign in from this link."
-        ]
-      }
-    }
-  },
-  "url_v2": {
-    "schema_version": "2.0",
-    "flow": "analyze",
-    "mode": "single",
-    "input_type": "url",
-    "item_count": 1,
-    "item": {
-      "subject": "https://xn--pple-43d.com",
-      "result": {
-        "input": {
-          "input_type": "url",
-          "content": "https://xn--pple-43d.com",
-          "metadata": {
-            "allowlist_domains": [
-              "xn--pple-43d.com"
-            ],
-            "allowlist_categories": [
-              "NONE"
-            ],
-            "allowlist_findings": [
-              "HMG002_PUNYCODE_VISIBILITY"
-            ],
-            "network_enabled": false,
-            "network_max_hops": 5,
-            "network_timeout": 3.0
-          }
-        },
-        "findings": [
-          {
-            "module": "homoglyph",
-            "category": "HMG001_NON_ASCII_HOSTNAME",
-            "severity": "LOW",
-            "confidence": "MEDIUM",
-            "risk_score": 25,
-            "title": "Hostname contains non-ASCII characters",
-            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
-            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+25"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "25"
-              },
-              {
-                "label": "Signal",
-                "value": "At least one hostname character is outside ASCII."
-              }
-            ],
-            "recommendations": [
-              "Pause before opening this link.",
-              "For important accounts, type the known website address yourself."
-            ]
-          },
-          {
-            "module": "homoglyph",
-            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
-            "severity": "MEDIUM",
-            "confidence": "HIGH",
-            "risk_score": 60,
-            "title": "Hostname label mixes writing systems",
-            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
-            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+35"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "60"
-              },
-              {
-                "label": "Label Scripts",
-                "value": "\u0430pple (Cyrillic, Latin)"
-              }
-            ],
-            "recommendations": [
-              "Do not sign in from this link.",
-              "Verify the destination through a trusted app or bookmark."
-            ]
-          },
-          {
-            "module": "homoglyph",
-            "category": "HMG004_CONFUSABLE_CHARACTERS",
-            "severity": "CRITICAL",
-            "confidence": "HIGH",
-            "risk_score": 85,
-            "title": "Confusable hostname characters detected",
-            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
-            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
-            "evidence": [
-              {
-                "label": "Hostname",
-                "value": "\u0430pple.com"
-              },
-              {
-                "label": "Hostname (idna)",
-                "value": "xn--pple-43d.com"
-              },
-              {
-                "label": "Risk Delta",
-                "value": "+25"
-              },
-              {
-                "label": "Cumulative Risk",
-                "value": "85"
-              },
-              {
-                "label": "ASCII Lookalike",
-                "value": "apple.com"
-              },
-              {
-                "label": "Character Mapping",
-                "value": "\u0430 -> a"
-              }
-            ],
-            "recommendations": [
-              "Treat this as suspicious until confirmed by a trusted source.",
-              "Use official bookmarks for banking, shopping, and email logins."
-            ]
-          }
-        ],
-        "overall_risk": 94,
-        "overall_severity": "CRITICAL",
-        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself.",
-        "analyzed_at": "<TIMESTAMP>"
-      },
-      "family": {
-        "risk_score": 94,
-        "severity": "CRITICAL",
-        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself.",
-        "signal_confidence": "HIGH",
-        "reasons": [
-          "This web address uses unusual letters. Some scam links use this trick to look real.",
-          "This link mixes different alphabets in one word to look like a known website.",
-          "Some letters in this link can be mistaken for normal English letters or numbers."
-        ],
-        "recommendations": [
-          "Pause before opening this link.",
-          "For important accounts, type the known website address yourself.",
-          "Do not sign in from this link."
-        ]
-      }
-    }
-  },
   "email_v1": {
-    "schema_version": "1.0",
     "flow": "email_check",
-    "mode": "single",
     "input_type": "email_headers",
-    "item_count": 1,
     "item": {
-      "subject": "sample",
+      "family": {
+        "reasons": [
+          "The sender server did not pass a key email authenticity check (SPF)."
+        ],
+        "recommendations": [
+          "Avoid opening links or attachments until sender identity is verified.",
+          "Confirm the message through a separate trusted channel."
+        ],
+        "risk_score": 30,
+        "severity": "LOW",
+        "signal_confidence": "HIGH",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action."
+      },
       "result": {
-        "input": {
-          "input_type": "email_headers",
-          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
-          "metadata": {}
-        },
+        "analyzed_at": "<TIMESTAMP>",
         "findings": [
           {
-            "module": "email_auth",
             "category": "EML101_SPF_FAIL",
-            "severity": "LOW",
             "confidence": "HIGH",
-            "risk_score": 30,
-            "title": "SPF authentication failed",
-            "explanation": "SPF status indicates a failure or DNS/authentication error.",
-            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
             "evidence": [
               {
                 "label": "SPF Status",
@@ -381,56 +52,56 @@
                 "value": "30"
               }
             ],
+            "explanation": "SPF status indicates a failure or DNS/authentication error.",
+            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "module": "email_auth",
             "recommendations": [
               "Avoid opening links or attachments until sender identity is verified.",
               "Confirm the message through a separate trusted channel."
-            ]
+            ],
+            "risk_score": 30,
+            "severity": "LOW",
+            "title": "SPF authentication failed"
           }
         ],
+        "input": {
+          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
+          "input_type": "email_headers",
+          "metadata": {}
+        },
         "overall_risk": 30,
         "overall_severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "analyzed_at": "<TIMESTAMP>"
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action."
       },
-      "family": {
-        "risk_score": 30,
-        "severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "signal_confidence": "HIGH",
-        "reasons": [
-          "The sender server did not pass a key email authenticity check (SPF)."
-        ],
-        "recommendations": [
-          "Avoid opening links or attachments until sender identity is verified.",
-          "Confirm the message through a separate trusted channel."
-        ]
-      }
-    }
+      "subject": "sample"
+    },
+    "item_count": 1,
+    "mode": "single",
+    "schema_version": "1.0"
   },
   "email_v2": {
-    "schema_version": "2.0",
     "flow": "analyze",
-    "mode": "single",
     "input_type": "email_headers",
-    "item_count": 1,
     "item": {
-      "subject": "sample",
+      "family": {
+        "reasons": [
+          "The sender server did not pass a key email authenticity check (SPF)."
+        ],
+        "recommendations": [
+          "Avoid opening links or attachments until sender identity is verified.",
+          "Confirm the message through a separate trusted channel."
+        ],
+        "risk_score": 30,
+        "severity": "LOW",
+        "signal_confidence": "HIGH",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action."
+      },
       "result": {
-        "input": {
-          "input_type": "email_headers",
-          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
-          "metadata": {}
-        },
+        "analyzed_at": "<TIMESTAMP>",
         "findings": [
           {
-            "module": "email_auth",
             "category": "EML101_SPF_FAIL",
-            "severity": "LOW",
             "confidence": "HIGH",
-            "risk_score": 30,
-            "title": "SPF authentication failed",
-            "explanation": "SPF status indicates a failure or DNS/authentication error.",
-            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
             "evidence": [
               {
                 "label": "SPF Status",
@@ -461,30 +132,497 @@
                 "value": "30"
               }
             ],
+            "explanation": "SPF status indicates a failure or DNS/authentication error.",
+            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "module": "email_auth",
             "recommendations": [
               "Avoid opening links or attachments until sender identity is verified.",
               "Confirm the message through a separate trusted channel."
-            ]
+            ],
+            "risk_score": 30,
+            "severity": "LOW",
+            "title": "SPF authentication failed"
           }
         ],
+        "input": {
+          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
+          "input_type": "email_headers",
+          "metadata": {}
+        },
         "overall_risk": 30,
         "overall_severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "analyzed_at": "<TIMESTAMP>"
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action."
       },
+      "subject": "sample"
+    },
+    "item_count": 1,
+    "mode": "single",
+    "schema_version": "2.0"
+  },
+  "url_v1": {
+    "flow": "url_check",
+    "input_type": "url",
+    "item": {
       "family": {
-        "risk_score": 30,
-        "severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "signal_confidence": "HIGH",
         "reasons": [
-          "The sender server did not pass a key email authenticity check (SPF)."
+          "This web address uses unusual letters. Some scam links use this trick to look real.",
+          "This link mixes different alphabets in one word to look like a known website.",
+          "Some letters in this link can be mistaken for normal English letters or numbers."
         ],
         "recommendations": [
-          "Avoid opening links or attachments until sender identity is verified.",
-          "Confirm the message through a separate trusted channel."
-        ]
-      }
-    }
+          "Pause before opening this link.",
+          "For important accounts, type the known website address yourself.",
+          "Do not sign in from this link."
+        ],
+        "risk_score": 94,
+        "severity": "CRITICAL",
+        "signal_confidence": "HIGH",
+        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself."
+      },
+      "result": {
+        "analyzed_at": "<TIMESTAMP>",
+        "findings": [
+          {
+            "category": "HMG001_NON_ASCII_HOSTNAME",
+            "confidence": "MEDIUM",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "25"
+              },
+              {
+                "label": "Signal",
+                "value": "At least one hostname character is outside ASCII."
+              }
+            ],
+            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
+            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Pause before opening this link.",
+              "For important accounts, type the known website address yourself."
+            ],
+            "risk_score": 25,
+            "severity": "LOW",
+            "title": "Hostname contains non-ASCII characters"
+          },
+          {
+            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
+            "confidence": "HIGH",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+35"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "60"
+              },
+              {
+                "label": "Label Scripts",
+                "value": "\u0430pple (Cyrillic, Latin)"
+              }
+            ],
+            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
+            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Do not sign in from this link.",
+              "Verify the destination through a trusted app or bookmark."
+            ],
+            "risk_score": 60,
+            "severity": "MEDIUM",
+            "title": "Hostname label mixes writing systems"
+          },
+          {
+            "category": "HMG004_CONFUSABLE_CHARACTERS",
+            "confidence": "HIGH",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "85"
+              },
+              {
+                "label": "ASCII Lookalike",
+                "value": "apple.com"
+              },
+              {
+                "label": "Character Mapping",
+                "value": "\u0430 -> a"
+              }
+            ],
+            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
+            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Treat this as suspicious until confirmed by a trusted source.",
+              "Use official bookmarks for banking, shopping, and email logins."
+            ],
+            "risk_score": 85,
+            "severity": "CRITICAL",
+            "title": "Confusable hostname characters detected"
+          }
+        ],
+        "input": {
+          "content": "https://xn--pple-43d.com",
+          "input_type": "url",
+          "metadata": {
+            "allowlist_categories": [
+              "NONE"
+            ],
+            "allowlist_domains": [
+              "xn--pple-43d.com"
+            ],
+            "allowlist_findings": [
+              "HMG002_PUNYCODE_VISIBILITY"
+            ],
+            "network_enabled": false,
+            "network_max_hops": 5,
+            "network_timeout": 3.0
+          }
+        },
+        "overall_risk": 94,
+        "overall_severity": "CRITICAL",
+        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself."
+      },
+      "subject": "https://xn--pple-43d.com"
+    },
+    "item_count": 1,
+    "mode": "single",
+    "schema_version": "1.0"
+  },
+  "url_v2": {
+    "flow": "analyze",
+    "input_type": "url",
+    "item": {
+      "analyst": {
+        "domain_anatomy": {
+          "canonical_hostname": "xn--pple-43d.com",
+          "canonical_registrable_domain": "xn--pple-43d.com",
+          "canonical_url": "https://xn--pple-43d.com/",
+          "hostname": "xn--pple-43d.com",
+          "idna_ascii_hostname": "xn--pple-43d.com",
+          "idna_unicode_hostname": "\u0430pple.com",
+          "ip_literal": null,
+          "ipv6_mapped_ipv4": null,
+          "is_ip_literal": false,
+          "normalization_notes": [],
+          "obfuscated_ipv4": null,
+          "obfuscated_ipv4_notes": [],
+          "registrable_domain": "xn--pple-43d.com",
+          "registrable_labels": [
+            "xn--pple-43d",
+            "com"
+          ],
+          "subdomain_labels": [],
+          "submitted_url": "https://xn--pple-43d.com"
+        },
+        "evidence_rows": [
+          {
+            "category": "HMG004_CONFUSABLE_CHARACTERS",
+            "confidence": "HIGH",
+            "cumulative_risk_score": 85,
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "85"
+              },
+              {
+                "label": "ASCII Lookalike",
+                "value": "apple.com"
+              },
+              {
+                "label": "Character Mapping",
+                "value": "\u0430 -> a"
+              }
+            ],
+            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
+            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Treat this as suspicious until confirmed by a trusted source.",
+              "Use official bookmarks for banking, shopping, and email logins."
+            ],
+            "severity": "CRITICAL",
+            "title": "Confusable hostname characters detected"
+          },
+          {
+            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
+            "confidence": "HIGH",
+            "cumulative_risk_score": 60,
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+35"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "60"
+              },
+              {
+                "label": "Label Scripts",
+                "value": "\u0430pple (Cyrillic, Latin)"
+              }
+            ],
+            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
+            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Do not sign in from this link.",
+              "Verify the destination through a trusted app or bookmark."
+            ],
+            "severity": "MEDIUM",
+            "title": "Hostname label mixes writing systems"
+          },
+          {
+            "category": "HMG001_NON_ASCII_HOSTNAME",
+            "confidence": "MEDIUM",
+            "cumulative_risk_score": 25,
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "25"
+              },
+              {
+                "label": "Signal",
+                "value": "At least one hostname character is outside ASCII."
+              }
+            ],
+            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
+            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Pause before opening this link.",
+              "For important accounts, type the known website address yourself."
+            ],
+            "severity": "LOW",
+            "title": "Hostname contains non-ASCII characters"
+          }
+        ],
+        "redirect_trace": null
+      },
+      "family": {
+        "reasons": [
+          "This web address uses unusual letters. Some scam links use this trick to look real.",
+          "This link mixes different alphabets in one word to look like a known website.",
+          "Some letters in this link can be mistaken for normal English letters or numbers."
+        ],
+        "recommendations": [
+          "Pause before opening this link.",
+          "For important accounts, type the known website address yourself.",
+          "Do not sign in from this link."
+        ],
+        "risk_score": 94,
+        "severity": "CRITICAL",
+        "signal_confidence": "HIGH",
+        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself."
+      },
+      "result": {
+        "analyzed_at": "<TIMESTAMP>",
+        "findings": [
+          {
+            "category": "HMG001_NON_ASCII_HOSTNAME",
+            "confidence": "MEDIUM",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "25"
+              },
+              {
+                "label": "Signal",
+                "value": "At least one hostname character is outside ASCII."
+              }
+            ],
+            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
+            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Pause before opening this link.",
+              "For important accounts, type the known website address yourself."
+            ],
+            "risk_score": 25,
+            "severity": "LOW",
+            "title": "Hostname contains non-ASCII characters"
+          },
+          {
+            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
+            "confidence": "HIGH",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+35"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "60"
+              },
+              {
+                "label": "Label Scripts",
+                "value": "\u0430pple (Cyrillic, Latin)"
+              }
+            ],
+            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
+            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Do not sign in from this link.",
+              "Verify the destination through a trusted app or bookmark."
+            ],
+            "risk_score": 60,
+            "severity": "MEDIUM",
+            "title": "Hostname label mixes writing systems"
+          },
+          {
+            "category": "HMG004_CONFUSABLE_CHARACTERS",
+            "confidence": "HIGH",
+            "evidence": [
+              {
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "85"
+              },
+              {
+                "label": "ASCII Lookalike",
+                "value": "apple.com"
+              },
+              {
+                "label": "Character Mapping",
+                "value": "\u0430 -> a"
+              }
+            ],
+            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
+            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
+            "module": "homoglyph",
+            "recommendations": [
+              "Treat this as suspicious until confirmed by a trusted source.",
+              "Use official bookmarks for banking, shopping, and email logins."
+            ],
+            "risk_score": 85,
+            "severity": "CRITICAL",
+            "title": "Confusable hostname characters detected"
+          }
+        ],
+        "input": {
+          "content": "https://xn--pple-43d.com",
+          "input_type": "url",
+          "metadata": {
+            "allowlist_categories": [
+              "NONE"
+            ],
+            "allowlist_domains": [
+              "xn--pple-43d.com"
+            ],
+            "allowlist_findings": [
+              "HMG002_PUNYCODE_VISIBILITY"
+            ],
+            "network_enabled": false,
+            "network_max_hops": 5,
+            "network_timeout": 3.0
+          }
+        },
+        "overall_risk": 94,
+        "overall_severity": "CRITICAL",
+        "summary": "High-risk warning: this link may impersonate a trusted site. Do not open it, and visit the real site by typing the address yourself."
+      },
+      "subject": "https://xn--pple-43d.com"
+    },
+    "item_count": 1,
+    "mode": "single",
+    "schema_version": "2.0"
   }
 }
