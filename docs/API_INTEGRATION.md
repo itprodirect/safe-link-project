@@ -4,7 +4,7 @@
 
 Current stable contract: `1.0` (`/api/v1/*`)  
 Current draft contract: `2.0` (`/api/v2/analyze`)  
-Updated: `2026-03-05` (E1-I4 parity governance update)
+Updated: `2026-03-08` (E4 analyst-mode compare-ready contract update)
 
 This document is the integration source of truth for backend consumers (Next.js UI, scripts, and service callers).
 
@@ -141,6 +141,7 @@ For `POST /api/v2/analyze`:
 - `schema_version` is `"2.0"`
 - `flow` is `"analyze"`
 - `mode` is currently `"single"`
+- URL responses add `item.analyst`; email responses do not require it
 
 ### Single-mode shape
 
@@ -174,6 +175,61 @@ For `POST /api/v2/analyze`:
   ]
 }
 ```
+
+### URL analyst shape (`/api/v2/analyze`, `input_type="url"`)
+
+`item.analyst` is additive and currently URL-only.
+
+```json
+{
+  "domain_anatomy": { "... normalized URL and host breakdown ..." },
+  "evidence_rows": [
+    {
+      "module": "homoglyph",
+      "category": "HMG004_CONFUSABLE_CHARACTERS",
+      "finding_key": "homoglyph:HMG004_CONFUSABLE_CHARACTERS",
+      "compare_key": "homoglyph:HMG004_CONFUSABLE_CHARACTERS",
+      "sort_index": 0,
+      "risk_delta": 25,
+      "evidence": [
+        { "key": "hostname", "label": "Hostname", "value": "?pple.com" }
+      ],
+      "evidence_map": {
+        "hostname": "?pple.com"
+      }
+    }
+  ],
+  "redirect_trace": { "... optional redirect timeline ..." },
+  "suppression_trace": {
+    "configured_allowlist_domains": ["trusted.example"],
+    "suppressed_rows": [
+      {
+        "finding_key": "homoglyph:HMG002_PUNYCODE_VISIBILITY",
+        "compare_key": "homoglyph:HMG002_PUNYCODE_VISIBILITY:finding:hmg002_punycode_visibility",
+        "sort_index": 0,
+        "suppression_scope": "finding"
+      }
+    ]
+  }
+}
+```
+
+Compare-ready additions:
+
+- `finding_key`: stable semantic key for one finding family (`<module>:<category>`)
+- `compare_key`: deterministic row key for future history/delta matching; may diverge from `finding_key` if duplicate finding families ever appear
+- `sort_index`: deterministic presentation order after analyst sorting
+- `risk_delta`: parsed integer delta when evidence includes `Risk Delta`
+- `evidence[].key`: normalized machine key for one evidence label (`character_mapping`, `redirect_hops`, etc.)
+- `evidence_map`: flattened keyed evidence object for cheap compare/diff logic
+- `suppression_trace.suppressed_rows[*].compare_key`: stable suppression-row key for future policy/history diff views
+
+Current analyst sections:
+
+- `domain_anatomy`: submitted/canonical URL, host labels, IDNA forms, IP-literal markers, normalization notes
+- `evidence_rows`: UI-ready finding rows sorted by highest cumulative risk first
+- `redirect_trace`: optional redirect chain projection built from redirect findings
+- `suppression_trace`: allowlist inputs plus structured suppressed-finding rows
 
 ### QR compatibility keys
 

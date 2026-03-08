@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import re
+
 from lsh.core.allowlist import (
     allowlist_category_prefixes_for_input,
     allowlist_domains_for_input,
     allowlist_findings_for_input,
 )
 from lsh.core.context import get_runtime_context, url_context_for_input
-from lsh.core.models import AnalysisResult
+from lsh.core.models import AnalysisResult, Finding
 from lsh.core.url_tools import extract_hostname, registrable_domain, registrable_labels
 from lsh.formatters.family import build_family_view
+
+_COMPARE_TOKEN_PATTERN = re.compile(r"[^a-z0-9]+")
+_RISK_DELTA_PATTERN = re.compile(r"^[+]?(?P<value>-?\d+)$")
 
 
 def _analysis_result_payload(result: AnalysisResult) -> dict[str, object]:
@@ -29,28 +34,78 @@ def _family_payload(result: AnalysisResult) -> dict[str, object]:
     }
 
 
+def _compare_token(value: str) -> str:
+    token = _COMPARE_TOKEN_PATTERN.sub("_", value.strip().lower()).strip("_")
+    return token or "value"
+
+
+def _stable_compare_key(base_key: str, seen_keys: dict[str, int]) -> str:
+    occurrence = seen_keys.get(base_key, 0) + 1
+    seen_keys[base_key] = occurrence
+    if occurrence == 1:
+        return base_key
+    return f"{base_key}#{occurrence}"
+
+
+def _evidence_payload(finding: Finding) -> tuple[list[dict[str, str]], dict[str, str]]:
+    evidence_entries = []
+    evidence_map: dict[str, str] = {}
+    seen_keys: dict[str, int] = {}
+
+    for evidence in finding.evidence:
+        base_key = _compare_token(evidence.label)
+        compare_key = _stable_compare_key(base_key, seen_keys)
+        evidence_entries.append(
+            {"key": compare_key, "label": evidence.label, "value": evidence.value}
+        )
+        evidence_map[compare_key] = evidence.value
+
+    return evidence_entries, evidence_map
+
+
+def _risk_delta_value(evidence_map: dict[str, str]) -> int | None:
+    raw_value = evidence_map.get("risk_delta")
+    if raw_value is None:
+        return None
+    match = _RISK_DELTA_PATTERN.match(raw_value.strip())
+    if match is None:
+        return None
+    return int(match.group("value"))
+
+
 def _finding_evidence_payload(result: AnalysisResult) -> list[dict[str, object]]:
     findings = sorted(
         result.findings,
         key=lambda finding: (-finding.risk_score, finding.module, finding.category, finding.title),
     )
-    return [
-        {
-            "module": finding.module,
-            "category": finding.category,
-            "severity": finding.severity.value,
-            "confidence": finding.confidence.value,
-            "cumulative_risk_score": finding.risk_score,
-            "title": finding.title,
-            "explanation": finding.explanation,
-            "family_explanation": finding.family_explanation,
-            "recommendations": list(finding.recommendations),
-            "evidence": [
-                {"label": evidence.label, "value": evidence.value} for evidence in finding.evidence
-            ],
-        }
-        for finding in findings
-    ]
+    rows: list[dict[str, object]] = []
+    seen_keys: dict[str, int] = {}
+
+    for index, finding in enumerate(findings):
+        finding_key = f"{finding.module}:{finding.category}"
+        compare_key = _stable_compare_key(finding_key, seen_keys)
+        evidence_entries, evidence_map = _evidence_payload(finding)
+        rows.append(
+            {
+                "module": finding.module,
+                "category": finding.category,
+                "finding_key": finding_key,
+                "compare_key": compare_key,
+                "sort_index": index,
+                "severity": finding.severity.value,
+                "confidence": finding.confidence.value,
+                "cumulative_risk_score": finding.risk_score,
+                "risk_delta": _risk_delta_value(evidence_map),
+                "title": finding.title,
+                "explanation": finding.explanation,
+                "family_explanation": finding.family_explanation,
+                "recommendations": list(finding.recommendations),
+                "evidence": evidence_entries,
+                "evidence_map": evidence_map,
+            }
+        )
+
+    return rows
 
 
 def _split_chain(value: str | None) -> list[str]:
@@ -177,8 +232,45 @@ def _suppression_reason(scope: str, *, matched_rule: str) -> str:
     )
 
 
-def _suppression_trace_payload(result: AnalysisResult) -> dict[str, object] | None:
+def _suppression_rows_payload(result: AnalysisResult) -> list[dict[str, object]]:
     runtime_context = get_runtime_context(result.input)
+    suppressed_events = [] if runtime_context is None else list(runtime_context.suppressed_findings)
+    seen_keys: dict[str, int] = {}
+    rows: list[dict[str, object]] = []
+
+    for index, event in enumerate(
+        sorted(
+            suppressed_events,
+            key=lambda value: (value.module, value.finding_code, value.matched_rule),
+        )
+    ):
+        finding_key = f"{event.module}:{event.finding_code}"
+        base_compare_key = (
+            f"{finding_key}:{event.suppression_scope}:{_compare_token(event.matched_rule)}"
+        )
+        compare_key = _stable_compare_key(base_compare_key, seen_keys)
+        rows.append(
+            {
+                "module": event.module,
+                "category": event.finding_code,
+                "finding_key": finding_key,
+                "compare_key": compare_key,
+                "sort_index": index,
+                "hostname": event.hostname,
+                "matched_allowlist_domain": event.matched_allowlist_domain,
+                "suppression_scope": event.suppression_scope,
+                "matched_rule": event.matched_rule,
+                "reason": _suppression_reason(
+                    event.suppression_scope,
+                    matched_rule=event.matched_rule,
+                ),
+            }
+        )
+
+    return rows
+
+
+def _suppression_trace_payload(result: AnalysisResult) -> dict[str, object] | None:
     url_context = url_context_for_input(result.input)
     configured_domains = sorted(allowlist_domains_for_input(result.input))
     if not configured_domains:
@@ -186,25 +278,7 @@ def _suppression_trace_payload(result: AnalysisResult) -> dict[str, object] | No
 
     configured_categories = sorted(allowlist_category_prefixes_for_input(result.input))
     configured_findings = sorted(allowlist_findings_for_input(result.input))
-    suppressed_events = [] if runtime_context is None else list(runtime_context.suppressed_findings)
-    suppressed_rows = [
-        {
-            "module": event.module,
-            "category": event.finding_code,
-            "hostname": event.hostname,
-            "matched_allowlist_domain": event.matched_allowlist_domain,
-            "suppression_scope": event.suppression_scope,
-            "matched_rule": event.matched_rule,
-            "reason": _suppression_reason(
-                event.suppression_scope,
-                matched_rule=event.matched_rule,
-            ),
-        }
-        for event in sorted(
-            suppressed_events,
-            key=lambda value: (value.module, value.finding_code, value.matched_rule),
-        )
-    ]
+    suppressed_rows = _suppression_rows_payload(result)
     matched_domains = sorted(
         {
             row["matched_allowlist_domain"]

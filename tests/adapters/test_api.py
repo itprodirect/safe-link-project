@@ -198,9 +198,19 @@ def test_v2_analyze_url_allowlist_finding_targets_single_code() -> None:
     assert "HMG002_PUNYCODE_VISIBILITY" not in categories
     assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
 
+    evidence_rows = body["item"]["analyst"]["evidence_rows"]
+    assert evidence_rows
+    assert all("compare_key" in row for row in evidence_rows)
+    assert all("finding_key" in row for row in evidence_rows)
+    assert all("evidence_map" in row for row in evidence_rows)
+    assert all("key" in entry for row in evidence_rows for entry in row["evidence"])
+
     suppression_trace = body["item"]["analyst"]["suppression_trace"]
     assert suppression_trace["suppressed_count"] == 1
     assert suppression_trace["suppressed_rows"][0]["category"] == "HMG002_PUNYCODE_VISIBILITY"
+    assert suppression_trace["suppressed_rows"][0]["compare_key"] == (
+        "homoglyph:HMG002_PUNYCODE_VISIBILITY:finding:hmg002_punycode_visibility"
+    )
     assert suppression_trace["suppressed_rows"][0]["suppression_scope"] == "finding"
 
 

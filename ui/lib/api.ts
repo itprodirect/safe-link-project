@@ -10,6 +10,7 @@ export interface ApiErrorEnvelope {
 }
 
 export interface ApiEvidence {
+  key: string;
   label: string;
   value: string;
 }
@@ -52,14 +53,19 @@ export interface ApiFamilyPayload {
 export interface ApiAnalystEvidenceRow {
   module: string;
   category: string;
+  finding_key: string;
+  compare_key: string;
+  sort_index: number;
   severity: string;
   confidence: string;
   cumulative_risk_score: number;
+  risk_delta: number | null;
   title: string;
   explanation: string;
   family_explanation: string;
   recommendations: string[];
   evidence: ApiEvidence[];
+  evidence_map: Record<string, string>;
 }
 
 export interface ApiDomainAnatomy {
@@ -97,6 +103,9 @@ export interface ApiRedirectTrace {
 export interface ApiSuppressionTraceRow {
   module: string;
   category: string;
+  finding_key: string;
+  compare_key: string;
+  sort_index: number;
   hostname: string;
   matched_allowlist_domain: string;
   suppression_scope: "category" | "finding";

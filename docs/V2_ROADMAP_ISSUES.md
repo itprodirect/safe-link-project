@@ -1,6 +1,6 @@
 # V2 Roadmap and Issue Tracker
 
-Updated: 2026-03-05
+Updated: 2026-03-08
 Owner: Product + Engineering
 Status: Execution tracker
 
@@ -47,7 +47,7 @@ Epic issues are now created and linked below.
 | E1 | [#3](https://github.com/itprodirect/safe-link-project/issues/3) | V2 Foundation: composition root, service layer, `/api/v2` skeleton | V2-Phase-1 | Open |
 | E2 | [#4](https://github.com/itprodirect/safe-link-project/issues/4) | V2 Unified Analyze Workspace (URL/Email/QR) | V2-Phase-2 | Open |
 | E3 | [#5](https://github.com/itprodirect/safe-link-project/issues/5) | V2 Verdict-First UX and action flow | V2-Phase-3 | Open |
-| E4 | [#6](https://github.com/itprodirect/safe-link-project/issues/6) | V2 Analyst Mode and deep evidence surfaces | V2-Phase-4 | Open |
+| E4 | [#6](https://github.com/itprodirect/safe-link-project/issues/6) | V2 Analyst Mode and deep evidence surfaces | V2-Phase-4 | Ready to close |
 | E5 | [#7](https://github.com/itprodirect/safe-link-project/issues/7) | V2 Policy Packs and suppression management | V2-Phase-5 | Open |
 | E6 | [#8](https://github.com/itprodirect/safe-link-project/issues/8) | V2 History, compare, and feedback loop | V2-Phase-6 | Open |
 | E7 | [#9](https://github.com/itprodirect/safe-link-project/issues/9) | V2 Hardening: security, reliability, observability | V2-Phase-7 | Open |
@@ -124,16 +124,17 @@ Epic issues are now created and linked below.
 
 ### Child issues
 
-- [ ] `E4-I1` Implement `EvidencePanel` with filtering.
-- [ ] `E4-I2` Implement `DomainAnatomy` component.
-- [ ] `E4-I3` Implement `RedirectPathView`.
-- [ ] `E4-I4` Add suppression trace visibility.
-- [ ] `E4-I5` Add compare-ready evidence model in API output.
+- [x] `E4-I1` Implement `EvidencePanel` with filtering.
+- [x] `E4-I2` Implement `DomainAnatomy` component.
+- [x] `E4-I3` Implement `RedirectPathView`.
+- [x] `E4-I4` Add suppression trace visibility.
+- [x] `E4-I5` Add compare-ready evidence model in API output.
 
 ### Definition of done
 
 1. Analysts can inspect full evidence and derivation path.
-2. Quick mode remains uncluttered.
+2. Suppressed findings and compare-stable evidence keys are available in the v2 URL contract.
+3. Quick mode remains uncluttered.
 
 ## E5: Policy Packs
 

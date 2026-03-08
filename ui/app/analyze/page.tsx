@@ -78,7 +78,7 @@ const TAB_HELP: Record<AnalyzeTab, string> = {
 
 const MODE_COPY: Record<WorkspaceMode, string> = {
   quick: "Quick mode keeps the first verdict, top reasons, and next actions in view.",
-  analyst: "Analyst mode keeps contract details, domain anatomy, redirect path, and evidence in view."
+  analyst: "Analyst mode keeps contract details, domain anatomy, redirect path, suppression trace, and evidence in view."
 };
 
 function readStoredMode(): WorkspaceMode {

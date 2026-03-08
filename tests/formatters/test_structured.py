@@ -117,6 +117,13 @@ def test_v2_url_payload_includes_analyst_projection() -> None:
     assert isinstance(evidence_rows, list)
     assert evidence_rows
     assert evidence_rows[0]["cumulative_risk_score"] >= evidence_rows[-1]["cumulative_risk_score"]
+    first_row = evidence_rows[0]
+    assert first_row["finding_key"] == "homoglyph:HMG004_CONFUSABLE_CHARACTERS"
+    assert first_row["compare_key"] == "homoglyph:HMG004_CONFUSABLE_CHARACTERS"
+    assert first_row["sort_index"] == 0
+    assert first_row["risk_delta"] == 25
+    assert first_row["evidence"][0]["key"] == "hostname"
+    assert first_row["evidence_map"]["hostname"] == "\u0430pple.com"
 
 
 def test_v2_url_payload_includes_suppression_trace() -> None:
@@ -152,6 +159,11 @@ def test_v2_url_payload_includes_suppression_trace() -> None:
     row = suppression_trace["suppressed_rows"][0]
     assert row["module"] == "homoglyph"
     assert row["category"] == "HMG002_PUNYCODE_VISIBILITY"
+    assert row["finding_key"] == "homoglyph:HMG002_PUNYCODE_VISIBILITY"
+    assert row["compare_key"] == (
+        "homoglyph:HMG002_PUNYCODE_VISIBILITY:finding:hmg002_punycode_visibility"
+    )
+    assert row["sort_index"] == 0
     assert row["suppression_scope"] == "finding"
     assert row["matched_rule"] == "HMG002_PUNYCODE_VISIBILITY"
 

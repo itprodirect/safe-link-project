@@ -4,14 +4,14 @@
 
 Modules detect. Core orchestrates and scores. Application services compose. Adapters render.
 
-## Implemented Architecture (2026-03-05)
+## Implemented Architecture (2026-03-08)
 
 ### Core Layer (`src/lsh/core/`)
 
 - `models.py`: canonical data contracts (`AnalysisInput`, `Finding`, `AnalysisResult`, `NormalizedURL`)
-- `allowlist.py`: normalized domain allowlist helpers with category-prefix scoping
+- `allowlist.py`: normalized domain allowlist helpers with category-prefix scoping plus runtime suppression-trace capture
 - `url_tools.py`: shared URL parsing and registrable-domain extraction (offline heuristics)
-- `context.py`: shared runtime context/preprocessing cache for one analysis run (URL-focused today)
+- `context.py`: shared runtime context/preprocessing cache for one analysis run (URL-focused today), including analyst-only suppression events
 - `normalizer.py`: deterministic URL normalization helpers (percent-decoding, obfuscated IP parsing, localhost aliases, IPv6-mapped IPv4, path normalization)
 - `scorer.py`: severity mapping, finding normalization, and compound aggregate risk calculation (`risk_score`-based; confidence is informational)
 - `orchestrator.py`: module execution + aggregate result construction + confidence-aware summary text
@@ -46,7 +46,7 @@ Modules detect. Core orchestrates and scores. Application services compose. Adap
 ### Formatter Layer (`src/lsh/formatters/`)
 
 - `family.py`: reusable family-facing formatter used by the CLI and ready for future web/API adapters
-- `structured.py`: stable single/multi-item response wrappers shared by CLI JSON and API responses
+- `structured.py`: stable single/multi-item response wrappers shared by CLI JSON and API responses, including v2 URL analyst projections and compare-ready evidence keys
 
 ## Runtime Flow
 
@@ -55,14 +55,15 @@ Modules detect. Core orchestrates and scores. Application services compose. Adap
 3. Application service routes to shared orchestrators (URL or email).
 4. Orchestrator builds runtime context once (for URL inputs), runs modules, then normalizes and aggregates findings.
 5. Orchestrator returns `AnalysisResult` with summary wording influenced by overall risk and confidence.
-6. Adapters render technical/family/structured outputs using shared formatter helpers.
+6. Structured formatters can project analyst-only URL views (domain anatomy, redirects, suppression rows) from runtime context without changing the base `AnalysisResult` model.
+7. Adapters render technical/family/structured outputs using shared formatter helpers.
 
 ## Current URL Processing Reality (Important)
 
 - Orchestrator now builds one shared URL runtime context per analysis, including normalized/canonical URL data.
 - `net_ip`, `url_structure`, `homoglyph`, and `ascii_lookalike` use the shared context.
 - Orchestrator now routes modules by declared `supported_input_types` before execution.
-- The runtime context is internal and attached to `AnalysisInput` as non-serialized runtime state, so JSON output contracts stay stable.
+- The runtime context is internal and attached to `AnalysisInput` as non-serialized runtime state, so base JSON contracts stay stable while v2 analyst projections can still expose selected derived fields.
 
 ## Runtime URL Context (Current Shape)
 
@@ -78,11 +79,13 @@ Contains (URL inputs):
 - raw + canonical hostname and registrable-domain values
 - IDNA ASCII/Unicode hostname forms (best effort)
 - parsed literal-IP / obfuscated-IP / IPv6-mapped-IPv4 helpers
+- structured suppression-trace events recorded when allowlist rules suppress URL findings
 
 Why non-serialized runtime state:
 
 - keeps the public `AnalysisResult` / CLI JSON contract unchanged
 - avoids leaking internal preprocessing details into downstream consumers before the API schema is intentionally designed
+- allows additive v2 analyst projections (including suppression traces) without a breaking model change
 - allows gradual detector migration without a breaking model change
 
 ## Contract Requirements

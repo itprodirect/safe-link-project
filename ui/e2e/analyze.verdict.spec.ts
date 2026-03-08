@@ -50,7 +50,8 @@ const SAFE_URL_RESPONSE = {
         normalization_notes: []
       },
       evidence_rows: [],
-      redirect_trace: null
+      redirect_trace: null,
+      suppression_trace: null
     }
   }
 } as const;
@@ -142,36 +143,58 @@ const ANALYST_URL_RESPONSE = {
         {
           module: "url_structure",
           category: "URL002_DECEPTIVE_SUBDOMAIN",
+          finding_key: "url_structure:URL002_DECEPTIVE_SUBDOMAIN",
+          compare_key: "url_structure:URL002_DECEPTIVE_SUBDOMAIN",
+          sort_index: 0,
           severity: "HIGH",
           confidence: "HIGH",
           cumulative_risk_score: 65,
+          risk_delta: null,
           title: "Suspicious brand token appears in a subdomain",
           explanation: "A known brand token appears outside the registrable domain.",
           family_explanation: "This link places a familiar site name in the wrong part of the address.",
           recommendations: ["Verify the destination through a trusted bookmark."],
           evidence: [
-            { label: "Hostname", value: "login.example.test" },
-            { label: "Registrable Domain", value: "example.test" }
-          ]
+            { key: "hostname", label: "Hostname", value: "login.example.test" },
+            { key: "registrable_domain", label: "Registrable Domain", value: "example.test" }
+          ],
+          evidence_map: {
+            hostname: "login.example.test",
+            registrable_domain: "example.test"
+          }
         },
         {
           module: "redirect",
           category: "RED002_CROSS_DOMAIN_REDIRECT",
+          finding_key: "redirect:RED002_CROSS_DOMAIN_REDIRECT",
+          compare_key: "redirect:RED002_CROSS_DOMAIN_REDIRECT",
+          sort_index: 1,
           severity: "INFO",
           confidence: "MEDIUM",
           cumulative_risk_score: 40,
+          risk_delta: null,
           title: "Redirect chain changes registrable domain",
           explanation: "The redirect chain moves across different registrable domains.",
           family_explanation: "This link starts on one site name and ends on a different site name.",
           recommendations: ["Verify that the final site name is expected and trusted."],
           evidence: [
             {
+              key: "chain",
               label: "Chain",
               value:
                 "https://login.example.test -> https://redirect.gateway.test -> https://final.example.org"
             },
-            { label: "Domain Path", value: "example.test -> gateway.test -> example.org" }
-          ]
+            {
+              key: "domain_path",
+              label: "Domain Path",
+              value: "example.test -> gateway.test -> example.org"
+            }
+          ],
+          evidence_map: {
+            chain:
+              "https://login.example.test -> https://redirect.gateway.test -> https://final.example.org",
+            domain_path: "example.test -> gateway.test -> example.org"
+          }
         }
       ],
       redirect_trace: {
@@ -201,6 +224,9 @@ const ANALYST_URL_RESPONSE = {
           {
             module: "url_structure",
             category: "URL003_NESTED_URL_PARAMETER",
+            finding_key: "url_structure:URL003_NESTED_URL_PARAMETER",
+            compare_key: "url_structure:URL003_NESTED_URL_PARAMETER:category:url",
+            sort_index: 0,
             hostname: "login.example.test",
             matched_allowlist_domain: "example.test",
             suppression_scope: "category",

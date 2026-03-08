@@ -23,6 +23,7 @@ class FamilyPayload(_StrictModel):
 
 
 class EvidenceValuePayload(_StrictModel):
+    key: str
     label: str
     value: str
 
@@ -30,14 +31,19 @@ class EvidenceValuePayload(_StrictModel):
 class AnalystEvidenceRowPayload(_StrictModel):
     module: str
     category: str
+    finding_key: str
+    compare_key: str
+    sort_index: int = Field(ge=0)
     severity: str
     confidence: str
     cumulative_risk_score: int
+    risk_delta: int | None = None
     title: str
     explanation: str
     family_explanation: str
     recommendations: list[str]
     evidence: list[EvidenceValuePayload]
+    evidence_map: dict[str, str]
 
 
 class DomainAnatomyPayload(_StrictModel):
@@ -75,6 +81,9 @@ class RedirectTracePayload(_StrictModel):
 class SuppressionTraceRowPayload(_StrictModel):
     module: str
     category: str
+    finding_key: str
+    compare_key: str
+    sort_index: int = Field(ge=0)
     hostname: str
     matched_allowlist_domain: str
     suppression_scope: Literal["category", "finding"]

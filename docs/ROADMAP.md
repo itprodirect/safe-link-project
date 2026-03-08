@@ -141,6 +141,20 @@ Shift Quick mode from a generic summary layout to a decision-first surface.
 4. [x] Complete plain-language copy pass for all major outcomes across flows.
 5. [x] Add broader UX/usability validation beyond the current smoke path.
 
+## Session 14: URL Analyst Mode Deep Evidence Slice (2026-03-08)
+
+### Goal
+
+Finish the first shippable URL Analyst Mode surface and make the v2 contract ready for future compare/history work.
+
+### Work Items
+
+1. [x] Add URL-only `item.analyst` payloads on `/api/v2/analyze` with domain anatomy and evidence rows.
+2. [x] Add redirect-path projection for network-enabled URL findings.
+3. [x] Add suppression-trace visibility from allowlist decisions through API and UI.
+4. [x] Add compare-ready evidence keys (`finding_key`, `compare_key`, keyed evidence maps) for future delta views.
+5. [x] Sync API/docs/roadmap state with the delivered analyst-mode contract.
+
 ## Risks and Mitigations
 
 - Risk: network-dependent logic increases flaky tests
