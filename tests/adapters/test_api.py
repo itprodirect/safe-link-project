@@ -81,6 +81,84 @@ def test_cors_preflight_respects_env_override(monkeypatch: pytest.MonkeyPatch) -
     assert denied.headers.get("access-control-allow-origin") is None
 
 
+def test_cors_response_headers_on_actual_post() -> None:
+    """Verify CORS headers appear on real POST responses, not just preflight."""
+    client = _client()
+    response = client.post(
+        "/api/v1/url/check",
+        json={"url": "https://example.com"},
+        headers={"Origin": "http://127.0.0.1:3000"},
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://127.0.0.1:3000"
+
+
+def test_cors_response_headers_on_v2_analyze_post() -> None:
+    """Verify CORS headers on the v2 analyze endpoint real response."""
+    client = _client()
+    response = client.post(
+        "/api/v2/analyze",
+        json={"input_type": "url", "content": "https://example.com"},
+        headers={"Origin": "http://127.0.0.1:3000"},
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://127.0.0.1:3000"
+
+
+def test_cors_hosted_origin_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Simulate hosted deployment with custom domain origins."""
+    monkeypatch.setenv(
+        "LSH_API_CORS_ALLOW_ORIGINS",
+        "https://app.linksafety.example.com,https://staging.linksafety.example.com",
+    )
+    client = TestClient(api.create_app())
+
+    # Preflight from allowed production origin
+    preflight_resp = client.options(
+        "/api/v2/analyze",
+        headers=_preflight_headers("https://app.linksafety.example.com"),
+    )
+    assert preflight_resp.status_code in {200, 204}
+    assert (
+        preflight_resp.headers.get("access-control-allow-origin")
+        == "https://app.linksafety.example.com"
+    )
+
+    # Actual POST from allowed staging origin
+    post_resp = client.post(
+        "/api/v1/url/check",
+        json={"url": "https://example.com"},
+        headers={"Origin": "https://staging.linksafety.example.com"},
+    )
+    assert post_resp.status_code == 200
+    assert (
+        post_resp.headers.get("access-control-allow-origin")
+        == "https://staging.linksafety.example.com"
+    )
+
+    # Denied origin gets no CORS header
+    denied_resp = client.post(
+        "/api/v1/url/check",
+        json={"url": "https://example.com"},
+        headers={"Origin": "https://evil.example.com"},
+    )
+    assert denied_resp.status_code == 200
+    assert denied_resp.headers.get("access-control-allow-origin") is None
+
+
+def test_cors_preflight_all_endpoint_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify CORS preflight works for all API endpoint paths."""
+    monkeypatch.setenv("LSH_API_CORS_ALLOW_ORIGINS", "https://ui.example.com")
+    client = TestClient(api.create_app())
+
+    for path in ["/api/v1/url/check", "/api/v1/email/check", "/api/v2/analyze"]:
+        resp = client.options(path, headers=_preflight_headers("https://ui.example.com"))
+        assert resp.status_code in {200, 204}, f"preflight failed for {path}"
+        assert (
+            resp.headers.get("access-control-allow-origin") == "https://ui.example.com"
+        ), f"CORS origin missing for {path}"
+
+
 def test_url_check_endpoint_returns_wrapped_shape() -> None:
     client = _client()
 
