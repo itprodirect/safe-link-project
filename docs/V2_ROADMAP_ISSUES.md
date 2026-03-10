@@ -1,6 +1,6 @@
 # V2 Roadmap and Issue Tracker
 
-Updated: 2026-03-08
+Updated: 2026-03-09
 Owner: Product + Engineering
 Status: Execution tracker
 
@@ -44,10 +44,10 @@ Epic issues are now created and linked below.
 
 | Epic ID | GitHub Issue | Title | Milestone | Status |
 |---|---|---|---|---|
-| E1 | [#3](https://github.com/itprodirect/safe-link-project/issues/3) | V2 Foundation: composition root, service layer, `/api/v2` skeleton | V2-Phase-1 | Open |
-| E2 | [#4](https://github.com/itprodirect/safe-link-project/issues/4) | V2 Unified Analyze Workspace (URL/Email/QR) | V2-Phase-2 | Open |
-| E3 | [#5](https://github.com/itprodirect/safe-link-project/issues/5) | V2 Verdict-First UX and action flow | V2-Phase-3 | Open |
-| E4 | [#6](https://github.com/itprodirect/safe-link-project/issues/6) | V2 Analyst Mode and deep evidence surfaces | V2-Phase-4 | Ready to close |
+| E1 | [#3](https://github.com/itprodirect/safe-link-project/issues/3) | V2 Foundation: composition root, service layer, `/api/v2` skeleton | V2-Phase-1 | Closed |
+| E2 | [#4](https://github.com/itprodirect/safe-link-project/issues/4) | V2 Unified Analyze Workspace (URL/Email/QR) | V2-Phase-2 | Closed |
+| E3 | [#5](https://github.com/itprodirect/safe-link-project/issues/5) | V2 Verdict-First UX and action flow | V2-Phase-3 | Closed |
+| E4 | [#6](https://github.com/itprodirect/safe-link-project/issues/6) | V2 Analyst Mode and deep evidence surfaces | V2-Phase-4 | Closed |
 | E5 | [#7](https://github.com/itprodirect/safe-link-project/issues/7) | V2 Policy Packs and suppression management | V2-Phase-5 | Open |
 | E6 | [#8](https://github.com/itprodirect/safe-link-project/issues/8) | V2 History, compare, and feedback loop | V2-Phase-6 | Open |
 | E7 | [#9](https://github.com/itprodirect/safe-link-project/issues/9) | V2 Hardening: security, reliability, observability | V2-Phase-7 | Open |

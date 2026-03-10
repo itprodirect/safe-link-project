@@ -4,7 +4,7 @@
 
 Modules detect. Core orchestrates and scores. Application services compose. Adapters render.
 
-## Implemented Architecture (2026-03-08)
+## Implemented Architecture (2026-03-09)
 
 ### Core Layer (`src/lsh/core/`)
 

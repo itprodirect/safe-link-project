@@ -52,7 +52,7 @@ cd ui && npm run lint && npm run build  # frontend
 
 **Detection modules**: `homoglyph` (Unicode/IDN), `ascii_lookalike` (leet/brand), `url_structure` (deceptive patterns), `net_ip` (IP literals), `redirect` (opt-in redirect chains), `email_auth` (SPF/DKIM/DMARC), `qr_decode` (QR payload extraction).
 
-## Current Status (2026-03-08)
+## Current Status (2026-03-09)
 
 Implemented now:
 

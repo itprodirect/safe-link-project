@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-03-06)
+## Current Progress (2026-03-09)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -23,11 +23,16 @@
   - [x] Stable structured wrappers for single/multi result payloads (including QR `--all`)
   - [x] Minimal FastAPI adapter over existing orchestrator + formatter layers
   - [x] API contract + Next.js integration notes
+- [x] Session 8: Deployment + UI validation (Docker baseline, Next.js scaffold, contract smoke tests)
+- [x] Session 9: Deployment hardening (QR upload contract, CI hardening, CORS middleware, API contract enforcement)
 - [x] Session 10: False-positive control completion
   - [x] per-finding allowlist scope (`--allowlist-finding`, API `allowlist_findings`)
   - [x] category `NONE` override for finding-only suppression on allowlisted domains
   - [x] broadened brand/suffix calibration fixtures and operator confidence guidance
+- [x] Session 11: V2 execution kickoff (GitHub epics, shared service layer, v2 endpoint, E1 closeout)
+- [x] Session 12: Unified `/analyze` workspace (URL/Email/QR tabs, typed v2 client, mode toggle, e2e smoke)
 - [x] Session 13: Verdict-first UX slice (`VerdictCard`, `WhyPanel`, action-level mapping)
+- [x] Session 14: URL Analyst Mode deep evidence (analyst payloads, suppression traces, compare-ready keys)
 
 ## Session 8: Deployment + UI Validation
 
