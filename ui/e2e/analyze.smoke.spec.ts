@@ -29,7 +29,9 @@ test("runs the URL flow and exposes analyst details", async ({ page }) => {
   await page.getByRole("tab", { name: "Analyst" }).click();
   await expect(page.getByRole("heading", { name: "Contract summary" })).toBeVisible();
   await expect(page.getByText("Primary subject")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Raw JSON" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Domain anatomy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Evidence panel" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Raw JSON" })).toHaveCount(0);
 });
 
 test("runs the email-header flow from the same workspace", async ({ page }) => {
@@ -46,6 +48,10 @@ test("runs the email-header flow from the same workspace", async ({ page }) => {
   await expect(page.getByText("Recommended next step")).toBeVisible();
   await expect(page.getByText("Subject: smoke-email")).toBeVisible();
   await expect(page.getByText("Flow: analyze")).toBeVisible();
+
+  await page.getByRole("tab", { name: "Analyst" }).click();
+  await expect(page.getByRole("heading", { name: "Raw JSON" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Domain anatomy" })).toHaveCount(0);
 });
 
 test("surfaces structured QR upload errors from the unified page", async ({ page }) => {
@@ -59,4 +65,3 @@ test("surfaces structured QR upload errors from the unified page", async ({ page
   ).toBeVisible();
   await expect(page.getByText("Latest endpoint: POST /api/v1/qr/scan")).toBeVisible();
 });
-

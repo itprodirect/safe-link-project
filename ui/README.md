@@ -6,6 +6,7 @@ It is still intentionally lean, but `/analyze` now works as a real shared worksp
 - URL and email submit through `POST /api/v2/analyze`
 - QR remains available from the same page through `POST /api/v1/qr/scan` until v2 adds file input support
 - Quick and Analyst display modes share the same request surface
+- URL Analyst mode now renders contract summary, domain anatomy, redirect path, suppression trace, and evidence filtering from structured v2 payloads
 
 For the full product UX direction, see:
 
@@ -77,5 +78,6 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.
 The Playwright smoke covers the unified `/analyze` page for:
 
 - URL submission through `POST /api/v2/analyze`
+- analyst-mode URL rendering of domain anatomy, redirect, suppression, and evidence panels from structured payloads
 - email-header submission through `POST /api/v2/analyze`
 - QR upload through `POST /api/v1/qr/scan`, asserting the structured error path when the decoded fixture is not a URL or QR decoding is unavailable

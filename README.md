@@ -20,7 +20,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 # opens http://localhost:3000
 
 # Tests
-pytest -q                              # backend (226 tests)
+pytest -q                              # backend (230 tests)
 ruff check src tests                   # lint
 mypy src                               # type check
 cd ui && npm run lint && npm run build  # frontend
@@ -36,7 +36,7 @@ cd ui && npm run lint && npm run build  # frontend
 | `POST /api/v1/url/check` | Analyze a URL for homoglyph/IDN tricks, ASCII lookalikes, suspicious structure, IP literals, and optional redirect-chain following |
 | `POST /api/v1/email/check` | Analyze raw email authentication headers (SPF/DKIM/DMARC) |
 | `POST /api/v1/qr/scan` | Upload a QR image, decode payloads, extract URLs, run URL analysis |
-| `POST /api/v2/analyze` | Unified endpoint for URL, email_headers, and email_file input types with family-friendly summaries |
+| `POST /api/v2/analyze` | Unified endpoint for URL, email_headers, and email_file input types with family summaries plus URL analyst projections |
 
 **CLI** (`lsh`): `check`, `email-check`, `qr-scan` commands with `--json`, `--family`, `--network`, and allowlist flags.
 
@@ -48,11 +48,11 @@ cd ui && npm run lint && npm run build  # frontend
 | `/url` | Standalone URL check |
 | `/email` | Standalone email header check |
 | `/qr` | Standalone QR scan |
-| `/analyze` | Unified workspace with URL/Email/QR tabs, Quick mode (verdict-first UX) and Analyst mode (raw contract details) |
+| `/analyze` | Unified workspace with URL/Email/QR tabs, Quick mode (verdict-first UX) and URL Analyst mode (domain anatomy, redirect path, suppression trace, evidence panel) |
 
 **Detection modules**: `homoglyph` (Unicode/IDN), `ascii_lookalike` (leet/brand), `url_structure` (deceptive patterns), `net_ip` (IP literals), `redirect` (opt-in redirect chains), `email_auth` (SPF/DKIM/DMARC), `qr_decode` (QR payload extraction).
 
-## Current Status (2026-03-07)
+## Current Status (2026-03-08)
 
 Implemented now:
 
@@ -66,7 +66,7 @@ Implemented now:
 - Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency; QR upload route degrades gracefully when `python-multipart` is missing)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - Reusable structured response wrappers in `src/lsh/formatters/structured.py`
-- Draft unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity and edge-case test coverage
+- Draft unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity, analyst projections, and edge-case test coverage
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
@@ -85,6 +85,9 @@ Implemented now:
 - JSON output for machine-readable integrations (`--json`)
 - Adversarial regression coverage (obfuscated IPs, fragment deception, encoding evasion)
 - Aggregate scoring policy clarified: overall risk is `risk_score`-based; `confidence` is for trust-calibration messaging
+- Unified `/analyze` workspace with extracted Quick/Analyst result panels in `ui/app/analyze/`
+- URL-first analyst payloads on `/api/v2/analyze` with domain anatomy, redirect path, suppression trace, and evidence rows
+- Compare-ready analyst evidence/suppression keys (`finding_key`, `compare_key`, keyed evidence maps) for future history/delta views
 - V2 execution artifacts and tracking:
   - blueprint: `docs/V2_BLUEPRINT.md`
   - roadmap/issues tracker: `docs/V2_ROADMAP_ISSUES.md`
@@ -93,8 +96,8 @@ Implemented now:
 In progress and next:
 
 - Hosted validation closure for Session 9 deployment checklist
-- Full v2 `/analyze` workspace UX (Quick/Analyst mode split)
-- v2 policy management, history/compare flows, and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
+- Email/QR analyst-mode parity beyond the current URL-first slice
+- v2 policy management, persisted history/compare flows, and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
 
 ## Quick Start
 

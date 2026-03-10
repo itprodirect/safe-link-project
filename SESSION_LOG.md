@@ -2310,3 +2310,60 @@ Development session history. Each entry documents what was done, why, and what's
 - `npm run typecheck` passed in `ui/`.
 - `npm run smoke:e2e` passed locally against a live API + built UI (`3 passed`).
 - Local verification used a temporary API instance on `127.0.0.1:8010` and the built UI on `127.0.0.1:3000`.
+
+---
+
+## 2026-03-08 - Session 14A: URL analyst compare-ready contract and docs sync
+
+**Agent:** Codex
+
+**Branch:** `codex/analyst-mode-url-slice`
+
+**Goal:** Finish the URL-first Analyst Mode slice by adding compare-stable analyst evidence keys, then sync the API/roadmap/docs state before closing the branch for review.
+
+**Module(s) Touched:** structured formatter, API response models, UI API types, mocked verdict fixtures, README/API/architecture/roadmap docs, session log
+
+**Changes:**
+- Added compare-ready fields to URL analyst evidence rows in `src/lsh/formatters/structured.py`:
+  - `finding_key`
+  - `compare_key`
+  - `sort_index`
+  - `risk_delta`
+  - keyed `evidence[]`
+  - flattened `evidence_map`
+- Added compare-ready fields to suppression trace rows:
+  - `finding_key`
+  - `compare_key`
+  - `sort_index`
+- Extended typed API contracts in `src/lsh/adapters/api_models.py` and `ui/lib/api.ts` to match the new analyst payload shape.
+- Updated structured/api tests and regenerated the v1/v2 snapshot fixture so the additive v2 URL changes stay governed.
+- Synced docs to the current implementation:
+  - `README.md`
+  - `ui/README.md`
+  - `docs/API_INTEGRATION.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/ROADMAP.md`
+  - `docs/V2_ROADMAP_ISSUES.md`
+  - `docs/issues/V2_E4_ANALYST_MODE.md`
+- Updated mocked analyst-mode browser fixtures to reflect the richer v2 analyst contract.
+
+**Decisions:**
+- Kept compare metadata additive inside the existing URL analyst payload instead of introducing a second compare-specific API shape. This preserves current UI behavior while giving future history/delta views stable join keys.
+- Used normalized machine keys for evidence labels (`evidence[].key` + `evidence_map`) so future compare logic does not need to diff on presentation-only labels.
+- Left email and QR analyst output on the current fallback path; compare-ready shaping in this session remains intentionally URL-first.
+
+**Open Questions:**
+- When history/compare is implemented, should we persist the full analyst payload per run, or recompute analyst projections from stored `AnalysisResult` + policy metadata at read time?
+
+**Next:**
+- Watch PR #13 after the compare-ready/doc-sync commit lands.
+- If checks are green, merge or hand off for review and close the session.
+- Start E5 policy-pack persistence after this PR is settled.
+
+**Tests / Verification:**
+- `ruff check src tests`
+- `python -m pytest -q`
+- `npm run lint`
+- `npm run build`
+- `gh pr checks 13 --watch`
+

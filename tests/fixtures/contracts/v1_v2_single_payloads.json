@@ -1,4 +1,164 @@
 {
+  "email_v1": {
+    "schema_version": "1.0",
+    "flow": "email_check",
+    "mode": "single",
+    "input_type": "email_headers",
+    "item_count": 1,
+    "item": {
+      "subject": "sample",
+      "result": {
+        "input": {
+          "input_type": "email_headers",
+          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
+          "metadata": {}
+        },
+        "findings": [
+          {
+            "module": "email_auth",
+            "category": "EML101_SPF_FAIL",
+            "severity": "LOW",
+            "confidence": "HIGH",
+            "risk_score": 30,
+            "title": "SPF authentication failed",
+            "explanation": "SPF status indicates a failure or DNS/authentication error.",
+            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "evidence": [
+              {
+                "label": "SPF Status",
+                "value": "fail"
+              },
+              {
+                "label": "DKIM Status",
+                "value": "pass"
+              },
+              {
+                "label": "DMARC Status",
+                "value": "pass"
+              },
+              {
+                "label": "Authentication-Results Count",
+                "value": "1"
+              },
+              {
+                "label": "Received-SPF Count",
+                "value": "0"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+30"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "30"
+              }
+            ],
+            "recommendations": [
+              "Avoid opening links or attachments until sender identity is verified.",
+              "Confirm the message through a separate trusted channel."
+            ]
+          }
+        ],
+        "overall_risk": 30,
+        "overall_severity": "LOW",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
+        "analyzed_at": "<TIMESTAMP>"
+      },
+      "family": {
+        "risk_score": 30,
+        "severity": "LOW",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
+        "signal_confidence": "HIGH",
+        "reasons": [
+          "The sender server did not pass a key email authenticity check (SPF)."
+        ],
+        "recommendations": [
+          "Avoid opening links or attachments until sender identity is verified.",
+          "Confirm the message through a separate trusted channel."
+        ]
+      }
+    }
+  },
+  "email_v2": {
+    "schema_version": "2.0",
+    "flow": "analyze",
+    "mode": "single",
+    "input_type": "email_headers",
+    "item_count": 1,
+    "item": {
+      "subject": "sample",
+      "result": {
+        "input": {
+          "input_type": "email_headers",
+          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
+          "metadata": {}
+        },
+        "findings": [
+          {
+            "module": "email_auth",
+            "category": "EML101_SPF_FAIL",
+            "severity": "LOW",
+            "confidence": "HIGH",
+            "risk_score": 30,
+            "title": "SPF authentication failed",
+            "explanation": "SPF status indicates a failure or DNS/authentication error.",
+            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "evidence": [
+              {
+                "label": "SPF Status",
+                "value": "fail"
+              },
+              {
+                "label": "DKIM Status",
+                "value": "pass"
+              },
+              {
+                "label": "DMARC Status",
+                "value": "pass"
+              },
+              {
+                "label": "Authentication-Results Count",
+                "value": "1"
+              },
+              {
+                "label": "Received-SPF Count",
+                "value": "0"
+              },
+              {
+                "label": "Risk Delta",
+                "value": "+30"
+              },
+              {
+                "label": "Cumulative Risk",
+                "value": "30"
+              }
+            ],
+            "recommendations": [
+              "Avoid opening links or attachments until sender identity is verified.",
+              "Confirm the message through a separate trusted channel."
+            ]
+          }
+        ],
+        "overall_risk": 30,
+        "overall_severity": "LOW",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
+        "analyzed_at": "<TIMESTAMP>"
+      },
+      "family": {
+        "risk_score": 30,
+        "severity": "LOW",
+        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
+        "signal_confidence": "HIGH",
+        "reasons": [
+          "The sender server did not pass a key email authenticity check (SPF)."
+        ],
+        "recommendations": [
+          "Avoid opening links or attachments until sender identity is verified.",
+          "Confirm the message through a separate trusted channel."
+        ]
+      }
+    }
+  },
   "url_v1": {
     "schema_version": "1.0",
     "flow": "url_check",
@@ -324,166 +484,223 @@
           "For important accounts, type the known website address yourself.",
           "Do not sign in from this link."
         ]
-      }
-    }
-  },
-  "email_v1": {
-    "schema_version": "1.0",
-    "flow": "email_check",
-    "mode": "single",
-    "input_type": "email_headers",
-    "item_count": 1,
-    "item": {
-      "subject": "sample",
-      "result": {
-        "input": {
-          "input_type": "email_headers",
-          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
-          "metadata": {}
+      },
+      "analyst": {
+        "domain_anatomy": {
+          "submitted_url": "https://xn--pple-43d.com",
+          "canonical_url": "https://xn--pple-43d.com/",
+          "hostname": "xn--pple-43d.com",
+          "canonical_hostname": "xn--pple-43d.com",
+          "registrable_domain": "xn--pple-43d.com",
+          "canonical_registrable_domain": "xn--pple-43d.com",
+          "subdomain_labels": [],
+          "registrable_labels": [
+            "xn--pple-43d",
+            "com"
+          ],
+          "idna_ascii_hostname": "xn--pple-43d.com",
+          "idna_unicode_hostname": "\u0430pple.com",
+          "is_ip_literal": false,
+          "ip_literal": null,
+          "obfuscated_ipv4": null,
+          "obfuscated_ipv4_notes": [],
+          "ipv6_mapped_ipv4": null,
+          "normalization_notes": []
         },
-        "findings": [
+        "evidence_rows": [
           {
-            "module": "email_auth",
-            "category": "EML101_SPF_FAIL",
-            "severity": "LOW",
+            "module": "homoglyph",
+            "category": "HMG004_CONFUSABLE_CHARACTERS",
+            "finding_key": "homoglyph:HMG004_CONFUSABLE_CHARACTERS",
+            "compare_key": "homoglyph:HMG004_CONFUSABLE_CHARACTERS",
+            "sort_index": 0,
+            "severity": "CRITICAL",
             "confidence": "HIGH",
-            "risk_score": 30,
-            "title": "SPF authentication failed",
-            "explanation": "SPF status indicates a failure or DNS/authentication error.",
-            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "cumulative_risk_score": 85,
+            "risk_delta": 25,
+            "title": "Confusable hostname characters detected",
+            "explanation": "Unicode confusable analysis found hostname characters that can be read as different ASCII letters/numbers.",
+            "family_explanation": "Some letters in this link can be mistaken for normal English letters or numbers.",
+            "recommendations": [
+              "Treat this as suspicious until confirmed by a trusted source.",
+              "Use official bookmarks for banking, shopping, and email logins."
+            ],
             "evidence": [
               {
-                "label": "SPF Status",
-                "value": "fail"
+                "key": "hostname",
+                "label": "Hostname",
+                "value": "\u0430pple.com"
               },
               {
-                "label": "DKIM Status",
-                "value": "pass"
+                "key": "hostname_idna",
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
               },
               {
-                "label": "DMARC Status",
-                "value": "pass"
-              },
-              {
-                "label": "Authentication-Results Count",
-                "value": "1"
-              },
-              {
-                "label": "Received-SPF Count",
-                "value": "0"
-              },
-              {
+                "key": "risk_delta",
                 "label": "Risk Delta",
-                "value": "+30"
+                "value": "+25"
               },
               {
+                "key": "cumulative_risk",
                 "label": "Cumulative Risk",
-                "value": "30"
+                "value": "85"
+              },
+              {
+                "key": "ascii_lookalike",
+                "label": "ASCII Lookalike",
+                "value": "apple.com"
+              },
+              {
+                "key": "character_mapping",
+                "label": "Character Mapping",
+                "value": "\u0430 -> a"
               }
             ],
-            "recommendations": [
-              "Avoid opening links or attachments until sender identity is verified.",
-              "Confirm the message through a separate trusted channel."
-            ]
-          }
-        ],
-        "overall_risk": 30,
-        "overall_severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "analyzed_at": "<TIMESTAMP>"
-      },
-      "family": {
-        "risk_score": 30,
-        "severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "signal_confidence": "HIGH",
-        "reasons": [
-          "The sender server did not pass a key email authenticity check (SPF)."
-        ],
-        "recommendations": [
-          "Avoid opening links or attachments until sender identity is verified.",
-          "Confirm the message through a separate trusted channel."
-        ]
-      }
-    }
-  },
-  "email_v2": {
-    "schema_version": "2.0",
-    "flow": "analyze",
-    "mode": "single",
-    "input_type": "email_headers",
-    "item_count": 1,
-    "item": {
-      "subject": "sample",
-      "result": {
-        "input": {
-          "input_type": "email_headers",
-          "content": "Authentication-Results: mx; spf=fail; dkim=pass; dmarc=pass",
-          "metadata": {}
-        },
-        "findings": [
+            "evidence_map": {
+              "hostname": "\u0430pple.com",
+              "hostname_idna": "xn--pple-43d.com",
+              "risk_delta": "+25",
+              "cumulative_risk": "85",
+              "ascii_lookalike": "apple.com",
+              "character_mapping": "\u0430 -> a"
+            }
+          },
           {
-            "module": "email_auth",
-            "category": "EML101_SPF_FAIL",
-            "severity": "LOW",
+            "module": "homoglyph",
+            "category": "HMG003_MIXED_SCRIPT_HOSTNAME",
+            "finding_key": "homoglyph:HMG003_MIXED_SCRIPT_HOSTNAME",
+            "compare_key": "homoglyph:HMG003_MIXED_SCRIPT_HOSTNAME",
+            "sort_index": 1,
+            "severity": "MEDIUM",
             "confidence": "HIGH",
-            "risk_score": 30,
-            "title": "SPF authentication failed",
-            "explanation": "SPF status indicates a failure or DNS/authentication error.",
-            "family_explanation": "The sender server did not pass a key email authenticity check (SPF).",
+            "cumulative_risk_score": 60,
+            "risk_delta": 35,
+            "title": "Hostname label mixes writing systems",
+            "explanation": "One or more domain labels mix scripts (for example Latin + Cyrillic), which is a common homoglyph phishing pattern.",
+            "family_explanation": "This link mixes different alphabets in one word to look like a known website.",
+            "recommendations": [
+              "Do not sign in from this link.",
+              "Verify the destination through a trusted app or bookmark."
+            ],
             "evidence": [
               {
-                "label": "SPF Status",
-                "value": "fail"
+                "key": "hostname",
+                "label": "Hostname",
+                "value": "\u0430pple.com"
               },
               {
-                "label": "DKIM Status",
-                "value": "pass"
+                "key": "hostname_idna",
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
               },
               {
-                "label": "DMARC Status",
-                "value": "pass"
-              },
-              {
-                "label": "Authentication-Results Count",
-                "value": "1"
-              },
-              {
-                "label": "Received-SPF Count",
-                "value": "0"
-              },
-              {
+                "key": "risk_delta",
                 "label": "Risk Delta",
-                "value": "+30"
+                "value": "+35"
               },
               {
+                "key": "cumulative_risk",
                 "label": "Cumulative Risk",
-                "value": "30"
+                "value": "60"
+              },
+              {
+                "key": "label_scripts",
+                "label": "Label Scripts",
+                "value": "\u0430pple (Cyrillic, Latin)"
               }
             ],
+            "evidence_map": {
+              "hostname": "\u0430pple.com",
+              "hostname_idna": "xn--pple-43d.com",
+              "risk_delta": "+35",
+              "cumulative_risk": "60",
+              "label_scripts": "\u0430pple (Cyrillic, Latin)"
+            }
+          },
+          {
+            "module": "homoglyph",
+            "category": "HMG001_NON_ASCII_HOSTNAME",
+            "finding_key": "homoglyph:HMG001_NON_ASCII_HOSTNAME",
+            "compare_key": "homoglyph:HMG001_NON_ASCII_HOSTNAME",
+            "sort_index": 2,
+            "severity": "LOW",
+            "confidence": "MEDIUM",
+            "cumulative_risk_score": 25,
+            "risk_delta": 25,
+            "title": "Hostname contains non-ASCII characters",
+            "explanation": "The domain includes Unicode characters, so visual lookalike checks are needed to rule out IDN spoofing.",
+            "family_explanation": "This web address uses unusual letters. Some scam links use this trick to look real.",
             "recommendations": [
-              "Avoid opening links or attachments until sender identity is verified.",
-              "Confirm the message through a separate trusted channel."
-            ]
+              "Pause before opening this link.",
+              "For important accounts, type the known website address yourself."
+            ],
+            "evidence": [
+              {
+                "key": "hostname",
+                "label": "Hostname",
+                "value": "\u0430pple.com"
+              },
+              {
+                "key": "hostname_idna",
+                "label": "Hostname (idna)",
+                "value": "xn--pple-43d.com"
+              },
+              {
+                "key": "risk_delta",
+                "label": "Risk Delta",
+                "value": "+25"
+              },
+              {
+                "key": "cumulative_risk",
+                "label": "Cumulative Risk",
+                "value": "25"
+              },
+              {
+                "key": "signal",
+                "label": "Signal",
+                "value": "At least one hostname character is outside ASCII."
+              }
+            ],
+            "evidence_map": {
+              "hostname": "\u0430pple.com",
+              "hostname_idna": "xn--pple-43d.com",
+              "risk_delta": "+25",
+              "cumulative_risk": "25",
+              "signal": "At least one hostname character is outside ASCII."
+            }
           }
         ],
-        "overall_risk": 30,
-        "overall_severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "analyzed_at": "<TIMESTAMP>"
-      },
-      "family": {
-        "risk_score": 30,
-        "severity": "LOW",
-        "summary": "A mild email authentication warning sign was found. Double-check sensitive requests before taking action.",
-        "signal_confidence": "HIGH",
-        "reasons": [
-          "The sender server did not pass a key email authenticity check (SPF)."
-        ],
-        "recommendations": [
-          "Avoid opening links or attachments until sender identity is verified.",
-          "Confirm the message through a separate trusted channel."
-        ]
+        "redirect_trace": null,
+        "suppression_trace": {
+          "hostname": "xn--pple-43d.com",
+          "configured_allowlist_domains": [
+            "xn--pple-43d.com",
+            "\u0430pple.com"
+          ],
+          "configured_allowlist_categories": [],
+          "configured_allowlist_findings": [
+            "HMG002_PUNYCODE_VISIBILITY"
+          ],
+          "matched_allowlist_domains": [
+            "xn--pple-43d.com"
+          ],
+          "suppressed_count": 1,
+          "suppressed_rows": [
+            {
+              "module": "homoglyph",
+              "category": "HMG002_PUNYCODE_VISIBILITY",
+              "finding_key": "homoglyph:HMG002_PUNYCODE_VISIBILITY",
+              "compare_key": "homoglyph:HMG002_PUNYCODE_VISIBILITY:finding:hmg002_punycode_visibility",
+              "sort_index": 0,
+              "hostname": "xn--pple-43d.com",
+              "matched_allowlist_domain": "xn--pple-43d.com",
+              "suppression_scope": "finding",
+              "matched_rule": "HMG002_PUNYCODE_VISIBILITY",
+              "reason": "Suppressed because the hostname matched an allowlist domain and finding token HMG002_PUNYCODE_VISIBILITY was enabled."
+            }
+          ]
+        }
       }
     }
   }

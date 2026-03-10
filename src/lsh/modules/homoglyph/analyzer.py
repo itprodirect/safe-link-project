@@ -227,6 +227,7 @@ class HomoglyphDetector(ModuleInterface):
             if should_suppress_finding_for_allowlist(
                 input,
                 hostname,
+                module_name=self.name,
                 category_prefix="HMG",
                 finding_code=code,
             ):

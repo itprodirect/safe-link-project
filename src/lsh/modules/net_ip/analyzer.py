@@ -64,6 +64,7 @@ class NetIPDetector(ModuleInterface):
             if should_suppress_finding_for_allowlist(
                 input,
                 hostname,
+                module_name=self.name,
                 category_prefix="NET",
                 finding_code=candidate.category,
             ):

@@ -104,6 +104,7 @@ class AsciiLookalikeDetector(ModuleInterface):
             if should_suppress_finding_for_allowlist(
                 input,
                 hostname,
+                module_name=self.name,
                 category_prefix="ASCII",
                 finding_code=code,
             ):

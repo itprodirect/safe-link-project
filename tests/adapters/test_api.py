@@ -141,6 +141,9 @@ def test_v2_analyze_url_returns_wrapped_shape() -> None:
     assert body["mode"] == "single"
     assert body["input_type"] == "url"
     assert body["item_count"] == 1
+    assert "analyst" in body["item"]
+    assert body["item"]["analyst"]["domain_anatomy"]["submitted_url"] == "https://example.com"
+    assert isinstance(body["item"]["analyst"]["evidence_rows"], list)
 
 
 def test_v2_analyze_email_returns_wrapped_shape() -> None:
@@ -159,6 +162,7 @@ def test_v2_analyze_email_returns_wrapped_shape() -> None:
     assert body["flow"] == "analyze"
     assert body["input_type"] == "email_headers"
     assert body["item"]["subject"] == "sample headers"
+    assert "analyst" not in body["item"]
 
 
 def test_v2_analyze_can_include_family_payload() -> None:
@@ -188,10 +192,26 @@ def test_v2_analyze_url_allowlist_finding_targets_single_code() -> None:
         },
     )
     assert response.status_code == 200
-    findings = response.json()["item"]["result"]["findings"]
+    body = response.json()
+    findings = body["item"]["result"]["findings"]
     categories = {finding["category"] for finding in findings}
     assert "HMG002_PUNYCODE_VISIBILITY" not in categories
     assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+    evidence_rows = body["item"]["analyst"]["evidence_rows"]
+    assert evidence_rows
+    assert all("compare_key" in row for row in evidence_rows)
+    assert all("finding_key" in row for row in evidence_rows)
+    assert all("evidence_map" in row for row in evidence_rows)
+    assert all("key" in entry for row in evidence_rows for entry in row["evidence"])
+
+    suppression_trace = body["item"]["analyst"]["suppression_trace"]
+    assert suppression_trace["suppressed_count"] == 1
+    assert suppression_trace["suppressed_rows"][0]["category"] == "HMG002_PUNYCODE_VISIBILITY"
+    assert suppression_trace["suppressed_rows"][0]["compare_key"] == (
+        "homoglyph:HMG002_PUNYCODE_VISIBILITY:finding:hmg002_punycode_visibility"
+    )
+    assert suppression_trace["suppressed_rows"][0]["suppression_scope"] == "finding"
 
 
 def test_v2_analyze_url_allowlist_categories_can_be_lowercase() -> None:
@@ -285,6 +305,8 @@ def test_v1_v2_url_result_parity_for_overlapping_fields() -> None:
     )
     assert v1_body["item"]["family"] == v2_body["item"]["family"]
     assert v1_body["item"]["subject"] == v2_body["item"]["subject"]
+    assert "analyst" not in v1_body["item"]
+    assert "analyst" in v2_body["item"]
     assert v1_body["mode"] == v2_body["mode"] == "single"
     assert v1_body["item_count"] == v2_body["item_count"] == 1
 
@@ -527,5 +549,9 @@ def test_qr_scan_requires_upload_file() -> None:
     client = _client()
     response = client.post("/api/v1/qr/scan", data={"analyze_all": "false"})
     assert response.status_code == 422
+
+
+
+
 
 

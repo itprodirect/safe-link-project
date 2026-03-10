@@ -211,7 +211,7 @@ def create_app() -> Any:
             include_family=request.family,
         )
 
-    @app.post("/api/v2/analyze", response_model=AnalyzeV2Response)
+    @app.post("/api/v2/analyze", response_model=AnalyzeV2Response, response_model_exclude_none=True)
     def analyze_v2(request: AnalyzeRequestV2) -> dict[str, object]:
         if request.input_type == "url":
             result = analyze_url(
@@ -338,4 +338,5 @@ def create_app() -> Any:
 
 
 app: Any | None = create_app() if FASTAPI_AVAILABLE else None
+
 
