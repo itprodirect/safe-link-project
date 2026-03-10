@@ -62,6 +62,20 @@ async function run() {
   );
   console.log("[smoke] cors preflight ok");
 
+  // Verify CORS headers on actual POST response (not just preflight)
+  const corsPostResponse = await fetch(`${API_BASE_URL}/api/v1/url/check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Origin": UI_ORIGIN },
+    body: JSON.stringify({ url: "https://example.com" })
+  });
+  await check(corsPostResponse.ok, "cors post response failed");
+  const corsPostOrigin = corsPostResponse.headers.get("access-control-allow-origin");
+  await check(
+    corsPostOrigin === UI_ORIGIN || corsPostOrigin === "*",
+    `cors post response origin mismatch (${corsPostOrigin ?? "missing"})`
+  );
+  console.log("[smoke] cors post response ok");
+
   const urlResult = await postJson("/api/v1/url/check", { url: "https://example.com" });
   await check(urlResult.response.ok, "url check failed");
   await check(urlResult.payload.schema_version === "1.0", "url schema_version mismatch");

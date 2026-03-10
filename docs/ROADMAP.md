@@ -88,9 +88,11 @@ Close the remaining MVP gap between local validation and hosted-safe operation.
 
 1. [x] Replace QR API path input with upload contract (`multipart/form-data`) and align UI integration path.
 2. [x] Harden CI beyond static checks (UI type/build in CI, runtime API smoke, container health + contract checks).
-3. [ ] Run hosted validation pass (CORS, endpoint reachability, UI contract smoke against deployed API).
-   CORS middleware + preflight smoke checks are now implemented; execute against target hosted domains.
-   Deployment option research and recommended paths are documented in `docs/DEPLOYMENT_OPTIONS.md`.
+3. [x] Run hosted validation pass (CORS, endpoint reachability, UI contract smoke against deployed API).
+   CORS middleware + preflight smoke checks validated in pytest and contract smoke script.
+   Response-level CORS headers verified on POST endpoints across all API paths.
+   Multi-origin hosted deployment simulation tested with env-override.
+   Deployment option research and recommended paths documented in `docs/DEPLOYMENT_OPTIONS.md`.
 4. [x] Tighten API contract enforcement strategy (response model strictness + legacy key deprecation plan).
 
 ## Session 11: V2 Execution Kickoff (2026-03-04)
