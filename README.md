@@ -36,7 +36,9 @@ cd ui && npm run lint && npm run build  # frontend
 | `POST /api/v1/url/check` | Analyze a URL for homoglyph/IDN tricks, ASCII lookalikes, suspicious structure, IP literals, and optional redirect-chain following |
 | `POST /api/v1/email/check` | Analyze raw email authentication headers (SPF/DKIM/DMARC) |
 | `POST /api/v1/qr/scan` | Upload a QR image, decode payloads, extract URLs, run URL analysis |
-| `POST /api/v2/analyze` | Unified endpoint for URL, email_headers, and email_file input types with family summaries plus URL analyst projections |
+| `POST /api/v2/analyze` | Unified endpoint for URL, email_headers, and email_file input types with family summaries plus URL analyst projections; accepts optional `policy_id` for URL policy-pack application |
+| `GET/POST /api/v2/policies` | List and create persisted policy packs |
+| `GET/PUT/DELETE /api/v2/policies/{id}` | Read, update (full/partial), and delete one policy pack |
 
 **CLI** (`lsh`): `check`, `email-check`, `qr-scan` commands with `--json`, `--family`, `--network`, and allowlist flags.
 
@@ -66,7 +68,7 @@ Implemented now:
 - Minimal FastAPI adapter in `src/lsh/adapters/api.py` (optional dependency; QR upload route degrades gracefully when `python-multipart` is missing)
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - Reusable structured response wrappers in `src/lsh/formatters/structured.py`
-- Draft unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity, analyst projections, and edge-case test coverage
+- Unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity, analyst projections, policy-pack `policy_id` support, and edge-case test coverage
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
@@ -97,7 +99,7 @@ In progress and next:
 
 - Hosted validation closure for Session 9 deployment checklist
 - Email/QR analyst-mode parity beyond the current URL-first slice
-- v2 policy management, persisted history/compare flows, and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
+- Persisted history/compare flows and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
 
 ## Quick Start
 
@@ -159,13 +161,24 @@ Optional QR legacy-key control for API integrations:
 LSH_API_INCLUDE_QR_LEGACY_KEYS=false uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
 ```
 
+Optional policy-store path override for persisted policy packs:
+
+```bash
+LSH_POLICY_STORE_DIR=.lsh uvicorn lsh.adapters.api:app --host 127.0.0.1 --port 8000
+```
+
 Current endpoints:
 
 - `GET /health`
 - `POST /api/v1/url/check`
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan` (`multipart/form-data` with uploaded file)
-- `POST /api/v2/analyze` (unified single-item analyze endpoint, draft)
+- `POST /api/v2/analyze` (unified single-item analyze endpoint; URL input accepts optional `policy_id`)
+- `GET /api/v2/policies`
+- `POST /api/v2/policies`
+- `GET /api/v2/policies/{id}`
+- `PUT /api/v2/policies/{id}`
+- `DELETE /api/v2/policies/{id}`
 
 Contract and integration notes: `docs/API_INTEGRATION.md`
 
@@ -207,7 +220,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 NEXT_PUBLIC_UI_ORIGIN=http://127.0.0.1:3000 npm run smoke:e2e
 ```
 
-Roadmap note: the current `ui/` app is a contract-validation surface, not the final product UX.  
+Roadmap note: the current `ui/` app is a contract-validation surface, not the final product UX.
 The full v2 experience plan lives in `docs/V2_BLUEPRINT.md`.
 
 ### Quick Smoke Examples

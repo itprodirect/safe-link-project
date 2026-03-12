@@ -14,10 +14,20 @@ from lsh.adapters.api_models import (
     AnalyzeV2Response,
     ApiErrorEnvelope,
     EmailCheckResponse,
+    PolicyCreateRequest,
+    PolicyDeleteResponse,
+    PolicyItemResponse,
+    PolicyListResponse,
+    PolicyUpdateRequest,
     QRScanResponse,
     UrlCheckResponse,
 )
-from lsh.application import analyze_email, analyze_url
+from lsh.application import (
+    PolicyService,
+    analyze_email,
+    analyze_url,
+    resolve_metadata_with_policy,
+)
 from lsh.formatters.structured import (
     build_qr_scan_payload,
     build_single_result_payload,
@@ -76,6 +86,7 @@ class AnalyzeRequestV2(BaseModel):
     content: str = ""
     subject: str | None = None
     family: bool = False
+    policy_id: str | None = Field(default=None, min_length=1)
     allowlist_domains: list[str] = Field(default_factory=list)
     allowlist_categories: list[str] = Field(default_factory=list)
     allowlist_findings: list[str] = Field(default_factory=list)
@@ -158,6 +169,10 @@ _QR_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     503: {"model": ApiErrorEnvelope, "description": "Structured QR decoder-unavailable envelope."},
 }
 
+_POLICY_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    404: {"model": ApiErrorEnvelope, "description": "Structured policy-not-found envelope."},
+}
+
 
 def _multipart_support_available() -> bool:
     return find_spec("multipart") is not None
@@ -175,13 +190,14 @@ def create_app() -> Any:
         version="0.1.0",
         description="Minimal API adapter for URL, email, and QR analysis flows.",
     )
+    policy_service = PolicyService()
     cors_origins = _cors_allowed_origins()
     if cors_origins:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=cors_origins,
             allow_credentials=False,
-            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
 
@@ -211,20 +227,99 @@ def create_app() -> Any:
             include_family=request.family,
         )
 
+    @app.get("/api/v2/policies", response_model=PolicyListResponse)
+    def list_policies_v2() -> dict[str, object]:
+        policies = policy_service.list_policies()
+        return {
+            "schema_version": _SCHEMA_VERSION_V2,
+            "flow": "policies_list",
+            "item_count": len(policies),
+            "items": [policy.model_dump(mode="json") for policy in policies],
+        }
+
+    @app.get(
+        "/api/v2/policies/{id}",
+        response_model=PolicyItemResponse,
+        responses=_POLICY_ERROR_RESPONSES,
+    )
+    def get_policy_v2(id: str) -> dict[str, object]:
+        policy = policy_service.get_policy(id)
+        if policy is None:
+            raise _api_error(
+                status_code=404,
+                code="POLICY_NOT_FOUND",
+                message=f"Policy '{id}' was not found.",
+            )
+        return {
+            "schema_version": _SCHEMA_VERSION_V2,
+            "flow": "policies_get",
+            "item": policy.model_dump(mode="json"),
+        }
+
+    @app.post("/api/v2/policies", response_model=PolicyItemResponse, status_code=201)
+    def create_policy_v2(request: PolicyCreateRequest) -> dict[str, object]:
+        created = policy_service.create_policy(request.to_policy_pack())
+        return {
+            "schema_version": _SCHEMA_VERSION_V2,
+            "flow": "policies_create",
+            "item": created.model_dump(mode="json"),
+        }
+
+    @app.put(
+        "/api/v2/policies/{id}",
+        response_model=PolicyItemResponse,
+        responses=_POLICY_ERROR_RESPONSES,
+    )
+    def update_policy_v2(id: str, request: PolicyUpdateRequest) -> dict[str, object]:
+        updated = policy_service.update_policy(id, request.to_updates())
+        if updated is None:
+            raise _api_error(
+                status_code=404,
+                code="POLICY_NOT_FOUND",
+                message=f"Policy '{id}' was not found.",
+            )
+        return {
+            "schema_version": _SCHEMA_VERSION_V2,
+            "flow": "policies_update",
+            "item": updated.model_dump(mode="json"),
+        }
+
+    @app.delete("/api/v2/policies/{id}", response_model=PolicyDeleteResponse)
+    def delete_policy_v2(id: str) -> dict[str, object]:
+        deleted = policy_service.delete_policy(id)
+        return {
+            "schema_version": _SCHEMA_VERSION_V2,
+            "flow": "policies_delete",
+            "id": id,
+            "deleted": deleted,
+        }
+
     @app.post("/api/v2/analyze", response_model=AnalyzeV2Response, response_model_exclude_none=True)
     def analyze_v2(request: AnalyzeRequestV2) -> dict[str, object]:
         if request.input_type == "url":
-            result = analyze_url(
-                request.content,
-                _url_metadata_values(
-                    allowlist_domains=request.allowlist_domains,
-                    allowlist_categories=request.allowlist_categories,
-                    allowlist_findings=request.allowlist_findings,
-                    network_enabled=request.network_enabled,
-                    network_max_hops=request.network_max_hops,
-                    network_timeout=request.network_timeout,
-                ),
+            metadata = _url_metadata_values(
+                allowlist_domains=request.allowlist_domains,
+                allowlist_categories=request.allowlist_categories,
+                allowlist_findings=request.allowlist_findings,
+                network_enabled=request.network_enabled,
+                network_max_hops=request.network_max_hops,
+                network_timeout=request.network_timeout,
             )
+            if request.policy_id is not None:
+                policy = policy_service.get_policy(request.policy_id)
+                if policy is None:
+                    raise _api_error(
+                        status_code=404,
+                        code="POLICY_NOT_FOUND",
+                        message=f"Policy '{request.policy_id}' was not found.",
+                    )
+                metadata = resolve_metadata_with_policy(
+                    metadata,
+                    policy,
+                    input_type=request.input_type,
+                )
+
+            result = analyze_url(request.content, metadata)
             subject = request.subject or request.content
         else:
             result = analyze_email(request.content, input_type=request.input_type)
@@ -338,5 +433,4 @@ def create_app() -> Any:
 
 
 app: Any | None = create_app() if FASTAPI_AVAILABLE else None
-
 

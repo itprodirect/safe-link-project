@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from lsh.core.models import AnalysisResult
+from lsh.core.policy import PolicyPack
 
 
 class _StrictModel(BaseModel):
@@ -143,6 +144,65 @@ class AnalyzeV2Response(_StrictModel):
     input_type: Literal["url", "email_headers", "email_file"]
     item_count: Literal[1]
     item: WrappedItemV2
+
+
+class PolicyCreateRequest(_StrictModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = ""
+    allowlist_domains: list[str] = Field(default_factory=list)
+    allowlist_categories: list[str] = Field(default_factory=list)
+    allowlist_findings: list[str] = Field(default_factory=list)
+    input_types: list[Literal["url", "email_headers", "email_file"]] = Field(
+        default_factory=lambda: cast(
+            list[Literal["url", "email_headers", "email_file"]],
+            ["url"],
+        )
+    )
+    enabled: bool = True
+    tags: list[str] = Field(default_factory=list)
+
+    def to_policy_pack(self) -> PolicyPack:
+        return PolicyPack.model_validate(self.model_dump())
+
+
+class PolicyUpdateRequest(_StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = None
+    allowlist_domains: list[str] | None = None
+    allowlist_categories: list[str] | None = None
+    allowlist_findings: list[str] | None = None
+    input_types: list[Literal["url", "email_headers", "email_file"]] | None = None
+    enabled: bool | None = None
+    tags: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _validate_non_empty_update(self) -> PolicyUpdateRequest:
+        if not self.model_dump(exclude_none=True):
+            raise ValueError("At least one field must be provided.")
+        return self
+
+    def to_updates(self) -> dict[str, object]:
+        return self.model_dump(exclude_none=True)
+
+
+class PolicyListResponse(_StrictModel):
+    schema_version: Literal["2.0"]
+    flow: Literal["policies_list"]
+    item_count: int = Field(ge=0)
+    items: list[PolicyPack]
+
+
+class PolicyItemResponse(_StrictModel):
+    schema_version: Literal["2.0"]
+    flow: Literal["policies_get", "policies_create", "policies_update"]
+    item: PolicyPack
+
+
+class PolicyDeleteResponse(_StrictModel):
+    schema_version: Literal["2.0"]
+    flow: Literal["policies_delete"]
+    id: str
+    deleted: bool
 
 
 class QRLegacyResultItem(_StrictModel):
