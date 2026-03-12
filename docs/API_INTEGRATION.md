@@ -2,9 +2,9 @@
 
 ## Status
 
-Current stable contract: `1.0` (`/api/v1/*`)  
-Current draft contract: `2.0` (`/api/v2/analyze`)  
-Updated: `2026-03-08` (E4 analyst-mode compare-ready contract update)
+Current stable contract: `1.0` (`/api/v1/*`)
+Current draft contract: `2.0` (`/api/v2/analyze`, `/api/v2/policies`)
+Updated: `2026-03-11` (E5 policy CRUD + analyze policy-id integration)
 
 This document is the integration source of truth for backend consumers (Next.js UI, scripts, and service callers).
 
@@ -23,6 +23,11 @@ Endpoints:
 - `POST /api/v1/email/check`
 - `POST /api/v1/qr/scan`
 - `POST /api/v2/analyze` (draft v2 unified endpoint)
+- `GET /api/v2/policies`
+- `POST /api/v2/policies`
+- `GET /api/v2/policies/{id}`
+- `PUT /api/v2/policies/{id}`
+- `DELETE /api/v2/policies/{id}`
 
 ## CORS Contract
 
@@ -48,6 +53,7 @@ LSH_API_CORS_ALLOW_ORIGINS=https://safe-link-ui.example.com
   "content": "https://example.com",
   "subject": "optional display label",
   "family": false,
+  "policy_id": "optional-policy-id",
   "allowlist_domains": ["trusted.example"],
   "allowlist_categories": ["HMG", "ASCII"],
   "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
@@ -62,8 +68,77 @@ Notes:
 - `input_type` supports: `url`, `email_headers`, `email_file`.
 - `content` is the raw value to analyze for the declared `input_type`.
 - URL-only controls (`allowlist_*`, `network_*`) are applied when `input_type="url"`.
+- `policy_id` is optional and applies only to `input_type="url"`; policy rules are merged with inline metadata using union semantics.
+- Missing `policy_id` returns structured `404` (`POLICY_NOT_FOUND`).
 - `subject` overrides display label in wrapped response output.
 - Current v2 implementation returns wrapped `single` mode responses only.
+
+### GET `/api/v2/policies`
+
+Returns persisted policy packs.
+
+Success shape:
+
+```json
+{
+  "schema_version": "2.0",
+  "flow": "policies_list",
+  "item_count": 1,
+  "items": [
+    {
+      "id": "uuid",
+      "name": "corp-safe",
+      "description": "Trusted suppression profile",
+      "allowlist_domains": ["trusted.example"],
+      "allowlist_categories": ["NONE"],
+      "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+      "input_types": ["url"],
+      "enabled": true,
+      "created_at": "2026-03-11T22:00:00+00:00",
+      "updated_at": "2026-03-11T22:00:00+00:00",
+      "tags": ["prod"]
+    }
+  ]
+}
+```
+
+### POST `/api/v2/policies`
+
+Create a policy pack.
+
+```json
+{
+  "name": "corp-safe",
+  "description": "Trusted suppression profile",
+  "allowlist_domains": ["trusted.example"],
+  "allowlist_categories": ["NONE"],
+  "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+  "input_types": ["url"],
+  "enabled": true,
+  "tags": ["prod"]
+}
+```
+
+### GET `/api/v2/policies/{id}`
+
+Returns one policy pack by ID.
+
+### PUT `/api/v2/policies/{id}`
+
+Applies full/partial validated updates. At least one mutable field is required.
+
+### DELETE `/api/v2/policies/{id}`
+
+Deterministic delete shape:
+
+```json
+{
+  "schema_version": "2.0",
+  "flow": "policies_delete",
+  "id": "uuid",
+  "deleted": true
+}
+```
 
 ### POST `/api/v1/url/check`
 
@@ -287,6 +362,7 @@ Known error codes:
 - `QRC_IMAGE_READ_ERROR` (`400`)
 - `QRC_NO_PAYLOADS` (`400`)
 - `QRC_NO_URL_PAYLOADS` (`400`)
+- `POLICY_NOT_FOUND` (`404`)
 
 Validation errors (`422`) use FastAPI's default validation format and should be handled separately.
 
@@ -399,6 +475,6 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
 ## Operational Notes
 
 - QR API now accepts uploaded image bytes and does not require server-local file paths.
+- Policy storage path defaults to `.lsh/policies.json`; override with `LSH_POLICY_STORE_DIR`.
 - Use timeout/retry policy in frontend for network-enabled URL checks.
-
 

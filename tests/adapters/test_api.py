@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -20,6 +21,14 @@ _QR_UPLOADS_SKIP = pytest.mark.skipif(
 def _client() -> TestClient:
     app = api.create_app()
     return TestClient(app)
+
+
+def _client_with_policy_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> TestClient:
+    monkeypatch.setenv("LSH_POLICY_STORE_DIR", str(tmp_path / "policy-store"))
+    return TestClient(api.create_app())
 
 
 def _qr_upload(
@@ -633,3 +642,262 @@ def test_qr_scan_requires_upload_file() -> None:
 
 
 
+
+
+def _create_policy(
+    client: TestClient,
+    **overrides: object,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "name": "test-policy",
+        "description": "default",
+        "allowlist_domains": [],
+        "allowlist_categories": [],
+        "allowlist_findings": [],
+        "input_types": ["url"],
+        "enabled": True,
+        "tags": [],
+    }
+    payload.update(overrides)
+    response = client.post("/api/v2/policies", json=payload)
+    assert response.status_code == 201
+    return response.json()["item"]
+
+
+def test_v2_policies_crud_round_trip(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+
+    create_response = client.post(
+        "/api/v2/policies",
+        json={
+            "name": "corp-safe",
+            "description": "Trusted suppression profile",
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["NONE"],
+            "allowlist_findings": ["HMG002_PUNYCODE_VISIBILITY"],
+            "input_types": ["url"],
+            "enabled": True,
+            "tags": ["prod"],
+        },
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["schema_version"] == "2.0"
+    assert created["flow"] == "policies_create"
+
+    policy_id = created["item"]["id"]
+
+    list_response = client.get("/api/v2/policies")
+    assert list_response.status_code == 200
+    listed = list_response.json()
+    assert listed["schema_version"] == "2.0"
+    assert listed["flow"] == "policies_list"
+    assert listed["item_count"] == 1
+    assert listed["items"][0]["id"] == policy_id
+
+    get_response = client.get(f"/api/v2/policies/{policy_id}")
+    assert get_response.status_code == 200
+    fetched = get_response.json()
+    assert fetched["flow"] == "policies_get"
+    assert fetched["item"]["name"] == "corp-safe"
+
+    update_response = client.put(
+        f"/api/v2/policies/{policy_id}",
+        json={
+            "description": "Updated profile",
+            "enabled": False,
+            "tags": ["prod", "archived"],
+        },
+    )
+    assert update_response.status_code == 200
+    updated = update_response.json()
+    assert updated["flow"] == "policies_update"
+    assert updated["item"]["description"] == "Updated profile"
+    assert updated["item"]["enabled"] is False
+    assert updated["item"]["name"] == "corp-safe"
+
+    delete_response = client.delete(f"/api/v2/policies/{policy_id}")
+    assert delete_response.status_code == 200
+    deleted = delete_response.json()
+    assert deleted == {
+        "schema_version": "2.0",
+        "flow": "policies_delete",
+        "id": policy_id,
+        "deleted": True,
+    }
+
+    delete_again = client.delete(f"/api/v2/policies/{policy_id}")
+    assert delete_again.status_code == 200
+    assert delete_again.json()["deleted"] is False
+
+
+def test_v2_policy_get_not_found_uses_error_envelope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+
+    response = client.get("/api/v2/policies/missing-policy")
+    assert response.status_code == 404
+    detail = response.json()["detail"]
+    assert detail["schema_version"] == "1.0"
+    assert detail["error"]["code"] == "POLICY_NOT_FOUND"
+
+
+def test_v2_policy_update_not_found_uses_error_envelope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+
+    response = client.put(
+        "/api/v2/policies/missing-policy",
+        json={"description": "updated"},
+    )
+    assert response.status_code == 404
+    detail = response.json()["detail"]
+    assert detail["schema_version"] == "1.0"
+    assert detail["error"]["code"] == "POLICY_NOT_FOUND"
+
+
+def test_v2_policy_create_validation_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/v2/policies",
+        json={"name": "", "input_types": ["url"]},
+    )
+    assert response.status_code == 422
+
+
+def test_v2_policy_update_validation_error_for_empty_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+    created = _create_policy(client)
+
+    response = client.put(
+        f"/api/v2/policies/{created['id']}",
+        json={},
+    )
+    assert response.status_code == 422
+
+
+def test_v2_analyze_with_policy_id_applies_stored_policy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+    created = _create_policy(
+        client,
+        name="suppress-punycode",
+        allowlist_domains=["xn--pple-43d.com"],
+        allowlist_categories=["NONE"],
+        allowlist_findings=["HMG002_PUNYCODE_VISIBILITY"],
+    )
+
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://xn--pple-43d.com",
+            "policy_id": created["id"],
+        },
+    )
+    assert response.status_code == 200
+
+    body = response.json()
+    findings = body["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" in categories
+
+
+def test_v2_analyze_with_policy_id_missing_returns_404(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://example.com",
+            "policy_id": "missing-policy",
+        },
+    )
+    assert response.status_code == 404
+    detail = response.json()["detail"]
+    assert detail["schema_version"] == "1.0"
+    assert detail["error"]["code"] == "POLICY_NOT_FOUND"
+
+
+def test_v2_analyze_policy_and_inline_metadata_union(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+    created = _create_policy(
+        client,
+        name="union-check",
+        allowlist_domains=["xn--pple-43d.com"],
+        allowlist_categories=["NONE"],
+        allowlist_findings=["HMG002_PUNYCODE_VISIBILITY"],
+    )
+
+    response = client.post(
+        "/api/v2/analyze",
+        json={
+            "input_type": "url",
+            "content": "https://xn--pple-43d.com",
+            "policy_id": created["id"],
+            "allowlist_domains": ["xn--pple-43d.com"],
+            "allowlist_categories": ["none"],
+            "allowlist_findings": ["hmg003_mixed_script_hostname"],
+        },
+    )
+    assert response.status_code == 200
+
+    body = response.json()
+    findings = body["item"]["result"]["findings"]
+    categories = {finding["category"] for finding in findings}
+    assert "HMG002_PUNYCODE_VISIBILITY" not in categories
+    assert "HMG003_MIXED_SCRIPT_HOSTNAME" not in categories
+
+    suppression_trace = body["item"]["analyst"]["suppression_trace"]
+    configured_findings = set(suppression_trace["configured_allowlist_findings"])
+    assert configured_findings == {
+        "HMG002_PUNYCODE_VISIBILITY",
+        "HMG003_MIXED_SCRIPT_HOSTNAME",
+    }
+
+
+def test_openapi_includes_typed_policy_routes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client_with_policy_store(tmp_path, monkeypatch)
+    schema = client.get("/openapi.json").json()
+
+    list_success = schema["paths"]["/api/v2/policies"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+    assert "$ref" in list_success or "allOf" in list_success
+
+    item_success = schema["paths"]["/api/v2/policies/{id}"]["get"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    assert "$ref" in item_success or "allOf" in item_success
+
+    not_found_error = schema["paths"]["/api/v2/policies/{id}"]["get"]["responses"]["404"][
+        "content"
+    ]["application/json"]["schema"]
+    assert "$ref" in not_found_error

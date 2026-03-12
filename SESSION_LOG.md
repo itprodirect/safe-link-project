@@ -2367,3 +2367,51 @@ Development session history. Each entry documents what was done, why, and what's
 - `npm run build`
 - `gh pr checks 13 --watch`
 
+
+---
+
+## 2026-03-11 - Session 15A: E5 backend policy CRUD + analyze policy integration
+
+**Agent:** Codex
+
+**Branch:** `feat/e5-policy-pack-model`
+
+**Goal:** Ship E5 backend slice: add `/api/v2/policies` CRUD, add `policy_id` support on `/api/v2/analyze`, keep v1 untouched, and close with tests/docs.
+
+**Module(s) Touched:** FastAPI adapter, typed API models, application policy service seam, adapter tests, README/API integration docs
+
+**Changes:**
+- Added v2 policy CRUD routes:
+  - `GET /api/v2/policies`
+  - `GET /api/v2/policies/{id}`
+  - `POST /api/v2/policies`
+  - `PUT /api/v2/policies/{id}`
+  - `DELETE /api/v2/policies/{id}`
+- Added typed policy request/response models and OpenAPI coverage for new routes.
+- Added app-layer `PolicyService` wrapper so adapter does not manage store details directly.
+- Extended `AnalyzeRequestV2` with optional `policy_id`.
+- Wired analyze URL flow to load policy by `policy_id`, return structured `404` (`POLICY_NOT_FOUND`) when missing, and merge policy + inline metadata via `resolve_metadata_with_policy(...)`.
+- Preserved existing behavior when `policy_id` is omitted and kept v1 endpoints unchanged.
+- Added adapter tests for policy CRUD success/error/validation paths and analyze policy integration/union behavior.
+- Updated docs for new endpoints, `policy_id`, and `LSH_POLICY_STORE_DIR` behavior.
+
+**Decisions:**
+- Kept structured explicit API errors in the existing envelope style (`detail.schema_version = "1.0"`) to avoid contract breakage.
+- Used deterministic delete response (`{id, deleted}`) instead of 404-on-delete-miss.
+- Deferred line-ending normalization policy (`.gitattributes`) to a separate cleanup change; current CRLF/LF warnings are non-blocking.
+
+**Open Questions:**
+- Do we want follow-up coverage for concurrent policy writes on the JSON store path, or keep that for later persistence hardening?
+
+**Next:**
+- Commit and push this slice.
+- Optionally open a small follow-up PR for `.gitattributes` line-ending normalization policy.
+
+**Tests / Verification:**
+- `python -m pytest tests/core/test_policy.py tests/core/test_policy_store.py tests/application/test_policy_resolver.py -q` passed (`39 passed`).
+- `python -m pytest tests/adapters/test_api.py -q` passed (`32 passed, 7 skipped`).
+- `python -m pytest tests/contracts/test_v1_v2_snapshot_parity.py -q` passed (`3 passed`).
+- `python -m pytest -q` passed (`275 passed, 7 skipped`).
+- `python -m ruff check src tests` passed.
+- `python -m mypy src` passed.
+- `git diff --check` clean (no whitespace/check failures).
