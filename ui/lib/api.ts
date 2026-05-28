@@ -145,6 +145,7 @@ export interface AnalyzeV2Request {
   content: string;
   subject?: string;
   family?: boolean;
+  policy_id?: string;
   allowlist_domains?: string[];
   allowlist_categories?: string[];
   allowlist_findings?: string[];

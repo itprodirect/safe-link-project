@@ -62,7 +62,7 @@ def decode_qr_payloads_from_image(image_path: str | Path) -> list[str]:
     seen: set[str] = set()
     for obj in decoded_objects:
         raw_data = getattr(obj, "data", b"")
-        if not isinstance(raw_data, (bytes, bytearray)):
+        if not isinstance(raw_data, bytes | bytearray):
             continue
         text = bytes(raw_data).decode("utf-8", errors="replace").strip()
         if not text or text in seen:
@@ -95,7 +95,7 @@ def decode_qr_payloads_from_bytes(
     seen: set[str] = set()
     for obj in decoded_objects:
         raw_data = getattr(obj, "data", b"")
-        if not isinstance(raw_data, (bytes, bytearray)):
+        if not isinstance(raw_data, bytes | bytearray):
             continue
         text = bytes(raw_data).decode("utf-8", errors="replace").strip()
         if not text or text in seen:

@@ -23,7 +23,7 @@ def _network_enabled(input: AnalysisInput) -> bool:
     raw = input.metadata.get("network_enabled", False)
     if isinstance(raw, bool):
         return raw
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         return raw != 0
     if isinstance(raw, str):
         normalized = raw.strip().lower()

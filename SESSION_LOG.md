@@ -2415,3 +2415,48 @@ Development session history. Each entry documents what was done, why, and what's
 - `python -m ruff check src tests` passed.
 - `python -m mypy src` passed.
 - `git diff --check` clean (no whitespace/check failures).
+
+---
+
+## 2026-05-28 - Re-entry cleanup baseline normalization
+
+**Agent:** Codex
+
+**Branch:** `chore/reentry-cleanup`
+
+**Goal:** Normalize the local validation baseline after the E5 backend policy-pack work landed on `main`, fix known UI/tooling failures, and sync roadmap/checklist docs without adding product features.
+
+**Module(s) Touched:** UI e2e harness, UI lint tooling, API/client contract types, docs/status trackers, lint-only Python baseline fixes
+
+**Changes:**
+- Updated `ui/e2e/analyze.verdict.spec.ts` to scope verdict and analyst assertions to the intended panels, fixing strict-locator failures from duplicate visible text.
+- Replaced deprecated `next lint` usage in `ui/package.json` with `eslint .`, using the existing flat ESLint config.
+- Added optional `policy_id` to the typed UI `AnalyzeV2Request` contract without adding policy-management UI.
+- Synced `README.md`, `docs/ROADMAP.md`, and `docs/V2_ROADMAP_ISSUES.md` to show E5 backend policy model/store/API work as landed while E5 frontend selection, dry-run, and audit remain pending.
+- Documented that explicit v2 policy errors still use the existing `detail.schema_version: "1.0"` error envelope pending a deliberate versioning decision.
+- Fixed current ruff/mypy baseline drift with no behavior change:
+  - modernized three `isinstance` calls in QR/redirect modules for current ruff.
+  - removed a stale mypy file-level error-code directive from `src/lsh/adapters/api.py`.
+
+**Decisions:**
+- Kept E5 frontend policy UI out of scope; this session only synced docs/types to the backend contract already present.
+- Treated ruff/mypy failures as validation-baseline cleanup because they were mechanical current-tooling issues and did not alter policy or detection behavior.
+- Preserved explicit API error-envelope behavior (`schema_version: "1.0"`) and documented the future contract decision instead of changing it.
+
+**Open Questions:**
+- Should v2 endpoint-raised errors move to a v2 error envelope, or should the existing shared error envelope remain the stable error contract across API versions?
+
+**Next:**
+- Start the next E5 session on frontend policy selection/UI (`PolicyDrawer` or equivalent), then follow with policy dry-run preview and audit logging.
+- Keep E6 history/compare/rerun/feedback persistence separate from E5 completion work.
+
+**Tests / Verification:**
+- `ruff check src tests --no-cache` passed.
+- `mypy src` passed.
+- `pytest -q` passed (`282 passed`).
+- `npm run typecheck` passed in `ui/`.
+- `npm run lint` passed in `ui/`.
+- `npm run build` passed in `ui/`.
+- `npx playwright test e2e/analyze.verdict.spec.ts` passed in `ui/` (`3 passed`).
+- `npm run smoke:api` passed in `ui/` against local API `http://127.0.0.1:8000`.
+- `npm run smoke:e2e` passed in `ui/` against local API + built UI (`3 passed`).

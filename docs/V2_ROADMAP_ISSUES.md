@@ -1,6 +1,6 @@
 # V2 Roadmap and Issue Tracker
 
-Updated: 2026-03-09
+Updated: 2026-05-28
 Owner: Product + Engineering
 Status: Execution tracker
 
@@ -141,19 +141,22 @@ Epic issues are now created and linked below.
 ### Scope
 
 1. Turn allowlist/suppression into first-class policy management.
+2. Backend model/store/API support has landed.
+3. Frontend policy selection, dry-run preview, and audit visibility remain pending.
 
 ### Child issues
 
-- [ ] `E5-I1` Create policy pack data model and storage.
-- [ ] `E5-I2` Add `/api/v2/policies` CRUD endpoints.
-- [ ] `E5-I3` Build `PolicyDrawer` with scoped controls.
+- [x] `E5-I1` Create policy pack data model and storage. Backend landed via PRs `#15`/`#16`.
+- [x] `E5-I2` Add `/api/v2/policies` CRUD endpoints and `POST /api/v2/analyze` `policy_id` integration. Backend landed via PR `#16`.
+- [ ] `E5-I3` Build `PolicyDrawer` with scoped controls and frontend policy selection.
 - [ ] `E5-I4` Add policy dry-run preview.
 - [ ] `E5-I5` Add policy audit logging.
 
 ### Definition of done
 
-1. Policy packs can be created, edited, and applied in UI.
-2. Suppression behavior is transparent and test-covered.
+1. Backend policy packs can be created, edited, deleted, and applied to URL analysis by `policy_id`.
+2. Policy packs can be created, edited, selected, and applied in UI.
+3. Suppression behavior is transparent, dry-runnable, audited, and test-covered.
 
 ## E6: History, Compare, Feedback
 

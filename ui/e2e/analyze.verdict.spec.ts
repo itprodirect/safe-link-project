@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const SAFE_URL_RESPONSE = {
   schema_version: "2.0",
@@ -312,6 +312,10 @@ async function gotoAnalyze(page: Page) {
   await expect(page.getByRole("heading", { name: "Unified Analyze Workspace" })).toBeVisible();
 }
 
+function panelByHeading(page: Page, headingName: string): Locator {
+  return page.getByRole("heading", { name: headingName }).locator("xpath=ancestor::section[1]");
+}
+
 test("quick mode presents a safe decision without analyst-only details", async ({ page }) => {
   await page.route("**/api/v2/analyze", async (route) => {
     await route.fulfill({
@@ -327,11 +331,12 @@ test("quick mode presents a safe decision without analyst-only details", async (
 
   await expect(page.getByText("Action: Safe")).toBeVisible();
   await expect(page.getByText("Safe to continue")).toBeVisible();
+  const safeVerdictPanel = panelByHeading(page, "Safe to continue");
   await expect(
     page.getByText("This destination did not show strong warning signs in this scan.")
   ).toBeVisible();
   await expect(
-    page.getByText(
+    safeVerdictPanel.getByText(
       "Proceed only if you expected this item, and use trusted bookmarks for sensitive accounts."
     )
   ).toBeVisible();
@@ -354,15 +359,30 @@ test("analyst mode renders URL-specific panels from structured v2 payloads", asy
   await page.getByRole("tab", { name: "Analyst" }).click();
 
   await expect(page.getByRole("heading", { name: "Contract summary" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Domain anatomy" })).toBeVisible();
-  await expect(page.getByText("login.example.test")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Redirect path" })).toBeVisible();
-  await expect(page.getByText("Cross-domain redirect")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Suppression trace" })).toBeVisible();
-  await expect(page.getByText("Suppressed: 1")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Evidence panel" })).toBeVisible();
-  await expect(page.getByText("Suspicious brand token appears in a subdomain")).toBeVisible();
-  await expect(page.getByRole("button", { name: "redirect" })).toBeVisible();
+
+  const domainPanel = panelByHeading(page, "Domain anatomy");
+  await expect(domainPanel).toBeVisible();
+  await expect(
+    domainPanel
+      .locator(".metricCard")
+      .filter({ hasText: "Hostname" })
+      .filter({ hasText: "login.example.test" })
+  ).toBeVisible();
+
+  const redirectPanel = panelByHeading(page, "Redirect path");
+  await expect(redirectPanel).toBeVisible();
+  await expect(redirectPanel.getByText("Cross-domain redirect", { exact: true })).toBeVisible();
+
+  const suppressionPanel = panelByHeading(page, "Suppression trace");
+  await expect(suppressionPanel).toBeVisible();
+  await expect(suppressionPanel.getByText("Suppressed: 1", { exact: true })).toBeVisible();
+
+  const evidencePanel = panelByHeading(page, "Evidence panel");
+  await expect(evidencePanel).toBeVisible();
+  await expect(
+    evidencePanel.getByText("Suspicious brand token appears in a subdomain", { exact: true })
+  ).toBeVisible();
+  await expect(evidencePanel.getByRole("button", { name: "redirect" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Raw JSON" })).toHaveCount(0);
 });
 
