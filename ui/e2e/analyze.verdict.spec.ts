@@ -1,7 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
-
-const OBSOLETE_ANALYZE_VERDICT_REASON =
-  "Temporarily disabled after M1 shell/input simplification; rewritten in Issue #20.";
+import { expect, test, type Page } from "@playwright/test";
 
 const SAFE_URL_RESPONSE = {
   schema_version: "2.0",
@@ -59,7 +56,7 @@ const SAFE_URL_RESPONSE = {
   }
 } as const;
 
-const ANALYST_URL_RESPONSE = {
+const SUSPICIOUS_URL_RESPONSE = {
   schema_version: "2.0",
   flow: "analyze",
   mode: "single",
@@ -243,174 +240,83 @@ const ANALYST_URL_RESPONSE = {
   }
 } as const;
 
-const BLOCK_EMAIL_RESPONSE = {
-  schema_version: "2.0",
-  flow: "analyze",
-  mode: "single",
-  input_type: "email_headers",
-  item_count: 1,
-  item: {
-    subject: "finance-alert",
-    result: {
-      input: {
-        input_type: "email_headers",
-        content: "Authentication-Results: mx; spf=fail; dkim=fail; dmarc=fail",
-        metadata: {}
-      },
-      findings: [
-        {
-          module: "email_auth",
-          category: "EML301_DMARC_FAIL",
-          severity: "CRITICAL",
-          confidence: "HIGH",
-          risk_score: 95,
-          title: "DMARC policy check failed",
-          explanation: "DMARC status indicates a fail or policy error.",
-          family_explanation: "The sender's domain policy check (DMARC) failed.",
-          evidence: [],
-          recommendations: ["Do not act on sensitive requests until verified independently."]
-        },
-        {
-          module: "email_auth",
-          category: "EML201_DKIM_FAIL",
-          severity: "HIGH",
-          confidence: "HIGH",
-          risk_score: 80,
-          title: "DKIM signature validation failed",
-          explanation: "DKIM status indicates a failed or broken signature.",
-          family_explanation: "The email's signed authenticity check (DKIM) did not pass.",
-          evidence: [],
-          recommendations: ["Treat the message as suspicious until independently verified."]
-        }
-      ],
-      overall_risk: 95,
-      overall_severity: "CRITICAL",
-      summary:
-        "High-risk email-authentication warning. Do not trust links or urgent requests until independently verified.",
-      analyzed_at: "2026-03-06T00:00:00Z"
-    },
-    family: {
-      risk_score: 95,
-      severity: "CRITICAL",
-      summary:
-        "High-risk email-authentication warning. Do not trust links or urgent requests until independently verified.",
-      signal_confidence: "HIGH",
-      reasons: [
-        "The sender's domain policy check (DMARC) failed.",
-        "The email's signed authenticity check (DKIM) did not pass."
-      ],
-      recommendations: [
-        "Do not act on sensitive requests until verified independently.",
-        "Treat the message as suspicious until independently verified."
-      ]
-    }
-  }
-} as const;
-
 async function gotoAnalyze(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.clear();
   });
   await page.goto("/analyze");
-  await expect(page.getByRole("heading", { name: "Unified Analyze Workspace" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Analyze a suspicious link or QR code" })
+  ).toBeVisible();
 }
 
-function panelByHeading(page: Page, headingName: string): Locator {
-  return page.getByRole("heading", { name: headingName }).locator("xpath=ancestor::section[1]");
+async function mockAnalyzeResponse(page: Page, response: object) {
+  await page.route("**/api/v2/analyze", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(response)
+    });
+  });
 }
 
-test.fixme(true, OBSOLETE_ANALYZE_VERDICT_REASON);
+async function submitUrl(page: Page, url: string) {
+  await page.getByLabel("URL").fill(url);
+  await page.getByRole("button", { name: "Analyze" }).click();
+}
 
-test("quick mode presents a safe decision without analyst-only details", async ({ page }) => {
-  await page.route("**/api/v2/analyze", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SAFE_URL_RESPONSE)
-    });
-  });
-
+test("URL analysis renders the simplified verdict hierarchy with collapsed evidence", async ({
+  page
+}) => {
+  await mockAnalyzeResponse(page, SUSPICIOUS_URL_RESPONSE);
   await gotoAnalyze(page);
-  await page.getByPlaceholder("https://example.com").fill("https://example.com");
-  await page.getByRole("button", { name: "Analyze URL" }).click();
+  await submitUrl(page, "https://login.example.test");
 
-  await expect(page.getByText("Action: Safe")).toBeVisible();
-  await expect(page.getByText("Safe to continue")).toBeVisible();
-  const safeVerdictPanel = panelByHeading(page, "Safe to continue");
-  await expect(
-    page.getByText("This destination did not show strong warning signs in this scan.")
-  ).toBeVisible();
-  await expect(
-    safeVerdictPanel.getByText(
-      "Proceed only if you expected this item, and use trusted bookmarks for sensitive accounts."
-    )
-  ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Domain anatomy" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Raw JSON" })).toHaveCount(0);
+  const verdictCard = page.getByTestId("analyze-verdict-card");
+  await expect(verdictCard).toBeVisible();
+  await expect(verdictCard.getByRole("heading", { name: "Verdict" })).toBeVisible();
+  await expect(verdictCard.getByText("Suspicious", { exact: true })).toBeVisible();
+
+  const riskPill = page.getByTestId("analyze-risk-pill");
+  await expect(riskPill).toHaveText("High");
+  await expect(riskPill).toHaveAccessibleName("Risk level High");
+
+  const keyReasons = page.getByTestId("analyze-key-reasons");
+  await expect(keyReasons.getByRole("heading", { name: "Key reasons" })).toBeVisible();
+  await expect(keyReasons.getByRole("listitem")).toHaveCount(1);
+
+  const nextActions = page.getByTestId("analyze-next-actions");
+  await expect(nextActions.getByRole("heading", { name: "What to do next" })).toBeVisible();
+  await expect(nextActions.getByRole("listitem")).toHaveCount(3);
+
+  const technicalDetails = page.getByTestId("analyze-technical-details");
+  await expect(technicalDetails).toBeVisible();
+  await expect(technicalDetails).toHaveJSProperty("open", false);
+  await expect(technicalDetails.locator("h3", { hasText: "Domain anatomy" })).toBeHidden();
+
+  await technicalDetails.locator("summary").first().click();
+  await expect(technicalDetails).toHaveJSProperty("open", true);
+  await expect(technicalDetails.locator("h3", { hasText: "Domain anatomy" })).toBeVisible();
+  await expect(technicalDetails.locator("h3", { hasText: "Redirect path" })).toBeVisible();
+  await expect(technicalDetails.locator("h3", { hasText: "Suppression trace" })).toBeVisible();
+  await expect(technicalDetails.locator("h3", { hasText: "Evidence panel" })).toBeVisible();
 });
 
-test("analyst mode renders URL-specific panels from structured v2 payloads", async ({ page }) => {
-  await page.route("**/api/v2/analyze", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(ANALYST_URL_RESPONSE)
-    });
-  });
-
+test("safe action display maps to Safe and Low without showing email tabs", async ({ page }) => {
+  await mockAnalyzeResponse(page, SAFE_URL_RESPONSE);
   await gotoAnalyze(page);
-  await page.getByPlaceholder("https://example.com").fill("https://login.example.test");
-  await page.getByRole("button", { name: "Analyze URL" }).click();
-  await page.getByRole("tab", { name: "Analyst" }).click();
 
-  await expect(page.getByRole("heading", { name: "Contract summary" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Email" })).toHaveCount(0);
+  await expect(page.getByLabel("Email headers")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Analyze email/i })).toHaveCount(0);
 
-  const domainPanel = panelByHeading(page, "Domain anatomy");
-  await expect(domainPanel).toBeVisible();
-  await expect(
-    domainPanel
-      .locator(".metricCard")
-      .filter({ hasText: "Hostname" })
-      .filter({ hasText: "login.example.test" })
-  ).toBeVisible();
+  await submitUrl(page, "https://example.com");
 
-  const redirectPanel = panelByHeading(page, "Redirect path");
-  await expect(redirectPanel).toBeVisible();
-  await expect(redirectPanel.getByText("Cross-domain redirect", { exact: true })).toBeVisible();
-
-  const suppressionPanel = panelByHeading(page, "Suppression trace");
-  await expect(suppressionPanel).toBeVisible();
-  await expect(suppressionPanel.getByText("Suppressed: 1", { exact: true })).toBeVisible();
-
-  const evidencePanel = panelByHeading(page, "Evidence panel");
-  await expect(evidencePanel).toBeVisible();
-  await expect(
-    evidencePanel.getByText("Suspicious brand token appears in a subdomain", { exact: true })
-  ).toBeVisible();
-  await expect(evidencePanel.getByRole("button", { name: "redirect" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Raw JSON" })).toHaveCount(0);
-});
-
-test("analyst mode keeps email on the raw-details fallback", async ({ page }) => {
-  await page.route("**/api/v2/analyze", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(BLOCK_EMAIL_RESPONSE)
-    });
-  });
-
-  await gotoAnalyze(page);
-  await page.getByRole("tab", { name: "Email" }).click();
-  await page.getByLabel("Source label").fill("finance-alert");
-  await page
-    .getByLabel("Email headers")
-    .fill("Authentication-Results: mx; spf=fail; dkim=fail; dmarc=fail");
-  await page.getByRole("button", { name: "Analyze email headers" }).click();
-
-  await expect(page.getByText("Action: Block")).toBeVisible();
-  await page.getByRole("tab", { name: "Analyst" }).click();
-  await expect(page.getByRole("heading", { name: "Contract summary" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Raw JSON" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Domain anatomy" })).toHaveCount(0);
+  const verdictCard = page.getByTestId("analyze-verdict-card");
+  await expect(verdictCard.getByText("Safe", { exact: true })).toBeVisible();
+  const riskPill = page.getByTestId("analyze-risk-pill");
+  await expect(riskPill).toHaveText("Low");
+  await expect(riskPill).toHaveAccessibleName("Risk level Low");
+  await expect(page.getByTestId("analyze-key-reasons")).toBeVisible();
+  await expect(page.getByTestId("analyze-next-actions")).toBeVisible();
 });

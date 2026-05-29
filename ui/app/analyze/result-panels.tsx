@@ -31,41 +31,56 @@ const CONFIDENCE_RANK: Record<ConfidenceLevel, number> = {
 const ACTION_COPY: Record<
   ActionLevel,
   {
-    badge: string;
-    title: string;
-    detail: string;
-    fallbackRecommendation: string;
+    verdictLabel: string;
+    riskLabel: string;
+    fallbackExplanation: string;
+    fallbackReasons: string[];
+    fallbackRecommendations: string[];
   }
 > = {
   safe: {
-    badge: "Safe",
-    title: "Safe to continue",
-    detail: "No strong warning signals were returned for this result.",
-    fallbackRecommendation:
-      "Proceed only if you expected this item, and use trusted bookmarks for sensitive accounts."
+    verdictLabel: "Safe",
+    riskLabel: "Low",
+    fallbackExplanation: "This destination did not show strong warning signs in this scan.",
+    fallbackReasons: ["No major warning signals were returned for this result."],
+    fallbackRecommendations: [
+      "Continue only if you expected this destination.",
+      "Use trusted bookmarks for sensitive accounts."
+    ]
   },
   caution: {
-    badge: "Caution",
-    title: "Pause and verify",
-    detail: "A mild warning sign was found, so a quick verification step is still worth it.",
-    fallbackRecommendation: "Pause and verify the destination or sender before taking action."
+    verdictLabel: "Caution",
+    riskLabel: "Medium",
+    fallbackExplanation: "This destination has some warning signs, so verify it before opening.",
+    fallbackReasons: ["A warning signal was found, but it does not require an automatic block."],
+    fallbackRecommendations: [
+      "Verify the destination through a trusted source.",
+      "Avoid entering sensitive information until you confirm it."
+    ]
   },
   avoid: {
-    badge: "Avoid",
-    title: "Avoid interacting for now",
-    detail: "This result shows strong warning signs that should stop a routine click-through.",
-    fallbackRecommendation:
-      "Avoid opening links, replying, or signing in until you verify the destination through a trusted path."
+    verdictLabel: "Suspicious",
+    riskLabel: "High",
+    fallbackExplanation: "This destination shows strong warning signs and should be avoided for now.",
+    fallbackReasons: ["The analysis found high-risk signals for this destination."],
+    fallbackRecommendations: [
+      "Do not enter credentials or personal information.",
+      "Verify the sender or destination through another channel.",
+      "Report this link to your security team."
+    ]
   },
   block: {
-    badge: "Block",
-    title: "Block and report",
-    detail: "This result has high-risk signals and should be treated as unsafe by default.",
-    fallbackRecommendation:
-      "Do not open or reply. Report it and use an official contact path instead."
+    verdictLabel: "Dangerous",
+    riskLabel: "Critical",
+    fallbackExplanation: "This destination looks unsafe and should be blocked or reported.",
+    fallbackReasons: ["The analysis found critical warning signals for this destination."],
+    fallbackRecommendations: [
+      "Do not open the link or reply to the request.",
+      "Report it to your security team.",
+      "Use an official website or contact path instead."
+    ]
   }
 };
-
 
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
@@ -251,29 +266,12 @@ function getActionLevel(item: ApiItem): ActionLevel {
   return "safe";
 }
 
-function getPrimaryRecommendation(
-  item: ApiItem,
-  actionLevel: ActionLevel,
-  context: VerdictContext
-): string {
-  return getRecommendations(item, context)[0] ?? ACTION_COPY[actionLevel].fallbackRecommendation;
-}
-
-function getConfidenceNote(confidence: ConfidenceLevel | null): string {
-  if (confidence === "HIGH") {
-    return "High-confidence signals support this verdict.";
-  }
-  if (confidence === "MEDIUM") {
-    return "Signal confidence is moderate, so context still matters.";
-  }
-  if (confidence === "LOW") {
-    return "Signals are limited, so verify before acting.";
-  }
-  return "No confidence label was returned for this result.";
-}
-
 function getPlainLanguageSummary(item: ApiItem, context: VerdictContext): string {
   const actionLevel = getActionLevel(item);
+  const responseSummary = getString(item.family?.summary) ?? getString(item.result.summary);
+  if (responseSummary) {
+    return responseSummary;
+  }
 
   if (isEmailContext(context)) {
     if (actionLevel === "safe") {
@@ -301,46 +299,24 @@ function getPlainLanguageSummary(item: ApiItem, context: VerdictContext): string
     return "The QR code leads to a destination that looks unsafe.";
   }
 
-  if (actionLevel === "safe") {
-    return "This destination did not show strong warning signs in this scan.";
-  }
-  if (actionLevel === "caution") {
-    return "This destination has some warning signs, so verify it before opening.";
-  }
-  if (actionLevel === "avoid") {
-    return "This destination shows strong warning signs and should be avoided for now.";
-  }
-  return "This destination looks unsafe and should be blocked or reported.";
+  return ACTION_COPY[actionLevel].fallbackExplanation;
 }
 
-function getVerdictDetail(actionLevel: ActionLevel, context: VerdictContext): string {
-  if (isEmailContext(context)) {
-    if (actionLevel === "safe") {
-      return "The visible sender checks look normal enough that this message does not need an immediate block.";
-    }
-    if (actionLevel === "caution") {
-      return "Some sender checks are missing or weak, so this message deserves a second look.";
-    }
-    if (actionLevel === "avoid") {
-      return "Several sender checks failed or degraded, which raises spoofing risk.";
-    }
-    return "Multiple sender checks failed, which is common in spoofed or malicious messages.";
+function getDisplayReasons(item: ApiItem, context: VerdictContext): string[] {
+  const actionLevel = getActionLevel(item);
+  const reasons = getReasons(item, context);
+  if (reasons.length > 0) {
+    return reasons;
   }
+  return ACTION_COPY[actionLevel].fallbackReasons.slice(0, 3);
+}
 
-  if (isQrContext(context)) {
-    if (actionLevel === "safe") {
-      return "The QR code resolved cleanly and the visible destination did not trigger major warnings.";
-    }
-    if (actionLevel === "caution") {
-      return "The QR code resolved, but the destination still deserves a quick verification step.";
-    }
-    if (actionLevel === "avoid") {
-      return "The QR code resolves to a destination that should not be trusted casually.";
-    }
-    return "The QR code resolves to a destination with high-risk signals.";
-  }
-
-  return ACTION_COPY[actionLevel].detail;
+function getNextActions(item: ApiItem, context: VerdictContext): string[] {
+  const actionLevel = getActionLevel(item);
+  return dedupeStrings([
+    ...getRecommendations(item, context),
+    ...ACTION_COPY[actionLevel].fallbackRecommendations
+  ]).slice(0, 3);
 }
 
 function formatLabelList(values: string[]): string {
@@ -381,77 +357,80 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function VerdictIcon({ actionLevel }: { actionLevel: ActionLevel }) {
+  const iconLabel = actionLevel === "safe" ? "OK" : actionLevel === "caution" ? "!" : "!";
+
+  return (
+    <span className={`verdictIcon verdictIcon-${actionLevel}`} aria-hidden="true">
+      {iconLabel}
+    </span>
+  );
+}
+
 function VerdictCard({ item, context }: { item: ApiItem; context: VerdictContext }) {
-  const riskScore = getRiskScore(item);
-  const confidence = getConfidence(item);
   const actionLevel = getActionLevel(item);
-  const primaryRecommendation = getPrimaryRecommendation(item, actionLevel, context);
   const actionCopy = ACTION_COPY[actionLevel];
 
   return (
     <section className={`verdictCard verdictCard-${actionLevel}`} data-testid="analyze-verdict-card">
-      <div className="verdictHeader">
-        <div>
-          <p className="eyebrow">Primary verdict</p>
-          <h3>{actionCopy.title}</h3>
-        </div>
-        <span className={`actionPill actionPill-${actionLevel}`}>Action: {actionCopy.badge}</span>
+      <VerdictIcon actionLevel={actionLevel} />
+      <div className="verdictMainCopy">
+        <h2>Verdict</h2>
+        <p className="verdictStatus">{actionCopy.verdictLabel}</p>
+        <p className="verdictSummary">{getPlainLanguageSummary(item, context)}</p>
       </div>
-
-      <p className="verdictSummary">{getPlainLanguageSummary(item, context)}</p>
-      <p className="muted compactText">{getVerdictDetail(actionLevel, context)}</p>
-
-      <div className="verdictPrimaryAction">
-        <span className="metricLabel">Recommended next step</span>
-        <strong>{primaryRecommendation}</strong>
+      <div className="riskLevelBlock">
+        <span>Risk level</span>
+        <strong
+          aria-label={`Risk level ${actionCopy.riskLabel}`}
+          className={`riskPill riskPill-${actionLevel}`}
+          data-testid="analyze-risk-pill"
+          role="status"
+        >
+          {actionCopy.riskLabel}
+        </strong>
       </div>
-
-      <div className="badgeRow">
-        <span className="badge">Subject: {item.subject}</span>
-        <span className="badge">Risk: {riskScore !== null ? String(riskScore) : "-"}</span>
-        <span className="badge">Findings: {String(getFindingCount(item))}</span>
-        <span className="badge">Flow: {context.flow}</span>
-        <span className="badge">Confidence: {confidence ?? "Not provided"}</span>
-      </div>
-
-      <p className="verdictConfidence">{getConfidenceNote(confidence)}</p>
     </section>
   );
 }
 
-function WhyPanel({ item, context }: { item: ApiItem; context: VerdictContext }) {
-  const actionLevel = getActionLevel(item);
-  const reasons = getReasons(item, context);
-  const recommendations = getRecommendations(item, context);
-  const nextSteps =
-    recommendations.length > 0
-      ? recommendations
-      : [ACTION_COPY[actionLevel].fallbackRecommendation];
+function KeyReasonsCard({ item, context }: { item: ApiItem; context: VerdictContext }) {
+  const reasons = getDisplayReasons(item, context);
 
   return (
-    <div className="resultList">
-      <section className="miniCard">
-        <h3>Why this verdict</h3>
-        {reasons.length > 0 ? (
-          <ol className="rankedList">
-            {reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ol>
-        ) : (
-          <p className="muted">No reason strings were returned for this item.</p>
-        )}
-      </section>
+    <section className="resultInfoCard keyReasonsCard" data-testid="analyze-key-reasons">
+      <div className="resultInfoHeader">
+        <span className="resultInfoIcon" aria-hidden="true">
+          !
+        </span>
+        <h2>Key reasons</h2>
+      </div>
+      <ul className="reasonList">
+        {reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
-      <section className="miniCard">
-        <h3>Next actions</h3>
-        <ul className="cleanList">
-          {nextSteps.map((recommendation) => (
-            <li key={recommendation}>{recommendation}</li>
-          ))}
-        </ul>
-      </section>
-    </div>
+function NextActionsCard({ item, context }: { item: ApiItem; context: VerdictContext }) {
+  const nextActions = getNextActions(item, context);
+
+  return (
+    <section className="resultInfoCard nextActionsCard" data-testid="analyze-next-actions">
+      <div className="resultInfoHeader">
+        <span className="resultInfoIcon resultInfoIconQuestion" aria-hidden="true">
+          ?
+        </span>
+        <h2>What to do next</h2>
+      </div>
+      <ul className="nextActionList">
+        {nextActions.map((recommendation) => (
+          <li key={recommendation}>{recommendation}</li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -717,63 +696,118 @@ function EvidencePanel({ rows }: { rows: ApiAnalystEvidenceRow[] }) {
   );
 }
 
-function AnalystFallback({ response }: { response: ApiWrappedResponse }) {
-  const items = getResponseItems(response);
-  const primaryItem = getPrimaryItem(response);
+function ContractSummary({
+  response,
+  primaryItem
+}: {
+  response: ApiWrappedResponse;
+  primaryItem: ApiItem;
+}) {
+  return (
+    <section className="miniCard">
+      <h3>Contract summary</h3>
+      <div className="summaryGrid">
+        <MetricCard label="Schema" value={response.schema_version} />
+        <MetricCard label="Flow" value={response.flow} />
+        <MetricCard label="Mode" value={response.mode} />
+        <MetricCard label="Items" value={String(response.item_count)} />
+        <MetricCard label="Input type" value={response.input_type} />
+        <MetricCard label="Primary subject" value={primaryItem.subject} />
+      </div>
+    </section>
+  );
+}
+
+function PrimaryItemSnapshot({ item }: { item: ApiItem }) {
+  return (
+    <section className="miniCard">
+      <h3>Primary item snapshot</h3>
+      <div className="summaryGrid">
+        <MetricCard label="Severity" value={getSeverity(item)} />
+        <MetricCard
+          label="Risk"
+          value={getRiskScore(item) !== null ? String(getRiskScore(item)) : "-"}
+        />
+        <MetricCard label="Findings" value={String(getFindingCount(item))} />
+        <MetricCard label="Confidence" value={getConfidence(item) ?? "-"} />
+      </div>
+      <p className="compactText">{getSummary(item)}</p>
+    </section>
+  );
+}
+
+function ReturnedSubjects({ items }: { items: ApiItem[] }) {
+  if (items.length <= 1) {
+    return null;
+  }
 
   return (
-    <div className="resultList">
-      <section className="miniCard">
-        <h3>Contract summary</h3>
-        <div className="summaryGrid">
-          <MetricCard label="Schema" value={response.schema_version} />
-          <MetricCard label="Flow" value={response.flow} />
-          <MetricCard label="Mode" value={response.mode} />
-          <MetricCard label="Items" value={String(response.item_count)} />
-          <MetricCard label="Input type" value={response.input_type} />
-          <MetricCard label="Primary subject" value={primaryItem?.subject ?? "-"} />
-        </div>
-      </section>
+    <section className="miniCard">
+      <h3>Returned subjects</h3>
+      <ul className="cleanList">
+        {items.map((item) => (
+          <li key={item.subject}>
+            {item.subject} ({getSeverity(item)}, risk {getRiskScore(item) ?? "-"})
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
-      {primaryItem ? (
-        <section className="miniCard">
-          <h3>Primary item snapshot</h3>
-          <div className="summaryGrid">
-            <MetricCard label="Severity" value={getSeverity(primaryItem)} />
-            <MetricCard
-              label="Risk"
-              value={getRiskScore(primaryItem) !== null ? String(getRiskScore(primaryItem)) : "-"}
-            />
-            <MetricCard label="Findings" value={String(getFindingCount(primaryItem))} />
-            <MetricCard
-              label="Confidence"
-              value={getString(primaryItem.family?.signal_confidence) ?? "-"}
-            />
-          </div>
-          <p className="compactText">{getSummary(primaryItem)}</p>
-        </section>
-      ) : null}
+function RawResponseDetails({ response }: { response: ApiWrappedResponse }) {
+  return (
+    <details className="rawResponseDetails">
+      <summary>Raw response</summary>
+      <pre>{asPrettyJson(response)}</pre>
+    </details>
+  );
+}
 
-      <section className="miniCard">
-        <h3>Returned subjects</h3>
-        {items.length > 0 ? (
-          <ul className="cleanList">
-            {items.map((item) => (
-              <li key={item.subject}>
-                {item.subject} ({getSeverity(item)}, risk {getRiskScore(item) ?? "-"})
-              </li>
-            ))}
-          </ul>
+function TechnicalDetails({
+  response,
+  primaryItem,
+  items
+}: {
+  response: ApiWrappedResponse;
+  primaryItem: ApiItem;
+  items: ApiItem[];
+}) {
+  const analyst = response.input_type === "url" ? primaryItem.analyst : undefined;
+
+  return (
+    <details className="technicalDetails" data-testid="analyze-technical-details">
+      <summary>
+        <span>Evidence / technical details</span>
+        <span className="technicalDetailsChevron" aria-hidden="true">
+          v
+        </span>
+      </summary>
+      <div className="technicalDetailsBody">
+        <ContractSummary response={response} primaryItem={primaryItem} />
+        <PrimaryItemSnapshot item={primaryItem} />
+        {analyst ? (
+          <>
+            <DomainAnatomy anatomy={analyst.domain_anatomy} />
+            {analyst.redirect_trace ? <RedirectPathView trace={analyst.redirect_trace} /> : null}
+            {analyst.suppression_trace ? (
+              <SuppressionTracePanel trace={analyst.suppression_trace} />
+            ) : null}
+            <EvidencePanel rows={analyst.evidence_rows} />
+          </>
         ) : (
-          <p className="muted">No item subjects were returned.</p>
+          <section className="miniCard">
+            <h3>Structured evidence</h3>
+            <p className="muted">
+              No URL analyst evidence was returned for this result. The raw response remains
+              available below for debugging.
+            </p>
+          </section>
         )}
-      </section>
-
-      <section className="miniCard">
-        <h3>Raw JSON</h3>
-        <pre>{asPrettyJson(response)}</pre>
-      </section>
-    </div>
+        <ReturnedSubjects items={items} />
+        <RawResponseDetails response={response} />
+      </div>
+    </details>
   );
 }
 
@@ -792,90 +826,12 @@ export function QuickResult({ response }: { response: ApiWrappedResponse }) {
   return (
     <>
       <VerdictCard item={primaryItem} context={context} />
-      <WhyPanel item={primaryItem} context={context} />
-
-      {items.length > 1 ? (
-        <section className="miniCard">
-          <h3>Additional decoded items</h3>
-          <div className="resultListCompact">
-            {items.slice(1).map((item) => (
-              <article className="miniCard insetCard" key={item.subject}>
-                <strong>{item.subject}</strong>
-                <p className="muted compactText">{getSummary(item)}</p>
-                <div className="badgeRow">
-                  <span className="badge">Action: {ACTION_COPY[getActionLevel(item)].badge}</span>
-                  <span className="badge">
-                    Risk: {getRiskScore(item) !== null ? String(getRiskScore(item)) : "-"}
-                  </span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <div className="resultInfoGrid">
+        <KeyReasonsCard item={primaryItem} context={context} />
+        <NextActionsCard item={primaryItem} context={context} />
+      </div>
+      <TechnicalDetails response={response} primaryItem={primaryItem} items={items} />
     </>
-  );
-}
-
-export function AnalystResult({ response }: { response: ApiWrappedResponse }) {
-  const items = getResponseItems(response);
-  const primaryItem = getPrimaryItem(response);
-  const analyst = response.input_type === "url" ? primaryItem?.analyst : undefined;
-
-  if (!primaryItem) {
-    return <p className="muted">The API returned no items.</p>;
-  }
-
-  if (!analyst) {
-    return <AnalystFallback response={response} />;
-  }
-
-  return (
-    <div className="resultList">
-      <section className="miniCard">
-        <h3>Contract summary</h3>
-        <div className="summaryGrid">
-          <MetricCard label="Schema" value={response.schema_version} />
-          <MetricCard label="Flow" value={response.flow} />
-          <MetricCard label="Mode" value={response.mode} />
-          <MetricCard label="Items" value={String(response.item_count)} />
-          <MetricCard label="Input type" value={response.input_type} />
-          <MetricCard label="Primary subject" value={primaryItem.subject} />
-        </div>
-      </section>
-
-      <section className="miniCard">
-        <h3>Primary item snapshot</h3>
-        <div className="summaryGrid">
-          <MetricCard label="Severity" value={getSeverity(primaryItem)} />
-          <MetricCard
-            label="Risk"
-            value={getRiskScore(primaryItem) !== null ? String(getRiskScore(primaryItem)) : "-"}
-          />
-          <MetricCard label="Findings" value={String(getFindingCount(primaryItem))} />
-          <MetricCard label="Confidence" value={getConfidence(primaryItem) ?? "-"} />
-        </div>
-        <p className="compactText">{getSummary(primaryItem)}</p>
-      </section>
-
-      <DomainAnatomy anatomy={analyst.domain_anatomy} />
-      {analyst.redirect_trace ? <RedirectPathView trace={analyst.redirect_trace} /> : null}
-      {analyst.suppression_trace ? <SuppressionTracePanel trace={analyst.suppression_trace} /> : null}
-      <EvidencePanel rows={analyst.evidence_rows} />
-
-      {items.length > 1 ? (
-        <section className="miniCard">
-          <h3>Returned subjects</h3>
-          <ul className="cleanList">
-            {items.map((item) => (
-              <li key={item.subject}>
-                {item.subject} ({getSeverity(item)}, risk {getRiskScore(item) ?? "-"})
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-    </div>
   );
 }
 
@@ -883,13 +839,11 @@ export function EmptyState() {
   return (
     <section className="statusPanel">
       <p className="eyebrow">Ready</p>
-      <h3>Run an analysis from the left panel</h3>
+      <h2>Paste a link or upload a QR image</h2>
       <p className="muted">
-        This workspace always asks the API for family summaries so Quick mode can render a verdict
-        without falling back to raw JSON.
+        The result will show a clear verdict, key reasons, next steps, and optional technical
+        details after analysis finishes.
       </p>
     </section>
   );
 }
-
-
