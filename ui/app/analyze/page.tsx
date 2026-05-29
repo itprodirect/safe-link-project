@@ -29,11 +29,26 @@ interface RunState {
   lastSubmission: Submission | null;
 }
 
+const QR_ERROR_MESSAGES: Record<string, string> = {
+  QRC_DECODER_UNAVAILABLE:
+    "QR scanning is not available in this environment. Paste the URL from the QR code instead.",
+  QRC_MULTIPART_UNAVAILABLE:
+    "QR image uploads are not available in this environment. Paste the URL from the QR code instead.",
+  QRC_NO_URL_PAYLOADS:
+    "The QR image was read, but it did not contain a web URL. Upload a QR code with an http or https link, or paste the URL."
+};
+
 function formatRequestError(error: unknown): string {
   if (error instanceof ApiRequestError) {
+    if (error.code && QR_ERROR_MESSAGES[error.code]) {
+      return `${QR_ERROR_MESSAGES[error.code]} (${error.code})`;
+    }
     return `${error.message}${error.code ? ` (${error.code})` : ""}`;
   }
   if (error instanceof Error) {
+    if (error.name === "TypeError") {
+      return "Could not reach the analysis API. Confirm it is running and try again.";
+    }
     return error.message;
   }
   return "Unexpected error while calling API.";
@@ -70,6 +85,8 @@ function endpointLabel(submission: Submission | null): string | null {
 
 export default function AnalyzePage() {
   const validationMessageId = useId();
+  const urlInputId = useId();
+  const qrInputId = useId();
   const [url, setUrl] = useState("");
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
@@ -82,12 +99,12 @@ export default function AnalyzePage() {
 
   async function executeSubmission(submission: Submission): Promise<void> {
     setValidationMessage(null);
-    setRunState({
+    setRunState((current) => ({
       loading: true,
       error: null,
-      response: null,
+      response: current.response,
       lastSubmission: submission
-    });
+    }));
 
     try {
       let response: ApiWrappedResponse;
@@ -108,12 +125,12 @@ export default function AnalyzePage() {
         lastSubmission: submission
       });
     } catch (error) {
-      setRunState({
+      setRunState((current) => ({
         loading: false,
         error: formatRequestError(error),
-        response: null,
+        response: current.response,
         lastSubmission: submission
-      });
+      }));
     }
   }
 
@@ -166,11 +183,22 @@ export default function AnalyzePage() {
     });
   }
 
+  function onUrlChange(event: ChangeEvent<HTMLInputElement>) {
+    setUrl(event.target.value);
+    if (validationMessage) {
+      setValidationMessage(null);
+    }
+  }
+
   function onQrFileChange(event: ChangeEvent<HTMLInputElement>) {
     setQrFile(event.target.files?.[0] ?? null);
+    if (validationMessage) {
+      setValidationMessage(null);
+    }
   }
 
   const endpoint = endpointLabel(runState.lastSubmission);
+  const validationState = validationMessage ? "true" : undefined;
 
   return (
     <div className="analyzeShell" data-testid="analyze-shell">
@@ -213,17 +241,20 @@ export default function AnalyzePage() {
           onSubmit={onAnalyzeSubmit}
           aria-describedby={validationMessage ? validationMessageId : undefined}
         >
-          <label className="analyzeUrlField">
+          <label className="analyzeUrlField" htmlFor={urlInputId}>
             URL
             <input
+              id={urlInputId}
               value={url}
-              onChange={(event) => setUrl(event.target.value)}
+              onChange={onUrlChange}
               placeholder="https://example.com"
-              aria-invalid={validationMessage ? "true" : undefined}
+              disabled={runState.loading}
+              aria-invalid={validationState}
+              aria-describedby={validationMessage ? validationMessageId : undefined}
             />
           </label>
 
-          <label className="qrUploadField">
+          <label className="qrUploadField" htmlFor={qrInputId}>
             QR image (optional)
             <span className="qrUploadDropzone">
               <span className="qrUploadIcon" aria-hidden="true">
@@ -233,7 +264,15 @@ export default function AnalyzePage() {
                 {qrFile ? qrFile.name : "Click to upload QR image"}
                 <small>PNG, JPG, WEBP up to 5MB</small>
               </span>
-              <input type="file" accept="image/*" onChange={onQrFileChange} />
+              <input
+                id={qrInputId}
+                type="file"
+                accept="image/*"
+                onChange={onQrFileChange}
+                disabled={runState.loading}
+                aria-invalid={validationState}
+                aria-describedby={validationMessage ? validationMessageId : undefined}
+              />
             </span>
           </label>
 
@@ -254,28 +293,35 @@ export default function AnalyzePage() {
           ) : null}
         </form>
 
-        <section className="analyzeResultArea" aria-label="Analysis result">
+        <section
+          className="analyzeResultArea"
+          data-testid="analyze-result-area"
+          aria-label="Analysis result"
+          aria-busy={runState.loading}
+        >
           {endpoint ? <p className="muted compactText">Latest endpoint: {endpoint}</p> : null}
 
           {runState.loading ? (
-            <section className="statusPanel">
+            <section className="statusPanel" role="status" aria-live="polite">
               <p className="eyebrow">In progress</p>
-              <h2>Waiting on the API</h2>
-              <p className="muted">A fresh result will appear here when analysis finishes.</p>
+              <h2>Analyzing this submission</h2>
+              <p className="muted">
+                A fresh result will appear here when analysis finishes.
+                {runState.response ? " The previous result remains below." : ""}
+              </p>
             </section>
           ) : null}
 
           {!runState.loading && runState.error ? (
-            <section className="statusPanel statusPanelError">
+            <section className="statusPanel statusPanelError" role="alert" aria-live="assertive">
               <p className="eyebrow">Error</p>
               <h2>Request failed</h2>
               <p>{runState.error}</p>
+              {runState.response ? <p className="muted">The previous successful result is still shown below.</p> : null}
             </section>
           ) : null}
 
-          {!runState.loading && !runState.error && runState.response ? (
-            <QuickResult response={runState.response} />
-          ) : null}
+          {runState.response ? <QuickResult response={runState.response} /> : null}
 
           {!runState.loading && !runState.error && !runState.response ? <EmptyState /> : null}
         </section>

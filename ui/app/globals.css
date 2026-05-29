@@ -103,6 +103,18 @@ textarea {
   background: #fff;
 }
 
+input:disabled,
+textarea:disabled {
+  color: var(--muted);
+  background: #f3f6fb;
+  cursor: not-allowed;
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--block-ink);
+  box-shadow: 0 0 0 3px rgba(159, 18, 57, 0.12);
+}
+
 textarea {
   min-height: 170px;
 }
@@ -565,6 +577,10 @@ pre {
   background: #f8fbfc;
 }
 
+.statusPanel h2 {
+  margin: 0;
+}
+
 .statusPanelError {
   border-color: var(--danger-border);
   background: var(--danger-bg);
@@ -736,6 +752,26 @@ pre {
   padding: 0;
   opacity: 0;
   cursor: pointer;
+}
+
+.qrUploadDropzone:has(input:disabled) {
+  color: var(--muted);
+  background: #f3f6fb;
+  cursor: not-allowed;
+}
+
+.qrUploadDropzone:has(input[aria-invalid="true"]) {
+  border-color: var(--block-ink);
+  box-shadow: 0 0 0 3px rgba(159, 18, 57, 0.12);
+}
+
+.qrUploadDropzone:has(input:focus-visible),
+.technicalDetails summary:focus-visible,
+.rawResponseDetails summary:focus-visible,
+.analyzeNavItem:focus-visible,
+.analyzePrimaryButton:focus-visible {
+  outline: 3px solid rgba(11, 92, 255, 0.35);
+  outline-offset: 3px;
 }
 
 .qrUploadDropzone small {
