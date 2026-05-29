@@ -2437,6 +2437,7 @@ Development session history. Each entry documents what was done, why, and what's
 - Fixed current ruff/mypy baseline drift with no behavior change:
   - modernized three `isinstance` calls in QR/redirect modules for current ruff.
   - removed a stale mypy file-level error-code directive from `src/lsh/adapters/api.py`.
+  - follow-up commit `e0073c8` removed the stale `# type: ignore[import-untyped]` from `src/lsh/modules/redirect/analyzer.py` after the requests typing baseline no longer required it.
 
 **Decisions:**
 - Kept E5 frontend policy UI out of scope; this session only synced docs/types to the backend contract already present.
