@@ -426,16 +426,244 @@ pre {
   color: var(--text);
 }
 
+.analyzeShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  background: #f8fafc;
+}
+
+.analyzeSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 36px 20px;
+  border-right: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.analyzeBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #07122e;
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 42px;
+  border-radius: 10px;
+  background: #0b5cff;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.analyzeBrand strong {
+  display: grid;
+  font-size: 1.08rem;
+  line-height: 1.1;
+}
+
+.analyzeBrand span:last-child {
+  font-weight: 500;
+}
+
+.analyzeNav {
+  display: grid;
+  gap: 12px;
+}
+
+.analyzeNavItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1d2944;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: none;
+}
+
+.analyzeNavItem span {
+  width: 24px;
+  color: #0b5cff;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.analyzeNavItemActive {
+  background: #eef4ff;
+  color: #074ee8;
+}
+
+.analyzeNavItem:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.analyzeNavItem:disabled span {
+  color: #65738e;
+}
+
+.analyzeMain {
+  width: min(1040px, 100%);
+  padding: 48px 56px;
+}
+
+.analyzeHeader {
+  margin-bottom: 24px;
+}
+
+.analyzeHeader h1 {
+  margin: 0;
+  color: #07122e;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.analyzeHeader p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.analyzeInputCard {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 320px) auto;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.analyzeUrlField,
+.qrUploadField {
+  margin: 0;
+  color: #101a33;
+  font-weight: 650;
+}
+
+.analyzeUrlField input {
+  height: 48px;
+  border-radius: 8px;
+}
+
+.qrUploadDropzone {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 72px;
+  margin-top: 6px;
+  padding: 14px 16px;
+  border: 1px dashed #9aa8bf;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #1b2741;
+  font-weight: 650;
+  overflow: hidden;
+}
+
+.qrUploadDropzone input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.qrUploadDropzone small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.qrUploadIcon {
+  color: #0b5cff;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.analyzePrimaryButton {
+  min-width: 140px;
+  height: 48px;
+  border-radius: 8px;
+  background: #0b5cff;
+  box-shadow: 0 8px 18px rgba(11, 92, 255, 0.22);
+}
+
+.analyzeValidationMessage {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: var(--block-ink);
+  font-weight: 650;
+}
+
+.analyzeResultArea {
+  display: grid;
+  gap: 14px;
+}
+
+.analyzeResultArea > .compactText:first-child {
+  margin-top: 0;
+}
+
 @media (max-width: 960px) {
   .workspaceHero,
   .workspaceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .analyzeShell {
+    grid-template-columns: 1fr;
+  }
+
+  .analyzeSidebar {
+    padding: 18px 20px;
+  }
+
+  .analyzeNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analyzeMain {
+    padding: 32px 20px;
+  }
+
+  .analyzeInputCard {
+    grid-template-columns: 1fr;
+  }
+
+  .analyzePrimaryButton {
+    width: 100%;
   }
 }
 
 @media (max-width: 720px) {
   .shell {
     padding: 16px;
+  }
+
+  .analyzeNav {
+    grid-template-columns: 1fr;
   }
 
   .fieldGrid {
@@ -596,4 +824,3 @@ pre {
   border-color: rgba(180, 118, 27, 0.25);
   background: linear-gradient(180deg, rgba(255, 248, 233, 0.9), rgba(255, 255, 255, 0.96));
 }
-
