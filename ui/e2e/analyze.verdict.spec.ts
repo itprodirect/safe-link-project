@@ -277,7 +277,9 @@ test("URL analysis renders the simplified verdict hierarchy with collapsed evide
   await expect(verdictCard.getByRole("heading", { name: "Verdict" })).toBeVisible();
   await expect(verdictCard.getByText("Suspicious", { exact: true })).toBeVisible();
 
-  await expect(page.getByTestId("analyze-risk-pill")).toHaveText("Risk level High");
+  const riskPill = page.getByTestId("analyze-risk-pill");
+  await expect(riskPill).toHaveText("High");
+  await expect(riskPill).toHaveAccessibleName("Risk level High");
 
   const keyReasons = page.getByTestId("analyze-key-reasons");
   await expect(keyReasons.getByRole("heading", { name: "Key reasons" })).toBeVisible();
@@ -312,7 +314,9 @@ test("safe action display maps to Safe and Low without showing email tabs", asyn
 
   const verdictCard = page.getByTestId("analyze-verdict-card");
   await expect(verdictCard.getByText("Safe", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("analyze-risk-pill")).toHaveText("Risk level Low");
+  const riskPill = page.getByTestId("analyze-risk-pill");
+  await expect(riskPill).toHaveText("Low");
+  await expect(riskPill).toHaveAccessibleName("Risk level Low");
   await expect(page.getByTestId("analyze-key-reasons")).toBeVisible();
   await expect(page.getByTestId("analyze-next-actions")).toBeVisible();
 });

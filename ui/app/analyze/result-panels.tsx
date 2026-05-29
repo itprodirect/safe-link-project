@@ -379,13 +379,15 @@ function VerdictCard({ item, context }: { item: ApiItem; context: VerdictContext
         <p className="verdictStatus">{actionCopy.verdictLabel}</p>
         <p className="verdictSummary">{getPlainLanguageSummary(item, context)}</p>
       </div>
-      <div className="riskLevelBlock" aria-label={`Risk level ${actionCopy.riskLabel}`}>
+      <div className="riskLevelBlock">
         <span>Risk level</span>
         <strong
+          aria-label={`Risk level ${actionCopy.riskLabel}`}
           className={`riskPill riskPill-${actionLevel}`}
           data-testid="analyze-risk-pill"
+          role="status"
         >
-          Risk level {actionCopy.riskLabel}
+          {actionCopy.riskLabel}
         </strong>
       </div>
     </section>
