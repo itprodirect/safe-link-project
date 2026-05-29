@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "smoke:api": "node scripts/api-contract-smoke.mjs",
-    "smoke:e2e": "playwright test e2e/analyze.smoke.spec.ts"
+    "smoke:e2e": "playwright test e2e/analyze.smoke.spec.ts e2e/analyze.verdict.spec.ts"
   },
   "dependencies": {
     "next": "^15.0.0",
