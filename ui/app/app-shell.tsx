@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isAnalyzeRoute = pathname === "/analyze" || (pathname?.startsWith("/analyze/") ?? false);
 
-  if (pathname?.startsWith("/analyze")) {
+  if (isAnalyzeRoute) {
     return <>{children}</>;
   }
 
