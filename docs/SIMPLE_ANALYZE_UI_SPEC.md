@@ -39,6 +39,87 @@ This spec is based on the M1 GitHub issue sequence and current repository state:
 - Current docs and code show URL/email/QR analysis is already supported, but M1
   should subtract surface area from `/analyze` rather than add new backend behavior.
 
+## Implementation Clarifications After Claude Review
+
+These clarifications are binding for the M1 follow-up issues and are intended to
+keep implementation scoped to UI simplification rather than backend behavior.
+
+### Sidebar And Topbar Mechanism
+
+The target `/analyze` UI is sidebar-only. M1 Issue #2 / GitHub #19 must avoid
+double navigation caused by adding the simplified Analyze sidebar while the root
+topbar still renders above it.
+
+Issue #19 must choose the smallest safe implementation path and document that
+choice in the issue closeout or PR notes. A page-local `/analyze` shell is still
+preferred if it can remove or bypass the root topbar for this page without
+changing broader navigation behavior. If the existing layout makes that unsafe,
+the issue should explicitly document the smaller global shell change it uses.
+
+### Intermediate Result Rendering For Issue #19
+
+M1 Issue #2 / GitHub #19 focuses on the simplified shell, input card, validation,
+and single Analyze button routing. It should still keep successful analysis
+results visible after a run by reusing existing `QuickResult` behavior or an
+equivalent quick verdict rendering path.
+
+Full result hierarchy redesign belongs to M1 Issue #3 / GitHub #20. Issue #19
+should not attempt to complete the full verdict card, reasons/actions cards, or
+technical-details redesign unless that is the smallest safe way to preserve a
+working success state.
+
+### Evidence Accordion Contents For Issue #20
+
+M1 Issue #3 / GitHub #20 should move existing analyst and evidence-oriented
+content behind the collapsed `Evidence / technical details` accordion where
+practical. The primary result surface should keep verdict, risk, plain-English
+explanation, key reasons, and next actions prominent while retaining access to
+technical details for users who expand the accordion.
+
+### QR Upload Simplification
+
+Optional QR upload remains in the simplified `/analyze` UI. The primary UI should
+remove or hide `analyze_all`, and QR analysis should default to
+`analyze_all=false`.
+
+Continue tolerating QR decoder-unavailable and multipart-unavailable states in
+local and CI validation. Simplifying the QR upload surface must not require new
+decoder dependencies or make decoder availability a prerequisite for unrelated
+Analyze shell validation.
+
+### Email Browser UI Removal
+
+Hide Email from the simplified `/analyze` browser UI. Remove or migrate old
+browser tests that are tied to the `/analyze` Email tab so they no longer assert
+the removed tabbed primary surface.
+
+Preserve backend email/API smoke behavior and any legacy email route or API
+coverage that remains outside the simplified `/analyze` page. M1 removes Email
+from this UI path; it does not delete email analysis capability.
+
+### Verdict Display Labels
+
+Use the existing action/severity logic and apply this display-only mapping:
+
+| Existing action | Display label |
+|---|---|
+| `safe` | `Safe / Low` |
+| `caution` | `Caution / Medium` |
+| `avoid` | `Suspicious / High` |
+| `block` | `Dangerous / Critical` |
+
+This mapping is presentation-only. Do not change scorer thresholds, backend
+severity semantics, API response contracts, or the existing action derivation in
+order to show these labels.
+
+### Smoke Command Prerequisites
+
+Browser smoke validation may require Playwright Chromium, the API running on
+`:8000`, the built UI smoke server, and the necessary environment variables.
+Follow-up implementation issues should state which prerequisites were present
+when reporting browser smoke results, especially when a local environment blocks
+full smoke execution.
+
 ## Initial State And Analyzed State
 
 ### Initial State
