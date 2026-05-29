@@ -389,7 +389,7 @@ function VerdictCard({ item, context }: { item: ApiItem; context: VerdictContext
   const actionCopy = ACTION_COPY[actionLevel];
 
   return (
-    <section className={`verdictCard verdictCard-${actionLevel}`}>
+    <section className={`verdictCard verdictCard-${actionLevel}`} data-testid="analyze-verdict-card">
       <div className="verdictHeader">
         <div>
           <p className="eyebrow">Primary verdict</p>
@@ -891,6 +891,5 @@ export function EmptyState() {
     </section>
   );
 }
-
 
 

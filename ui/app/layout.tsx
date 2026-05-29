@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AppShell } from "./app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,17 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="shell">
-          <nav className="topbar">
-            <strong>Link Safety Hub UI</strong>
-            <Link href="/">Overview</Link>
-            <Link href="/analyze">Analyze (V2)</Link>
-            <Link href="/url">URL Check</Link>
-            <Link href="/email">Email Check</Link>
-            <Link href="/qr">QR Scan</Link>
-          </nav>
-          {children}
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
