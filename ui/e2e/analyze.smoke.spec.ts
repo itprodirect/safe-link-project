@@ -38,8 +38,10 @@ test("validates empty and mixed input without clearing a successful URL result",
   await page.getByLabel("URL").fill("https://example.com");
   await page.getByRole("button", { name: "Analyze" }).click();
   await expect(page.getByTestId("analyze-verdict-card")).toBeVisible();
-  await expect(page.getByText("Subject: https://example.com")).toBeVisible();
-  await expect(page.getByText("Flow: analyze")).toBeVisible();
+  await expect(page.getByTestId("analyze-risk-pill")).toBeVisible();
+  await expect(page.getByTestId("analyze-key-reasons")).toBeVisible();
+  await expect(page.getByTestId("analyze-next-actions")).toBeVisible();
+  await expect(page.getByTestId("analyze-technical-details")).toHaveJSProperty("open", false);
 
   await page.getByLabel("QR image (optional)").setInputFiles(QR_FIXTURE);
   await page.getByRole("button", { name: "Analyze" }).click();
