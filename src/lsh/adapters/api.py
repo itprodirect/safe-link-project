@@ -1,5 +1,4 @@
 """Minimal FastAPI adapter for Link Safety Hub."""
-# mypy: disable-error-code=untyped-decorator
 # mypy: warn_unused_ignores=False
 
 from __future__ import annotations
@@ -433,4 +432,3 @@ def create_app() -> Any:
 
 
 app: Any | None = create_app() if FASTAPI_AVAILABLE else None
-

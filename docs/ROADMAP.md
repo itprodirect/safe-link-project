@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Progress (2026-03-09)
+## Current Progress (2026-05-28)
 
 - [x] Session 0: Package scaffold, core models, scorer, CLI skeleton
 - [x] Session 1: Homoglyph / IDN module with focused tests
@@ -33,6 +33,7 @@
 - [x] Session 12: Unified `/analyze` workspace (URL/Email/QR tabs, typed v2 client, mode toggle, e2e smoke)
 - [x] Session 13: Verdict-first UX slice (`VerdictCard`, `WhyPanel`, action-level mapping)
 - [x] Session 14: URL Analyst Mode deep evidence (analyst payloads, suppression traces, compare-ready keys)
+- [x] Session 15: E5 backend policy-pack foundation (model/store, `/api/v2/policies` CRUD, analyze `policy_id` integration)
 
 ## Session 8: Deployment + UI Validation
 
@@ -161,6 +162,27 @@ Finish the first shippable URL Analyst Mode surface and make the v2 contract rea
 3. [x] Add suppression-trace visibility from allowlist decisions through API and UI.
 4. [x] Add compare-ready evidence keys (`finding_key`, `compare_key`, keyed evidence maps) for future delta views.
 5. [x] Sync API/docs/roadmap state with the delivered analyst-mode contract.
+
+## Session 15: E5 Backend Policy-Pack Foundation (2026-03-11)
+
+### Goal
+
+Land the backend half of policy packs without starting the policy-management UI.
+
+### Work Items
+
+1. [x] Add `PolicyPack` data model and file-backed `PolicyStore`.
+2. [x] Add `PolicyService` application seam for persistence operations.
+3. [x] Add typed `/api/v2/policies` CRUD endpoints.
+4. [x] Add optional `policy_id` support to URL requests on `POST /api/v2/analyze`.
+5. [x] Preserve v1 behavior and existing explicit API error-envelope versioning.
+6. [ ] Build E5 frontend policy selection/UI (`PolicyDrawer` or equivalent).
+7. [ ] Add policy dry-run preview.
+8. [ ] Add policy audit logging.
+
+### Current Boundary
+
+The E5 backend model/store/API slice has landed. The E5 epic remains open until users can manage and apply policies from the UI, dry-run policy effects, and inspect policy audit history. History, compare, rerun, and feedback persistence remain E6 work.
 
 ## Risks and Mitigations
 

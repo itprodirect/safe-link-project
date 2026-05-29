@@ -5,7 +5,7 @@
 Link Safety Hub (LSH) is a modular, local-first security toolbelt for URL, email-header, and QR-linked analysis.
 It targets clear risk decisions first, with technical evidence available when needed.
 
-## Current State (2026-03-09)
+## Current State (2026-05-28)
 
 Implemented:
 
@@ -22,19 +22,25 @@ Implemented:
 - Next.js UI with unified `/analyze` workspace (Quick + Analyst modes)
 - Verdict-first UX (`VerdictCard`, `WhyPanel`, action-level mapping)
 - URL Analyst Mode with domain anatomy, redirect path, suppression traces, compare-ready evidence keys
+- E5 backend policy-pack foundation:
+  - typed `PolicyPack` model and file-backed `PolicyStore`
+  - `PolicyService` application seam
+  - `/api/v2/policies` CRUD routes
+  - `POST /api/v2/analyze` URL `policy_id` integration with policy + inline suppression union semantics
 - Docker deployment baseline
-- Expanded regression coverage (223 tests):
+- Expanded regression coverage (282 pytest tests):
   - adversarial URL tests
   - v1/v2 parity and edge-case matrix tests
   - snapshot parity fixtures in `tests/fixtures/contracts/`
   - browser smoke tests for unified workspace and verdict UX
 - V2 phases E1-E4 complete (epics `#3`-`#6` closed)
+- E5 backend model/store/API work landed; E5 remains open for frontend policy selection, dry-run preview, and policy audit logging
 
 Open priorities:
 
-1. Complete hosted validation pass (Session 9 roadmap item 3).
-2. Start E5: Policy Packs and suppression management (`#7`).
-3. Continue with E6-E8 per V2 roadmap.
+1. Build E5 frontend policy selection/UI (`PolicyDrawer` or equivalent) for epic `#7`.
+2. Add E5 policy dry-run preview and policy audit logging.
+3. Keep E6 history, compare, rerun, and feedback persistence separate until the remaining E5 policy UX/audit work is complete.
 
 ## Tech Stack
 

@@ -54,7 +54,7 @@ cd ui && npm run lint && npm run build  # frontend
 
 **Detection modules**: `homoglyph` (Unicode/IDN), `ascii_lookalike` (leet/brand), `url_structure` (deceptive patterns), `net_ip` (IP literals), `redirect` (opt-in redirect chains), `email_auth` (SPF/DKIM/DMARC), `qr_decode` (QR payload extraction).
 
-## Current Status (2026-03-09)
+## Current Status (2026-05-28)
 
 Implemented now:
 
@@ -69,6 +69,11 @@ Implemented now:
 - Reusable family formatter layer in `src/lsh/formatters/family.py`
 - Reusable structured response wrappers in `src/lsh/formatters/structured.py`
 - Unified v2 endpoint (`POST /api/v2/analyze`) plus v1/v2 parity, analyst projections, policy-pack `policy_id` support, and edge-case test coverage
+- E5 backend policy-pack foundation:
+  - typed `PolicyPack` model and file-backed `PolicyStore`
+  - `PolicyService` application seam
+  - `/api/v2/policies` CRUD routes
+  - URL analyze `policy_id` integration with policy + inline suppression union semantics
 - URL-focused offline modules:
   - `homoglyph` (Unicode/IDN spoofing)
   - `ascii_lookalike` (ASCII glyph and leet brand lookalikes)
@@ -97,9 +102,12 @@ Implemented now:
 
 In progress and next:
 
+- E5 frontend policy selection/UI remains pending; the backend model/store/API slice has landed
+- E5 dry-run preview and policy audit logging remain future work
+- Persisted history/compare flows remain future E6 work
 - Hosted validation closure for Session 9 deployment checklist
 - Email/QR analyst-mode parity beyond the current URL-first slice
-- Persisted history/compare flows and hardening milestones (tracked in `docs/V2_ROADMAP_ISSUES.md`)
+- Hardening milestones remain tracked in `docs/V2_ROADMAP_ISSUES.md`
 
 ## Quick Start
 
@@ -427,4 +435,3 @@ Agent workflow docs:
 ## License
 
 MIT
-

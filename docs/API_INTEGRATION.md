@@ -366,6 +366,10 @@ Known error codes:
 
 Validation errors (`422`) use FastAPI's default validation format and should be handled separately.
 
+Contract decision pending: explicit endpoint-raised errors for v2 policy flows currently reuse the
+existing `detail.schema_version: "1.0"` error envelope. Do not change this to a v2 error envelope
+without a deliberate versioning decision and consumer migration note.
+
 ## v1/v2 Snapshot Governance (E1-I4)
 
 Deterministic overlap fixture and parity assertions live in:
@@ -477,4 +481,3 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
 - QR API now accepts uploaded image bytes and does not require server-local file paths.
 - Policy storage path defaults to `.lsh/policies.json`; override with `LSH_POLICY_STORE_DIR`.
 - Use timeout/retry policy in frontend for network-enabled URL checks.
-
