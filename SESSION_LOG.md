@@ -2461,3 +2461,40 @@ Development session history. Each entry documents what was done, why, and what's
 - `npx playwright test e2e/analyze.verdict.spec.ts` passed in `ui/` (`3 passed`).
 - `npm run smoke:api` passed in `ui/` against local API `http://127.0.0.1:8000`.
 - `npm run smoke:e2e` passed in `ui/` against local API + built UI (`3 passed`).
+
+---
+
+## 2026-05-29 - M1 Simplified Analyze UI local runbook closeout
+
+**Agent:** Codex
+
+**Branch:** `docs/analyze-ui-runbook`
+
+**Goal:** Create a docs-only closeout runbook for the completed M1 Simplified Analyze UI milestone.
+
+**Module(s) Touched:** docs, session log
+
+**Changes:**
+- Added `docs/LOCAL_ANALYZE_UI_RUNBOOK.md` with M1 closeout summary, mockup path, local setup, backend/frontend startup, environment variables, frontend validation commands, Analyze Playwright commands, manual verification checklist, known limitations, and next milestone recommendation.
+- Recorded the M1 merged PR sequence:
+  - `#23` simplified Analyze UI spec and mockup.
+  - `#24` simplified Analyze shell and input card.
+  - `#25` simplified Analyze result presentation.
+  - `#26` state/accessibility/test hardening.
+- Documented the unrelated favicon 404 as a known local-browser limitation because no favicon/app icon asset is currently present.
+
+**Decisions:**
+- Kept this closeout docs-only and did not modify runtime code, UI source, backend source, package files, dependencies, or test behavior.
+- Recommended resuming E5 frontend policy selection as the next milestone, keeping policy dry-run/audit and E6 history/compare work separate.
+- Noted that no repo-declared markdown formatter/checker is currently available in `pyproject.toml`, `Makefile`, or `ui/package.json`.
+
+**Open Questions:**
+- Should a separate visual-polish task add a favicon/app icon, or should the favicon 404 remain ignored until broader branding work?
+
+**Next:**
+- Use `docs/LOCAL_ANALYZE_UI_RUNBOOK.md` for future local Analyze UI setup, smoke validation, and manual checks.
+- Start the next E5 frontend policy selection milestone when ready.
+
+**Tests / Verification:**
+- `git diff --check` passed.
+- Markdown formatting check was not run because no local `markdownlint`, `markdownlint-cli2`, `mdformat`, or `prettier` command was available on PATH, and no repo-declared markdown check script is present.
